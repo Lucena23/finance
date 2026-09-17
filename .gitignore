@@ -1,3 +1,8 @@
+# ═══════════════════════════════════════════════════════════════
+# Finanças Aksurim — .gitignore
+# Blindagem de credenciais e documentação interna (REGRAS §2)
+# ═══════════════════════════════════════════════════════════════
+
 # Dependencies
 /node_modules
 /backend/node_modules
@@ -21,6 +26,7 @@ yarn-error.log*
 !.env.example
 /backend/.env
 /backend/.env.*
+!/backend/.env.example
 
 # Internal engineering docs (blindagem — NUNCA enviar ao GitHub)
 /docs/
@@ -36,3 +42,8 @@ Thumbs.db
 
 # Prisma
 /backend/prisma/*.db
+
+# Test coverage
+/coverage
+/backend/coverage
+/frontend/coverage
