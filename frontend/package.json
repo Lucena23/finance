@@ -1,0 +1,19 @@
+{
+  "name": "financas-aksurim-frontend",
+  "version": "1.0.0",
+  "description": "PWA React/Vite do Finanças Aksurim — Gestão de Compromissos Financeiros Compartilhados",
+  "author": "Aksurim Software",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "test": "vitest",
+    "test:cov": "vitest run --coverage"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
