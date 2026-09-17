@@ -1,0 +1,159 @@
+// ═══════════════════════════════════════════════════════════════
+// Finanças Aksurim — Prisma Schema
+// Documento Oficial de Arquitetura Técnica — §3.1
+// ═══════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════
+// ENUMS
+// ═══════════════════════════════════════════
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum ExpenseType {
+  SINGLE
+  INSTALLMENT
+  RECURRENT
+}
+
+enum ExpenseRecurrenceStatus {
+  ACTIVE
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+}
+
+// ═══════════════════════════════════════════
+// ENTIDADES
+// ═══════════════════════════════════════════
+
+model FamilyAccount {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(100)
+  ownerCpf  String   @unique @db.VarChar(14)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users      User[]
+  categories Category[]
+  expenses   Expense[]
+
+  @@map("family_accounts")
+}
+
+model User {
+  id              String   @id @default(uuid())
+  name            String   @db.VarChar(100)
+  email           String   @unique @db.VarChar(255)
+  passwordHash    String   @db.VarChar(255)
+  role            Role     @default(MEMBER)
+  avatarColor     String   @db.VarChar(7) // Código hex: #FF5733
+  initials        String   @db.VarChar(3) // Gerado automaticamente a partir do name
+  familyAccountId String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  familyAccount     FamilyAccount       @relation(fields: [familyAccountId], references: [id])
+  createdExpenses   Expense[]           @relation("CreatedBy")
+  paidItems         PaymentItem[]       @relation("PaidBy")
+  pushSubscriptions PushSubscription[]
+
+  @@index([familyAccountId])
+  @@index([email])
+  @@map("users")
+}
+
+model Category {
+  id              String   @id @default(uuid())
+  name            String   @db.VarChar(60)
+  color           String   @db.VarChar(7) // Código hex: #3B82F6
+  icon            String   @db.VarChar(50) // Nome do ícone Lucide (ex: "home", "zap")
+  familyAccountId String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  familyAccount FamilyAccount @relation(fields: [familyAccountId], references: [id])
+  expenses      Expense[]
+
+  @@index([familyAccountId])
+  @@map("categories")
+}
+
+model Expense {
+  id               String                  @id @default(uuid())
+  title            String                  @db.VarChar(150)
+  description      String?                 @db.Text
+  type             ExpenseType
+  totalAmount      Int // Valor total em centavos (ex: 15075 = R$ 150,75)
+  statusRecurrence ExpenseRecurrenceStatus @default(ACTIVE)
+  categoryId       String
+  familyAccountId  String
+  createdById      String
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  deletedAt        DateTime? // Soft delete — NULL = ativo
+
+  category      Category      @relation(fields: [categoryId], references: [id])
+  familyAccount FamilyAccount @relation(fields: [familyAccountId], references: [id])
+  createdBy     User          @relation("CreatedBy", fields: [createdById], references: [id])
+  paymentItems  PaymentItem[]
+
+  @@index([familyAccountId])
+  @@index([categoryId])
+  @@index([createdById])
+  @@index([deletedAt])
+  @@map("expenses")
+}
+
+model PaymentItem {
+  id                String        @id @default(uuid())
+  expenseId         String
+  dueDate           DateTime      @db.Date
+  installmentNumber Int // Número da parcela (1-indexed). SINGLE: sempre 1. RECURRENT: sequencial mensal.
+  totalInstallments Int // Total de parcelas. SINGLE: 1. RECURRENT: 0 (indeterminado).
+  expectedAmount    Int // Valor previsto em centavos
+  paidAmount        Int? // Valor efetivamente pago em centavos (NULL = não pago)
+  paidAt            DateTime? // Timestamp da baixa
+  paidById          String? // ID do usuário que quitou
+  status            PaymentStatus @default(PENDING)
+  notes             String?       @db.Text // Anotações livres de quitação
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  expense Expense @relation(fields: [expenseId], references: [id])
+  paidBy  User?   @relation("PaidBy", fields: [paidById], references: [id])
+
+  @@index([expenseId])
+  @@index([dueDate])
+  @@index([status])
+  @@index([paidById])
+  @@map("payment_items")
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String   @db.Text
+  p256dh    String   @db.VarChar(255) // Chave pública VAPID
+  auth      String   @db.VarChar(255) // Token de autenticação VAPID
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
