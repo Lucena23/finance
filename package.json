@@ -17,5 +17,23 @@
     "test:backend": "npm test --prefix backend",
     "test:frontend": "npm test --prefix frontend",
     "test": "npm run test:backend && npm run test:frontend"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.4.22",
+    "@nestjs/core": "^10.4.22",
+    "@nestjs/platform-express": "^10.4.22",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^10.4.9",
+    "@nestjs/schematics": "^10.2.3",
+    "@nestjs/testing": "^10.4.22",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.1",
+    "source-map-support": "^0.5.21",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.9.3"
   }
 }
