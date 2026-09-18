@@ -1,14 +1,15 @@
 /**
- * useDashboard.ts — Hook de consumo do Painel Gerencial (TAREFA 44).
+ * useDashboard.ts — Hooks de consumo do Painel Gerencial (TAREFAS 44 e 45).
  *
- * Encapsula o fetch de GET /dashboard/summary, expondo os cards de resumo do
- * mês (Total Pago, Total a Pagar e Divisão Proporcional por Membro) já
- * agregados pelo backend (RN-09 — relatórios exclusivamente de saídas).
+ * Encapsula o fetch dos endpoints do dashboard:
+ *  - GET /dashboard/summary → cards de resumo do mês (TAREFA 44).
+ *  - GET /dashboard/category-distribution → distribuição por categoria,
+ *    alimentando o gráfico de rosca (TAREFA 45).
  *
- * Os valores trafegam como inteiros em centavos (Int — §8.2); a conversão
- * para exibição ocorre exclusivamente na camada de apresentação.
- *
- * REGRA (§8.1): proibido o uso de `any`. Tipos explícitos em todo o módulo.
+ * RN-09: relatórios exclusivamente de saídas (sem receitas).
+ * §8.2: valores trafegam como inteiros em centavos (Int); a conversão para
+ *       exibição ocorre exclusivamente na camada de apresentação.
+ * §8.1: proibido o uso de `any`. Tipos explícitos em todo o módulo.
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -16,6 +17,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   ApiError,
   dashboardApi,
+  type CategoryDistribution,
   type DashboardSummary,
 } from '@/lib/api';
 
@@ -89,5 +91,79 @@ export function useDashboardSummary(
     isLoading,
     error,
     refetch: fetchSummary,
+  };
+}
+
+/**
+ * Filtros de período aceitos pela distribuição por categoria.
+ */
+export interface CategoryDistributionFilters {
+  /** Mês de referência (1–12). */
+  month: number;
+  /** Ano de referência (ex: 2026). */
+  year: number;
+}
+
+/**
+ * Estado e operações expostos pelo hook useCategoryDistribution.
+ */
+export interface UseCategoryDistributionResult {
+  /** Distribuição por categoria do mês, ou array vazio enquanto não carregado. */
+  distribution: CategoryDistribution[];
+  /** Indica se a requisição está em andamento. */
+  isLoading: boolean;
+  /** Mensagem de erro legível, ou null quando não há falha. */
+  error: string | null;
+  /** Recarrega a distribuição a partir da API. */
+  refetch: () => Promise<void>;
+}
+
+/**
+ * Consome a distribuição percentual de gastos por categoria do mês
+ * (alimenta o gráfico de rosca — TAREFA 45).
+ *
+ * @param filters Período de referência (month, year).
+ * @returns Distribuição por categoria, estados e função de refetch.
+ *
+ * @example
+ * const { distribution, isLoading, error, refetch } = useCategoryDistribution({ month: 9, year: 2026 });
+ */
+export function useCategoryDistribution(
+  filters: CategoryDistributionFilters,
+): UseCategoryDistributionResult {
+  const [distribution, setDistribution] = useState<CategoryDistribution[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const { month, year } = filters;
+
+  const fetchDistribution = useCallback(async (): Promise<void> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const data = await dashboardApi.categoryDistribution({ month, year });
+      setDistribution(data);
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : 'Não foi possível carregar a distribuição por categoria.';
+      setError(message);
+      setDistribution([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [month, year]);
+
+  useEffect(() => {
+    void fetchDistribution();
+  }, [fetchDistribution]);
+
+  return {
+    distribution,
+    isLoading,
+    error,
+    refetch: fetchDistribution,
   };
 }
