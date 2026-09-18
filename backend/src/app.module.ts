@@ -14,6 +14,7 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ExpenseModule } from './expense/expense.module';
 import { FamilyAccountModule } from './family-account/family-account.module';
+import { NotificationModule } from './notification/notification.module';
 import { PaymentItemModule } from './payment-item/payment-item.module';
 import { PrismaModule } from './prisma/prisma.module';
 
@@ -31,6 +32,7 @@ import { PrismaModule } from './prisma/prisma.module';
     ExpenseModule,
     PaymentItemModule,
     DashboardModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [
