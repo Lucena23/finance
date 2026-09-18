@@ -3,17 +3,19 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { PublicRoute } from '@/components/layout/PublicRoute';
 import { useAuth } from '@/hooks/useAuth';
+import { LoginPage } from '@/pages/LoginPage';
+import { RegisterPage } from '@/pages/RegisterPage';
 
 /**
  * App — Roteamento principal do Finanças Aksurim.
  *
- * Estrutura de rotas (TAREFA 35):
+ * Estrutura de rotas:
  *  - Rotas públicas (/login, /register) protegidas por <PublicRoute>.
  *  - Rotas autenticadas protegidas por <ProtectedRoute>.
  *
- * As páginas reais de login/registro e as telas internas são implementadas
- * nas tarefas subsequentes (36+). Placeholders mínimos são renderizados para
- * validar o fluxo de autenticação e o pipeline de build (tsc + vite build).
+ * As telas internas (fila, dashboard, despesas, categorias, configurações)
+ * são implementadas nas tarefas subsequentes (37+). Um placeholder mínimo é
+ * renderizado para validar o fluxo de autenticação e o pipeline de build.
  */
 export function App(): JSX.Element {
   return (
@@ -21,8 +23,8 @@ export function App(): JSX.Element {
       <Routes>
         {/* Rotas públicas — redirecionam se já autenticado */}
         <Route element={<PublicRoute />}>
-          <Route path="/login" element={<LoginPlaceholder />} />
-          <Route path="/register" element={<RegisterPlaceholder />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
         </Route>
 
         {/* Rotas autenticadas — redirecionam para /login se não autenticado */}
@@ -33,28 +35,6 @@ export function App(): JSX.Element {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
-  );
-}
-
-function LoginPlaceholder(): JSX.Element {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-2 p-6 text-center">
-      <h1 className="text-2xl font-bold">Entrar</h1>
-      <p className="text-muted-foreground text-sm">
-        Tela de login — implementação na TAREFA 36.
-      </p>
-    </main>
-  );
-}
-
-function RegisterPlaceholder(): JSX.Element {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-2 p-6 text-center">
-      <h1 className="text-2xl font-bold">Criar conta</h1>
-      <p className="text-muted-foreground text-sm">
-        Tela de registro — implementação na TAREFA 36.
-      </p>
-    </main>
   );
 }
 
