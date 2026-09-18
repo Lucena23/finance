@@ -5,10 +5,11 @@ import { PassportModule } from '@nestjs/passport';
 
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { JwtStrategy } from './jwt.strategy';
 
 /**
  * AuthModule — autenticação com bcrypt + JWT.
- * ARCHITECTURE §2 / §5.1 — TAREFA 10.
+ * ARCHITECTURE §2 / §5.1 — TAREFA 10 / TAREFA 11.
  */
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { AuthService } from './auth.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, JwtStrategy],
   exports: [AuthService],
 })
 export class AuthModule {}
