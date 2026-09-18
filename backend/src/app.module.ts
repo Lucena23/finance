@@ -11,6 +11,7 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { CategoryModule } from './category/category.module';
 import { FamilyScopeInterceptor } from './common/interceptors/family-scope.interceptor';
 import { RolesGuard } from './common/guards/roles.guard';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { ExpenseModule } from './expense/expense.module';
 import { FamilyAccountModule } from './family-account/family-account.module';
 import { PaymentItemModule } from './payment-item/payment-item.module';
@@ -29,6 +30,7 @@ import { PrismaModule } from './prisma/prisma.module';
     CategoryModule,
     ExpenseModule,
     PaymentItemModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [
