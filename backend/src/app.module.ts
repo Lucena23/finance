@@ -11,6 +11,7 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { CategoryModule } from './category/category.module';
 import { FamilyScopeInterceptor } from './common/interceptors/family-scope.interceptor';
 import { RolesGuard } from './common/guards/roles.guard';
+import { ExpenseModule } from './expense/expense.module';
 import { FamilyAccountModule } from './family-account/family-account.module';
 import { PrismaModule } from './prisma/prisma.module';
 
@@ -25,6 +26,7 @@ import { PrismaModule } from './prisma/prisma.module';
     AuthModule,
     FamilyAccountModule,
     CategoryModule,
+    ExpenseModule,
   ],
   controllers: [AppController],
   providers: [
