@@ -13,6 +13,7 @@ import { FamilyScopeInterceptor } from './common/interceptors/family-scope.inter
 import { RolesGuard } from './common/guards/roles.guard';
 import { ExpenseModule } from './expense/expense.module';
 import { FamilyAccountModule } from './family-account/family-account.module';
+import { PaymentItemModule } from './payment-item/payment-item.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
@@ -27,6 +28,7 @@ import { PrismaModule } from './prisma/prisma.module';
     FamilyAccountModule,
     CategoryModule,
     ExpenseModule,
+    PaymentItemModule,
   ],
   controllers: [AppController],
   providers: [
