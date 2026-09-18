@@ -1,30 +1,23 @@
-═══════════════════════════════════════════════════════════════
-INSTRUÇÕES DO TEMPLATE (NÃO COPIAR PARA O PROJETO)
-═══════════════════════════════════════════════════════════════
-
-O Changelog é o documento PÚBLICO de história do projeto.
-Este arquivo DEVE ficar na raiz do projeto (`/CHANGELOG.md`) e será enviado ao GitHub.
-
-ATENÇÃO: Mantenha linguagem corporativa padrão. As alterações devem refletir a autoria técnica da Aksurim Software.
-REGRA DE APPEND-ONLY: É estritamente proibido apagar, resumir ou modificar registros antigos deste arquivo. Novos registros devem ser sempre adicionados no topo da seção 'REGISTROS RECENTES'. O histórico é imutável.
-
-═══════════════════════════════════════════════════════════════
-MODELO DO DOCUMENTO (COPIAR E PREENCHER)
-═══════════════════════════════════════════════════════════════
-
-
 📜 CHANGELOG.md
 Histórico Oficial do Projeto — Aksurim Software
 
 
 ## REGISTROS RECENTES
 
-Data:
-Versão:
-Tipo: [FEATURE | FIX | IMPROVEMENT | REFACTOR | DOCS | CONFIG | TEST]
-Origem:
-Descrição:
+Data: 2026-09-17
+Versão: 0.1.0
+Tipo: FEATURE
+Origem: Módulo FamilyAccount — Vínculo por CPF (RN-02)
+Descrição: Implementação do módulo de gestão do workspace familiar com vínculo obrigatório por CPF do titular. Inclui validação de CPF (algoritmo oficial dos dígitos verificadores), armazenamento mascarado (XXX.XXX.XXX-XX), exibição parcial no frontend (***.***.XXX-XX) e rejeição de CPF duplicado com HTTP 409. O escopo familiar é derivado exclusivamente do token JWT, nunca de parâmetros de requisição.
 Arquivos alterados:
+  - backend/src/family-account/family-account.module.ts
+  - backend/src/family-account/family-account.controller.ts
+  - backend/src/family-account/family-account.service.ts
+  - backend/src/family-account/dto/create-family-account.dto.ts
+  - backend/src/family-account/dto/update-family-account.dto.ts
+  - backend/src/common/utils/cpf.util.ts
+  - backend/src/common/validators/is-cpf.validator.ts
+  - backend/src/app.module.ts
 Responsável: Joannderson Lucena (Aksurim Software)
 
 
