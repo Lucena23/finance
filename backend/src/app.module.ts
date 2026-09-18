@@ -8,6 +8,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { CategoryModule } from './category/category.module';
 import { FamilyScopeInterceptor } from './common/interceptors/family-scope.interceptor';
 import { RolesGuard } from './common/guards/roles.guard';
 import { FamilyAccountModule } from './family-account/family-account.module';
@@ -23,6 +24,7 @@ import { PrismaModule } from './prisma/prisma.module';
     PrismaModule,
     AuthModule,
     FamilyAccountModule,
+    CategoryModule,
   ],
   controllers: [AppController],
   providers: [
