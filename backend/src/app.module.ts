@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -25,6 +26,8 @@ import { PrismaModule } from './prisma/prisma.module';
       // Resolve o .env relativo à raiz do backend, independente do cwd.
       envFilePath: join(__dirname, '..', '.env'),
     }),
+    // Agendador de tarefas — habilita o Cron Job de Web Push (TAREFA 33).
+    ScheduleModule.forRoot(),
     PrismaModule,
     AuthModule,
     FamilyAccountModule,

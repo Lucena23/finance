@@ -4,6 +4,24 @@ Histórico Oficial do Projeto — Aksurim Software
 
 ## REGISTROS RECENTES
 
+Data: 2026-09-18
+Versão: 0.3.0
+Tipo: FEATURE
+Origem: Motor de Web Push Notifications — Prioridade P1/P2/P3/Silêncio e Cron Job (RN-10 / §8.6)
+Descrição: Implementação do motor de notificações push com hierarquia de prioridade e do Cron Job diário de disparo. Para cada workspace familiar o motor avalia as pendências na ordem P1 (contas em atraso) > P2 (vencendo hoje) > P3 (próximos 5 dias) > Silêncio, disparando no máximo 1 notificação por workspace por execução, com as mensagens oficiais definidas em REGRAS §8.6. O push é enviado a todas as subscriptions de todos os membros do workspace, com remoção automática de subscriptions expiradas (HTTP 404/410). O Cron Job executa diariamente às 05:00 BRT (timezone America/Sao_Paulo) via `node dist/notification-cron.js`, iterando todas as FamilyAccounts e registrando o resultado de disparo por workspace. Chaves VAPID lidas exclusivamente do .env.
+Arquivos alterados:
+  - backend/src/notification/notification-priority.service.ts
+  - backend/src/notification/notification.cron.ts
+  - backend/src/notification/notification-cron.module.ts
+  - backend/src/notification-cron.ts
+  - backend/src/notification/notification.module.ts
+  - backend/src/app.module.ts
+  - backend/package.json
+Responsável: Joannderson Lucena (Aksurim Software)
+
+
+## HISTÓRICO COMPLETO
+
 Data: 2026-09-17
 Versão: 0.2.0
 Tipo: FEATURE
@@ -18,9 +36,6 @@ Arquivos alterados:
   - backend/src/expense/dto/query-expenses.dto.ts
   - backend/src/app.module.ts
 Responsável: Joannderson Lucena (Aksurim Software)
-
-
-## HISTÓRICO COMPLETO
 
 Data: 2026-09-17
 Versão: 0.1.0
