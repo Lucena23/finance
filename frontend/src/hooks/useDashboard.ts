@@ -1,10 +1,12 @@
 /**
- * useDashboard.ts — Hooks de consumo do Painel Gerencial (TAREFAS 44 e 45).
+ * useDashboard.ts — Hooks de consumo do Painel Gerencial (TAREFAS 44, 45 e 46).
  *
  * Encapsula o fetch dos endpoints do dashboard:
  *  - GET /dashboard/summary → cards de resumo do mês (TAREFA 44).
  *  - GET /dashboard/category-distribution → distribuição por categoria,
  *    alimentando o gráfico de rosca (TAREFA 45).
+ *  - GET /dashboard/monthly-evolution → evolução mensal de 12 meses,
+ *    alimentando o gráfico de barras (TAREFA 46).
  *
  * RN-09: relatórios exclusivamente de saídas (sem receitas).
  * §8.2: valores trafegam como inteiros em centavos (Int); a conversão para
@@ -19,6 +21,7 @@ import {
   dashboardApi,
   type CategoryDistribution,
   type DashboardSummary,
+  type MonthlyEvolution,
 } from '@/lib/api';
 
 /**
@@ -165,5 +168,80 @@ export function useCategoryDistribution(
     isLoading,
     error,
     refetch: fetchDistribution,
+  };
+}
+
+/**
+ * Filtros de período aceitos pela evolução mensal.
+ */
+export interface MonthlyEvolutionFilters {
+  /** Ano de referência (ex: 2026). */
+  year: number;
+}
+
+/**
+ * Estado e operações expostos pelo hook useMonthlyEvolution.
+ */
+export interface UseMonthlyEvolutionResult {
+  /** Evolução mensal do ano, ou array vazio enquanto não carregado. */
+  evolution: MonthlyEvolution[];
+  /** Indica se a requisição está em andamento. */
+  isLoading: boolean;
+  /** Mensagem de erro legível, ou null quando não há falha. */
+  error: string | null;
+  /** Recarrega a evolução mensal a partir da API. */
+  refetch: () => Promise<void>;
+}
+
+/**
+ * Consome a evolução mensal de despesas ao longo dos 12 meses do ano
+ * (alimenta o gráfico de barras — TAREFA 46).
+ *
+ * RN-09: exclusivamente saídas (pago vs pendente). Meses sem dados retornam
+ * zero, conforme contrato do endpoint GET /dashboard/monthly-evolution.
+ *
+ * @param filters Ano de referência (year).
+ * @returns Evolução mensal, estados e função de refetch.
+ *
+ * @example
+ * const { evolution, isLoading, error, refetch } = useMonthlyEvolution({ year: 2026 });
+ */
+export function useMonthlyEvolution(
+  filters: MonthlyEvolutionFilters,
+): UseMonthlyEvolutionResult {
+  const [evolution, setEvolution] = useState<MonthlyEvolution[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const { year } = filters;
+
+  const fetchEvolution = useCallback(async (): Promise<void> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const data = await dashboardApi.monthlyEvolution({ year });
+      setEvolution(data);
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : 'Não foi possível carregar a evolução mensal.';
+      setError(message);
+      setEvolution([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [year]);
+
+  useEffect(() => {
+    void fetchEvolution();
+  }, [fetchEvolution]);
+
+  return {
+    evolution,
+    isLoading,
+    error,
+    refetch: fetchEvolution,
   };
 }

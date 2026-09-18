@@ -1,18 +1,18 @@
 /**
- * DashboardPage.tsx — Painel gerencial (TAREFAS 44 e 45).
+ * DashboardPage.tsx — Painel gerencial (TAREFAS 44, 45 e 46).
  *
  * Exibe os cards de resumo do mês (Total Pago, Total a Pagar e Divisão
  * Proporcional por Membro) através do componente <SummaryCards />, que
- * consome GET /dashboard/summary (RN-09 — exclusivamente saídas), e o
+ * consome GET /dashboard/summary (RN-09 — exclusivamente saídas), o
  * gráfico de rosca de distribuição por categoria (<CategoryDonut />), que
- * consome GET /dashboard/category-distribution.
- *
- * O gráfico de barras (evolução mensal) é entregue na TAREFA 46.
+ * consome GET /dashboard/category-distribution, e o gráfico de barras de
+ * evolução mensal (<MonthlyBars />), que consome GET /dashboard/monthly-evolution.
  */
 
 import { useMemo } from 'react';
 
 import { CategoryDonut } from '@/components/dashboard/CategoryDonut';
+import { MonthlyBars } from '@/components/dashboard/MonthlyBars';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
 import { DEFAULT_TIMEZONE } from '@/lib/constants';
 
@@ -52,6 +52,8 @@ export function DashboardPage(): JSX.Element {
       <SummaryCards month={month} year={year} />
 
       <CategoryDonut month={month} year={year} />
+
+      <MonthlyBars year={year} />
     </section>
   );
 }
