@@ -1,21 +1,31 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-
-import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
-import { PublicRoute } from '@/components/layout/PublicRoute';
-import { useAuth } from '@/hooks/useAuth';
-import { LoginPage } from '@/pages/LoginPage';
-import { RegisterPage } from '@/pages/RegisterPage';
-
 /**
- * App — Roteamento principal do Finanças Aksurim.
+ * App.tsx — Roteamento principal do Finanças Aksurim.
  *
  * Estrutura de rotas:
  *  - Rotas públicas (/login, /register) protegidas por <PublicRoute>.
- *  - Rotas autenticadas protegidas por <ProtectedRoute>.
+ *  - Rotas autenticadas protegidas por <ProtectedRoute> e envolvidas pelo
+ *    <AppShell> (Header + BottomNav + área de conteúdo — TAREFA 37).
  *
  * As telas internas (fila, dashboard, despesas, categorias, configurações)
- * são implementadas nas tarefas subsequentes (37+). Um placeholder mínimo é
- * renderizado para validar o fluxo de autenticação e o pipeline de build.
+ * são implementadas nas tarefas subsequentes (38+). Placeholders mínimos são
+ * renderizados para validar a navegação e o pipeline de build.
+ */
+
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+
+import { AppShell } from '@/components/layout/AppShell';
+import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
+import { PublicRoute } from '@/components/layout/PublicRoute';
+import { CategoriesPage } from '@/pages/CategoriesPage';
+import { DashboardPage } from '@/pages/DashboardPage';
+import { ExpensesPage } from '@/pages/ExpensesPage';
+import { LoginPage } from '@/pages/LoginPage';
+import { QueuePage } from '@/pages/QueuePage';
+import { RegisterPage } from '@/pages/RegisterPage';
+import { SettingsPage } from '@/pages/SettingsPage';
+
+/**
+ * Componente raiz de roteamento da aplicação.
  */
 export function App(): JSX.Element {
   return (
@@ -27,33 +37,19 @@ export function App(): JSX.Element {
           <Route path="/register" element={<RegisterPage />} />
         </Route>
 
-        {/* Rotas autenticadas — redirecionam para /login se não autenticado */}
+        {/* Rotas autenticadas — envolvidas pelo AppShell (TAREFA 37) */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<HomePlaceholder />} />
+          <Route element={<AppShell />}>
+            <Route path="/" element={<QueuePage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/expenses" element={<ExpensesPage />} />
+            <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Route>
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
-  );
-}
-
-function HomePlaceholder(): JSX.Element {
-  const { user, logout } = useAuth();
-
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
-      <h1 className="text-2xl font-bold">Finanças Aksurim</h1>
-      <p className="text-muted-foreground text-sm">
-        Sessão ativa para <strong>{user?.name}</strong> ({user?.initials}).
-      </p>
-      <button
-        type="button"
-        onClick={logout}
-        className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
-      >
-        Sair
-      </button>
-    </main>
   );
 }
