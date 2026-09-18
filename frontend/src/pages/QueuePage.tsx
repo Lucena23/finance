@@ -1,20 +1,31 @@
 /**
- * QueuePage.tsx — Página principal: Fila de Pagamentos (TAREFA 37 placeholder).
+ * QueuePage.tsx — Página principal: Fila de Pagamentos (TAREFA 38).
  *
- * Tela operacional principal do produto. O conteúdo completo (agrupamento por
- * urgência, cards e gaveta de quitação) é implementado nas TAREFAS 38–40.
+ * Tela operacional principal do produto. Renderiza a fila de compromissos
+ * pendentes agrupada por urgência (atraso → mês atual → futuros) através do
+ * componente <PaymentQueue />, que consome GET /payment-items/queue.
+ *
+ * A gaveta modal de quitação (PayDrawer) é integrada na TAREFA 40; aqui o
+ * callback de seleção de item é apenas encaminhado.
  */
 
-import { PagePlaceholder } from '@/components/layout/PagePlaceholder';
+import { PaymentQueue } from '@/components/payment/PaymentQueue';
 
 /**
  * Página da Fila de Pagamentos (rota raiz "/").
  */
 export function QueuePage(): JSX.Element {
   return (
-    <PagePlaceholder
-      title="Fila de Pagamentos"
-      description="Compromissos pendentes ordenados por urgência: em atraso, mês atual e futuros."
-    />
+    <section className="flex flex-col gap-4">
+      <header className="flex flex-col gap-1">
+        <h1 className="text-xl font-bold tracking-tight">Fila de Pagamentos</h1>
+        <p className="text-muted-foreground text-sm">
+          Compromissos pendentes ordenados por urgência: em atraso, mês atual e
+          futuros.
+        </p>
+      </header>
+
+      <PaymentQueue />
+    </section>
   );
 }
