@@ -20,6 +20,9 @@ yarn-error.log*
 /out-tsc
 /tmp
 
+# Service Worker compilado (artefato gerado a partir de src/service-worker.ts)
+/frontend/public/service-worker.js
+
 # Environment (NUNCA versionar credenciais)
 .env
 .env.*
