@@ -1,8 +1,6 @@
 📖 README.md
 Desenvolvido pela Aksurim Software
 
-Este projeto segue metodologias rigorosas de engenharia e Integração Contínua (CI/CD).
-
 
 SOBRE O PROJETO
 
@@ -47,8 +45,6 @@ Este repositório é um **monorepo** com dois workspaces independentes:
 ├── deploy/             # Scripts de build e configuração Apache
 ├── CHANGELOG.md
 └── README.md
-
-*(A documentação técnica detalhada e orquestração do pipeline são mantidas em diretórios internos protegidos).*
 
 
 COMO EXECUTAR O PROJETO
