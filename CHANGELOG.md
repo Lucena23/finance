@@ -5,6 +5,16 @@ Histórico Oficial do Projeto — Aksurim Software
 ## REGISTROS RECENTES
 
 Data: 2026-09-18
+Versão: 0.8.0
+Tipo: CHORE
+Origem: Auditoria Final de Segurança e Publicação
+Descrição: Auditoria final de segurança e conformidade do repositório para publicação pública. Foi verificado que o diretório `/docs/` e os arquivos `.env` não estão versionados (apenas `.env.example` é rastreado), que os headers de segurança HTTP estão ativos via `deploy/.htaccess`, que não há uso do tipo `any` no código (TypeScript `strict: true` e `noImplicitAny: true` em backend e frontend), e que as convenções de nomenclatura (kebab-case para arquivos, PascalCase para classes, snake_case para tabelas) estão conformes. A suíte de testes foi executada integralmente com sucesso (45 testes unitários + 4 e2e no backend, 11 no frontend) e ambos os builds de produção (backend e frontend) compilam sem erros. O relatório consolidado da auditoria foi registrado em `deploy/SECURITY-AUDIT.md`.
+Arquivos alterados:
+  - deploy/SECURITY-AUDIT.md
+  - CHANGELOG.md
+Responsável: Joannderson Lucena (Aksurim Software)
+
+Data: 2026-09-18
 Versão: 0.7.0
 Tipo: CHORE
 Origem: Deploy e Documentação Pública — Pipeline de Build, Apache e Cron Job
