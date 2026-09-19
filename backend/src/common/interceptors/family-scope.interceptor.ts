@@ -5,9 +5,11 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 
 import { AuthenticatedUser } from '../../auth/jwt.strategy';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 /**
  * Chave sob a qual o escopo familiar é anexado ao request.
@@ -27,7 +29,11 @@ export interface FamilyScope {
  * Campos proibidos em query/body — o escopo é sempre derivado do token.
  * Qualquer tentativa de injetá-los é tratada como vulnerabilidade crítica.
  */
-const FORBIDDEN_SCOPE_FIELDS = ['familyAccountId', 'familyAccountID', 'family_account_id'];
+const FORBIDDEN_SCOPE_FIELDS = [
+  'familyAccountId',
+  'familyAccountID',
+  'family_account_id',
+];
 
 /**
  * FamilyScopeInterceptor — Isolamento Multi-Tenant (RN-01 / §8.3).
@@ -40,10 +46,24 @@ const FORBIDDEN_SCOPE_FIELDS = ['familyAccountId', 'familyAccountID', 'family_ac
  *     via query string ou body — o escopo nunca é parametrizável pelo cliente.
  *
  * Deve ser aplicado APÓS o JwtAuthGuard, garantindo que request.user exista.
+ * Rotas marcadas com @Public() (login/register) são ignoradas — não há escopo
+ * familiar a derivar antes da autenticação.
  */
 @Injectable()
 export class FamilyScopeInterceptor implements NestInterceptor {
+  constructor(private readonly reflector: Reflector) {}
+
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    // Rotas públicas (login/register) não possuem escopo familiar.
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      return next.handle();
+    }
+
     const request = context.switchToHttp().getRequest<{
       user?: AuthenticatedUser;
       query?: Record<string, unknown>;
