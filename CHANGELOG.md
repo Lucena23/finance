@@ -5,6 +5,93 @@ Histórico Oficial do Projeto — Aksurim Software
 ## REGISTROS RECENTES
 
 Data: 2026-09-18
+Versão: 0.7.0
+Tipo: CHORE
+Origem: Deploy e Documentação Pública — Pipeline de Build, Apache e Cron Job
+Descrição: Consolidação da camada de deploy e da documentação pública do projeto. O script `deploy/build.sh` executa o pipeline unificado (prisma generate/migrate, build do backend e do frontend e sincronização dos assets estáticos para o diretório público do Apache), falhando imediatamente em qualquer erro (`set -euo pipefail`). O arquivo `deploy/.htaccess` habilita compressão DEFLATE, cache de assets estáticos, headers de segurança HTTP (X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy) e o fallback SPA para `index.html`. A configuração do Cron Job do cPanel (schedule `0 5 * * *`, timezone America/Sao_Paulo) foi documentada em `deploy/cron/README.md`, incluindo validação manual e a hierarquia de prioridade do motor de notificações. O README público foi revisado para remover qualquer menção a processos internos.
+Arquivos alterados:
+  - deploy/build.sh
+  - deploy/.htaccess
+  - deploy/cron/notification-cron.sh
+  - deploy/cron/README.md
+  - README.md
+Responsável: Joannderson Lucena (Aksurim Software)
+
+Data: 2026-09-18
+Versão: 0.6.0
+Tipo: TEST
+Origem: Suíte de Testes — Unitários, Isolamento Multi-Tenant e Fluxo Crítico e2e
+Descrição: Configuração e ampliação da suíte de testes do projeto. No backend, o Jest foi configurado com cobertura habilitada e testes unitários cobrindo a geração de PaymentItems (SINGLE, INSTALLMENT com soma exata e resíduo na última parcela, e RECURRENT com edição restrita a lançamentos futuros), a ordenação da fila por urgência (atraso → mês atual → futuros) e o motor de prioridade de notificações (P1/P2/P3/Silêncio, com no máximo 1 push por workspace). Foram adicionados testes de isolamento multi-tenant garantindo que o acesso cross-workspace retorna 404/vazio e nunca dados alheios, além de um teste e2e do fluxo crítico (cadastro → login → criar despesa → quitar parcela → verificar histórico). No frontend, o Vitest foi configurado com cobertura e testes dos utilitários (`formatCurrency`, `getInitials`).
+Arquivos alterados:
+  - backend/src/expense/expense.service.spec.ts
+  - backend/src/common/multi-tenant-isolation.spec.ts
+  - backend/test/critical-flow.e2e-spec.ts
+  - backend/test/jest-e2e.json
+  - backend/package.json
+  - frontend/src/lib/utils.spec.ts
+  - frontend/src/test/setup.ts
+  - frontend/package.json
+Responsável: Joannderson Lucena (Aksurim Software)
+
+Data: 2026-09-18
+Versão: 0.5.0
+Tipo: FEATURE
+Origem: PWA — Manifesto, Service Worker, Instalação e Web Push
+Descrição: Implementação completa do suporte a PWA. O `manifest.json` declara name, short_name, start_url, display standalone, theme_color, background_color e ícones em 192x192 e 512x512. O Service Worker realiza o cache de shell para funcionamento offline básico, invalida o cache a cada nova versão e escuta o evento `push` para exibir notificações. O fluxo de instalação na tela inicial é apresentado via prompt dedicado, e o registro de subscription de Web Push solicita permissão ao usuário e envia os dados para o endpoint `/notifications/subscribe`, com tratamento explícito do caso de permissão negada.
+Arquivos alterados:
+  - frontend/public/manifest.json
+  - frontend/public/service-worker.js
+  - frontend/public/icons/icon-192x192.png
+  - frontend/public/icons/icon-512x512.png
+  - frontend/src/service-worker.ts
+  - frontend/src/lib/pwa.ts
+  - frontend/src/components/pwa/InstallPrompt.tsx
+  - frontend/src/components/pwa/PushNotificationToggle.tsx
+Responsável: Joannderson Lucena (Aksurim Software)
+
+Data: 2026-09-18
+Versão: 0.4.0
+Tipo: FEATURE
+Origem: Frontend — Fundação, Autenticação, Fila, Despesas, Categorias e Dashboard
+Descrição: Implementação da aplicação frontend em React 18 + Vite 5 + Tailwind CSS 3, mobile-first. Inclui o cliente HTTP tipado com injeção de Bearer token e os utilitários `formatCurrency` (conversão de centavos inteiros para R$ X.XXX,XX) e `getInitials` (geração de iniciais conforme a regra de nomes). Foram entregues o AuthContext com persistência de token e proteção de rotas, as páginas de Login e Registro (com coleta de familyName e ownerCpf), o AppShell com Header e BottomNav responsivos, a Fila de Pagamentos com agrupamento visual por urgência (atraso em vermelho, mês atual em laranja, futuros em azul) e a gaveta modal de quitação com valor editável, data e observação. Também foram implementados o formulário e a listagem de despesas nos três tipos (SINGLE, INSTALLMENT, RECURRENT), o CRUD de categorias com seletor de cor e ícone Lucide, os badges coloridos de auditoria por membro com filtro rápido, e o painel gerencial com cards de resumo, gráfico de rosca por categoria e gráfico de barras de evolução mensal (Recharts).
+Arquivos alterados:
+  - frontend/src/main.tsx
+  - frontend/src/App.tsx
+  - frontend/src/lib/api.ts
+  - frontend/src/lib/utils.ts
+  - frontend/src/lib/constants.ts
+  - frontend/src/lib/validators.ts
+  - frontend/src/contexts/AuthContext.tsx
+  - frontend/src/hooks/useAuth.ts
+  - frontend/src/hooks/usePaymentQueue.ts
+  - frontend/src/hooks/useDashboard.ts
+  - frontend/src/components/layout/AppShell.tsx
+  - frontend/src/components/layout/Header.tsx
+  - frontend/src/components/layout/BottomNav.tsx
+  - frontend/src/components/payment/PaymentQueue.tsx
+  - frontend/src/components/payment/PaymentCard.tsx
+  - frontend/src/components/payment/PayDrawer.tsx
+  - frontend/src/components/expense/ExpenseForm.tsx
+  - frontend/src/components/expense/ExpenseCard.tsx
+  - frontend/src/components/category/CategoryForm.tsx
+  - frontend/src/components/member/MemberBadge.tsx
+  - frontend/src/components/member/MemberFilter.tsx
+  - frontend/src/components/dashboard/SummaryCards.tsx
+  - frontend/src/components/dashboard/CategoryDonut.tsx
+  - frontend/src/components/dashboard/MonthlyBars.tsx
+  - frontend/src/pages/LoginPage.tsx
+  - frontend/src/pages/RegisterPage.tsx
+  - frontend/src/pages/QueuePage.tsx
+  - frontend/src/pages/DashboardPage.tsx
+  - frontend/src/pages/ExpensesPage.tsx
+  - frontend/src/pages/CategoriesPage.tsx
+  - frontend/src/pages/SettingsPage.tsx
+Responsável: Joannderson Lucena (Aksurim Software)
+
+
+## HISTÓRICO COMPLETO
+
+Data: 2026-09-18
 Versão: 0.3.0
 Tipo: FEATURE
 Origem: Motor de Web Push Notifications — Prioridade P1/P2/P3/Silêncio e Cron Job (RN-10 / §8.6)
@@ -18,9 +105,6 @@ Arquivos alterados:
   - backend/src/app.module.ts
   - backend/package.json
 Responsável: Joannderson Lucena (Aksurim Software)
-
-
-## HISTÓRICO COMPLETO
 
 Data: 2026-09-17
 Versão: 0.2.0
