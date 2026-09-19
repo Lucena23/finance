@@ -1,0 +1,47 @@
+# ═══════════════════════════════════════════════════════════════
+# Finanças Aksurim — Configuração Apache (Frontend SPA)
+# ARCHITECTURE §4.1 — deploy/.htaccess
+#
+# Aplicado no diretório público do Apache (public_html/ ou
+# subdomínio dedicado, ex: financas.aksurim.com).
+#
+# Responsabilidades:
+#   1. Compressão DEFLATE dos assets textuais.
+#   2. Cache de longo prazo para assets estáticos hasheados.
+#   3. Headers de segurança HTTP.
+#   4. Fallback SPA — todas as rotas resolvem para index.html.
+# ═══════════════════════════════════════════════════════════════
+
+# ─── Compressão ───
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
+
+# ─── Cache de assets estáticos ───
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType application/font-woff2 "access plus 1 year"
+</IfModule>
+
+# ─── Headers de Segurança HTTP ───
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "DENY"
+  Header set X-XSS-Protection "1; mode=block"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+</IfModule>
+
+# ─── Fallback SPA — redireciona todas as rotas para index.html ───
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
