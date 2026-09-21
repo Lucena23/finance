@@ -30,20 +30,23 @@ import { UserModule } from './user/user.module';
     }),
     MailerModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (config: ConfigService) => ({
-        transport: {
-          host: config.get('SMTP_HOST') || 'mail.aksurim.com',
-          port: config.get('SMTP_PORT') || 465,
-          secure: true,
-          auth: {
-            user: config.get('SMTP_USER') || 'nao-responda@aksurim.com',
-            pass: config.get('SMTP_PASS'),
+      useFactory: async (config: ConfigService) => {
+        const port = Number(config.get('SMTP_PORT')) || 587;
+        return {
+          transport: {
+            host: config.get('SMTP_HOST') || 'mail.aksurim.com',
+            port,
+            secure: port === 465, // true para 465, false para outras (587, 25)
+            auth: {
+              user: config.get('SMTP_USER') || 'nao-responda@aksurim.com',
+              pass: config.get('SMTP_PASS'),
+            },
           },
-        },
-        defaults: {
-          from: '"Finanças Aksurim" <nao-responda@aksurim.com>',
-        },
-      }),
+          defaults: {
+            from: '"Finanças Aksurim" <nao-responda@aksurim.com>',
+          },
+        };
+      },
       inject: [ConfigService],
     }),
     // Agendador de tarefas — habilita o Cron Job de Web Push (TAREFA 33).
