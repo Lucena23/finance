@@ -1,6 +1,7 @@
 import {
   IsEmail,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Matches,
   MaxLength,
@@ -20,6 +21,11 @@ export class RegisterDto {
   @IsEmail()
   @MaxLength(255)
   email!: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(20)
+  whatsapp?: string;
 
   @IsString()
   @MinLength(8)

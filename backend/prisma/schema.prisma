@@ -24,6 +24,8 @@ model User {
   id                String             @id @default(uuid())
   name              String             @db.VarChar(100)
   email             String             @unique @db.VarChar(255)
+  whatsapp          String?            @db.VarChar(20) // Adicionado para coleta de Leads B2B
+  isEmailVerified   Boolean            @default(false) // Controle de segurança
   passwordHash      String             @db.VarChar(255)
   role              Role               @default(MEMBER)
   avatarColor       String             @db.VarChar(7)

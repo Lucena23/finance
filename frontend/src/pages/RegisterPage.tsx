@@ -38,6 +38,7 @@ import {
 interface RegisterFormState {
   name: string;
   email: string;
+  whatsapp: string;
   password: string;
   familyName: string;
   ownerCpf: string;
@@ -46,6 +47,7 @@ interface RegisterFormState {
 interface RegisterFormErrors {
   name?: string;
   email?: string;
+  whatsapp?: string;
   password?: string;
   familyName?: string;
   ownerCpf?: string;
@@ -61,6 +63,7 @@ export function RegisterPage(): JSX.Element {
   const [form, setForm] = useState<RegisterFormState>({
     name: '',
     email: '',
+    whatsapp: '',
     password: '',
     familyName: '',
     ownerCpf: '',
@@ -72,6 +75,14 @@ export function RegisterPage(): JSX.Element {
   /**
    * Valida todos os campos do formulário de registro.
    */
+  function formatWhatsApp(value: string): string {
+    const digits = value.replace(/\D/g, '').substring(0, 11);
+    if (digits.length === 0) return '';
+    if (digits.length <= 2) return `(${digits}`;
+    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  }
+
   function validate(): RegisterFormErrors {
     const nextErrors: RegisterFormErrors = {};
 
@@ -83,6 +94,12 @@ export function RegisterPage(): JSX.Element {
       nextErrors.email = 'Informe o e-mail.';
     } else if (!isValidEmail(form.email)) {
       nextErrors.email = 'E-mail inválido.';
+    }
+
+    if (!isNonEmpty(form.whatsapp)) {
+      nextErrors.whatsapp = 'Informe o seu WhatsApp.';
+    } else if (form.whatsapp.replace(/\D/g, '').length < 10) {
+      nextErrors.whatsapp = 'Número inválido.';
     }
 
     if (!isNonEmpty(form.password)) {
@@ -121,6 +138,7 @@ export function RegisterPage(): JSX.Element {
       await register({
         name: form.name.trim(),
         email: form.email.trim(),
+        whatsapp: form.whatsapp.replace(/\D/g, ''),
         password: form.password,
         familyName: form.familyName.trim(),
         ownerCpf: form.ownerCpf,
@@ -208,6 +226,28 @@ export function RegisterPage(): JSX.Element {
               {errors.email ? (
                 <p id="email-error" className="text-destructive text-xs">
                   {errors.email}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="whatsapp">WhatsApp (com DDD)</Label>
+              <Input
+                id="whatsapp"
+                name="whatsapp"
+                type="tel"
+                inputMode="numeric"
+                placeholder="(11) 99999-9999"
+                value={form.whatsapp}
+                aria-invalid={Boolean(errors.whatsapp)}
+                aria-describedby={errors.whatsapp ? 'whatsapp-error' : undefined}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, whatsapp: formatWhatsApp(event.target.value) }))
+                }
+              />
+              {errors.whatsapp ? (
+                <p id="whatsapp-error" className="text-destructive text-xs">
+                  {errors.whatsapp}
                 </p>
               ) : null}
             </div>

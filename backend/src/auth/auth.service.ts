@@ -95,6 +95,7 @@ export class AuthService {
         data: {
           name: dto.name.trim(),
           email,
+          whatsapp: dto.whatsapp,
           passwordHash,
           role: Role.ADMIN,
           initials,

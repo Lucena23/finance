@@ -14,6 +14,7 @@ import { useMemo } from 'react';
 import { CategoryDonut } from '@/components/dashboard/CategoryDonut';
 import { MonthlyBars } from '@/components/dashboard/MonthlyBars';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
+import { AdBanner } from '@/components/ads/AdBanner';
 import { DEFAULT_TIMEZONE } from '@/lib/constants';
 
 /**
@@ -41,7 +42,7 @@ export function DashboardPage(): JSX.Element {
   const { month, year } = useMemo(currentPeriod, []);
 
   return (
-    <section className="flex flex-col gap-4">
+    <section className="flex flex-col gap-4 pb-16">
       <header className="flex flex-col gap-1">
         <h1 className="text-xl font-bold tracking-tight">Painel Gerencial</h1>
         <p className="text-muted-foreground text-sm">
@@ -50,10 +51,18 @@ export function DashboardPage(): JSX.Element {
       </header>
 
       <SummaryCards month={month} year={year} />
+      
+      <div className="py-2">
+        <AdBanner type="leaderboard" className="mb-2" />
+      </div>
 
       <CategoryDonut month={month} year={year} />
 
       <MonthlyBars year={year} />
+      
+      <div className="pt-4 pb-8">
+        <AdBanner type="rectangle" />
+      </div>
     </section>
   );
 }

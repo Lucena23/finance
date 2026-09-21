@@ -5,6 +5,7 @@ import { ptBR } from 'date-fns/locale';
 import { PayDrawer } from '@/components/payment/PayDrawer';
 import { PaymentQueue } from '@/components/payment/PaymentQueue';
 import { PaymentHistory } from '@/components/payment/PaymentHistory';
+import { AdBanner } from '@/components/ads/AdBanner';
 import type { PaymentItem } from '@/lib/api';
 import { cn } from '@/lib/cn';
 
@@ -54,6 +55,11 @@ export function QueuePage(): JSX.Element {
     <section className="flex flex-col gap-5 pb-6">
       <header className="flex flex-col gap-2">
         <h1 className="text-xl font-bold tracking-tight">Suas Despesas</h1>
+        
+        {/* AdBanner Injetado - Placeholders de Ads Mobile Leaderboard */}
+        <div className="py-2">
+          <AdBanner type="leaderboard" />
+        </div>
         
         {/* Seletor de Meses */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">

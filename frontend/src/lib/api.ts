@@ -54,6 +54,7 @@ export interface LoginPayload {
 export interface RegisterPayload {
   name: string;
   email: string;
+  whatsapp?: string;
   password: string;
   familyName: string;
   ownerCpf: string;
