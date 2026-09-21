@@ -160,14 +160,19 @@ export function RegisterPage(): JSX.Element {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+    <main className="flex min-h-screen items-center justify-center bg-muted/40 p-4 py-10 flex-col">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl">Criar conta</CardTitle>
-          <CardDescription>
-            Crie o workspace familiar e comece a organizar os compromissos
-            financeiros compartilhados.
-          </CardDescription>
+        <CardHeader className="space-y-4 text-center">
+          <div className="flex justify-center">
+            {/* Aqui usamos a favicon.png que é apenas o ícone/logo sem o texto */}
+            <img src="/favicon.png" alt="Aksurim Logo" className="h-12 w-12 object-contain" />
+          </div>
+          <div>
+            <CardTitle className="text-2xl">Criar conta</CardTitle>
+            <CardDescription className="mt-1">
+              Crie o workspace familiar e comece a organizar os compromissos financeiros compartilhados.
+            </CardDescription>
+          </div>
         </CardHeader>
 
         <CardContent>
@@ -180,7 +185,7 @@ export function RegisterPage(): JSX.Element {
             {apiError ? (
               <div
                 role="alert"
-                className="bg-destructive/10 text-destructive rounded-md px-3 py-2 text-sm"
+                className="bg-destructive/10 text-destructive rounded-md px-3 py-2 text-sm text-center"
               >
                 {apiError}
               </div>
@@ -351,6 +356,12 @@ export function RegisterPage(): JSX.Element {
           </p>
         </CardContent>
       </Card>
+
+      {/* Direitos Autorais e Marca Registrada */}
+      <footer className="mt-8 text-center text-xs text-muted-foreground/60">
+        <p>&copy; {new Date().getFullYear()} Aksurim Software.</p>
+        <p>Marca Registrada. Todos os direitos reservados.</p>
+      </footer>
     </main>
   );
 }

@@ -109,14 +109,19 @@ export function LoginPage(): JSX.Element {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+    <main className="flex min-h-screen items-center justify-center bg-muted/40 p-4 flex-col">
       <Card className="w-full max-w-sm">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl">Entrar</CardTitle>
-          <CardDescription>
-            Acesse sua conta para gerenciar os compromissos financeiros da
-            família.
-          </CardDescription>
+        <CardHeader className="space-y-4 text-center">
+          <div className="flex justify-center">
+            {/* Aqui usamos a favicon.png que é apenas o ícone/logo sem o texto */}
+            <img src="/favicon.png" alt="Aksurim Logo" className="h-12 w-12 object-contain" />
+          </div>
+          <div>
+            <CardTitle className="text-2xl">Entrar</CardTitle>
+            <CardDescription className="mt-1">
+              Acesse sua conta para gerenciar os compromissos financeiros da família.
+            </CardDescription>
+          </div>
         </CardHeader>
 
         <CardContent>
@@ -129,7 +134,7 @@ export function LoginPage(): JSX.Element {
             {apiError ? (
               <div
                 role="alert"
-                className="bg-destructive/10 text-destructive rounded-md px-3 py-2 text-sm"
+                className="bg-destructive/10 text-destructive rounded-md px-3 py-2 text-sm text-center"
               >
                 {apiError}
               </div>
@@ -158,13 +163,20 @@ export function LoginPage(): JSX.Element {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Senha</Label>
+                <Link
+                  to="/forgot-password"
+                  className="text-primary text-xs font-medium underline-offset-4 hover:underline"
+                >
+                  Esqueceu a senha?
+                </Link>
+              </div>
               <Input
                 id="password"
                 name="password"
                 type="password"
                 autoComplete="current-password"
-                placeholder="••••••••"
                 value={form.password}
                 aria-invalid={Boolean(errors.password)}
                 aria-describedby={
@@ -187,7 +199,7 @@ export function LoginPage(): JSX.Element {
               ) : (
                 <LogIn className="h-4 w-4" aria-hidden="true" />
               )}
-              {isSubmitting ? 'Entrando…' : 'Entrar'}
+              {isSubmitting ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
 
@@ -202,6 +214,12 @@ export function LoginPage(): JSX.Element {
           </p>
         </CardContent>
       </Card>
+      
+      {/* Direitos Autorais e Marca Registrada */}
+      <footer className="mt-8 text-center text-xs text-muted-foreground/60">
+        <p>&copy; {new Date().getFullYear()} Aksurim Software.</p>
+        <p>Marca Registrada. Todos os direitos reservados.</p>
+      </footer>
     </main>
   );
 }
