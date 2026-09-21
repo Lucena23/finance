@@ -64,32 +64,31 @@ const GROUP_META: readonly QueueGroupMeta[] = [
   {
     key: QueueGroup.CURRENT_MONTH,
     label: 'Mês atual',
-    emoji: '🟠',
-    textClass: 'text-orange-500',
-    accentClass: 'border-l-orange-400',
-    headerBgClass: 'bg-orange-50',
-  },
-  {
-    key: QueueGroup.UPCOMING,
-    label: 'A vencer',
     emoji: '🔵',
     textClass: 'text-blue-600',
     accentClass: 'border-l-blue-500',
     headerBgClass: 'bg-blue-50',
   },
+  {
+    key: QueueGroup.UPCOMING,
+    label: 'A vencer',
+    emoji: '🟣',
+    textClass: 'text-purple-600',
+    accentClass: 'border-l-purple-500',
+    headerBgClass: 'bg-purple-50',
+  },
 ] as const;
 
 interface PaymentQueueProps {
-  /** Callback opcional disparado ao selecionar um item para quitação. */
+  month?: number;
+  year?: number;
+  hideUpcoming?: boolean;
   onSelectItem?: (item: PaymentItem) => void;
 }
 
-/**
- * Renderiza a fila de pagamentos agrupada por urgência.
- */
-export function PaymentQueue({ onSelectItem }: PaymentQueueProps): JSX.Element {
+export function PaymentQueue({ month, year, hideUpcoming, onSelectItem }: PaymentQueueProps): JSX.Element {
   const { overdue, currentMonth, upcoming, isEmpty, isLoading, error, refetch } =
-    usePaymentQueue();
+    usePaymentQueue({ month, year });
 
   const groups: Record<QueueGroup, PaymentItem[]> = {
     [QueueGroup.OVERDUE]: overdue,
@@ -165,7 +164,7 @@ export function PaymentQueue({ onSelectItem }: PaymentQueueProps): JSX.Element {
   // ── Fila com agrupamentos ─────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-6" data-testid="payment-queue">
-      {GROUP_META.map((meta) => {
+      {GROUP_META.filter(meta => !hideUpcoming || meta.key !== QueueGroup.UPCOMING).map((meta) => {
         const items = groups[meta.key];
 
         // Grupos vazios não são renderizados (evita cabeçalhos órfãos).

@@ -23,20 +23,23 @@ interface PaymentCardProps {
   /** Item de pagamento a ser exibido. */
   item: PaymentItem;
   /** Agrupamento de urgência ao qual o item pertence. */
-  urgency: QueueGroup;
+  urgency: QueueGroup | string;
   /** Classe de cor da barra lateral de urgência. */
   accentClass: string;
   /** Callback opcional disparado ao selecionar o card. */
   onSelect?: (item: PaymentItem) => void;
+  /** Se true, o card está sendo renderizado no histórico. */
+  isHistory?: boolean;
 }
 
 /**
  * Rótulo textual do indicador de urgência por agrupamento.
  */
-const URGENCY_LABEL: Record<QueueGroup, string> = {
-  [QueueGroup.OVERDUE]: 'Em atraso',
-  [QueueGroup.CURRENT_MONTH]: 'Vence este mês',
-  [QueueGroup.UPCOMING]: 'A vencer',
+const URGENCY_LABEL: Record<string, string> = {
+  OVERDUE: 'Em atraso',
+  CURRENT_MONTH: 'Vence este mês',
+  UPCOMING: 'A vencer',
+  PAID: 'Pago',
 };
 
 /**
@@ -47,6 +50,7 @@ export function PaymentCard({
   urgency,
   accentClass,
   onSelect,
+  isHistory,
 }: PaymentCardProps): JSX.Element {
   const isRecurrent = item.totalInstallments === 0;
   const installmentLabel = isRecurrent
@@ -85,24 +89,30 @@ export function PaymentCard({
     >
       <div className="flex min-w-0 flex-col gap-1">
         <span className="truncate text-sm font-semibold">
-          {item.expenseId ? installmentLabel : installmentLabel}
+          {installmentLabel}
         </span>
-        <span className="text-muted-foreground flex items-center gap-1 text-xs">
-          {isRecurrent ? (
-            <Repeat aria-hidden="true" className="h-3.5 w-3.5" />
+        <span className="text-muted-foreground flex items-center gap-1 text-[11px]">
+          {isHistory ? (
+             <span className="text-emerald-600 font-medium">Pago em {formatDate(item.paidAt || item.dueDate)}</span>
           ) : (
-            <CalendarClock aria-hidden="true" className="h-3.5 w-3.5" />
+             <>
+               {isRecurrent ? (
+                 <Repeat aria-hidden="true" className="h-3 w-3" />
+               ) : (
+                 <CalendarClock aria-hidden="true" className="h-3 w-3" />
+               )}
+               Vence em {formatDate(item.dueDate)}
+             </>
           )}
-          Vence em {formatDate(item.dueDate)}
         </span>
-        <span className="text-muted-foreground text-[11px]">
-          {URGENCY_LABEL[urgency]}
+        <span className="text-muted-foreground text-[10px]">
+          {isHistory ? 'Quitado' : URGENCY_LABEL[urgency as string]}
         </span>
       </div>
 
       <div className="flex shrink-0 flex-col items-end">
-        <span className="text-sm font-bold tabular-nums">
-          {formatCurrency(item.expectedAmount)}
+        <span className={cn("text-sm font-bold tabular-nums", isHistory && "text-emerald-700")}>
+          {formatCurrency(isHistory ? (item.paidAmount ?? item.expectedAmount) : item.expectedAmount)}
         </span>
       </div>
     </div>

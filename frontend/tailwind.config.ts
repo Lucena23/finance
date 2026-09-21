@@ -45,8 +45,8 @@ const config: Config = {
         // Indicadores de urgência da fila (RN-06 / §8.5)
         urgency: {
           overdue: '#EF4444', // 🔴 Em atraso
-          current: '#F97316', // 🟠 Mês atual
-          upcoming: '#3B82F6', // 🔵 Futuro
+          current: '#3B82F6', // 🔵 Mês atual
+          upcoming: '#A855F7', // 🟣 Futuro
         },
       },
       borderRadius: {

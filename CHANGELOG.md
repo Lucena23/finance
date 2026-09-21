@@ -4,6 +4,22 @@ Histórico Oficial do Projeto — Aksurim Software
 
 ## REGISTROS RECENTES
 
+Data: 2026-09-20
+Versão: 1.0.0
+Tipo: FEATURE / REFACTOR
+Origem: Design System (Dark Theme) e Módulo de Usuários
+Descrição: Refatoração completa do Design System da aplicação para um Dark Theme nativo e premium (fundo Slate 950 com acentos no verde Aksurim #D9F924). Inclusão do logo oficial da Aksurim Software na Navbar superior e nas configurações de PWA (ícones e favicon). Implementação back-to-front do módulo de membros (CRUD de usuários), permitindo a adição de novos familiares na mesma conta. A interface de configurações foi modernizada com um menu suspenso (dropdown) no avatar do usuário para Logout. As cores da Fila de Pagamentos foram reajustadas para vermelho (atraso) e azul (mês atual) para melhorar o contraste no tema escuro.
+Arquivos alterados:
+  - frontend/src/index.css
+  - frontend/tailwind.config.ts
+  - frontend/src/components/layout/Header.tsx
+  - frontend/src/pages/SettingsPage.tsx
+  - frontend/index.html
+  - backend/src/user/user.module.ts
+  - backend/src/user/user.controller.ts
+  - backend/src/user/user.service.ts
+Responsável: Joannderson Lucena (Aksurim Software)
+
 Data: 2026-09-18
 Versão: 0.8.0
 Tipo: CHORE

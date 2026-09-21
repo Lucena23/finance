@@ -221,6 +221,49 @@ export class DashboardService {
   }
 
   /**
+   * Evolução mensal de gastos ao longo de 12 meses.
+   * Usado para popular o gráfico de barras.
+   */
+  async getMonthlyEvolution(
+    familyAccountId: string,
+    query: QueryDashboardDto,
+  ): Promise<{ month: number; totalPaid: number; totalPending: number }[]> {
+    const { year } = this.resolveReferencePeriod(query);
+    const yearStart = new Date(Date.UTC(year, 0, 1));
+    const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+
+    const items = await this.prisma.paymentItem.findMany({
+      where: {
+        dueDate: { gte: yearStart, lte: yearEnd },
+        expense: { familyAccountId, deletedAt: null },
+      },
+      select: {
+        status: true,
+        dueDate: true,
+        expectedAmount: true,
+        paidAmount: true,
+      },
+    });
+
+    const evolution = Array.from({ length: 12 }, (_, i) => ({
+      month: i + 1,
+      totalPaid: 0,
+      totalPending: 0,
+    }));
+
+    for (const item of items) {
+      const itemMonth = item.dueDate.getUTCMonth(); // 0-11
+      if (item.status === 'PAID') {
+        evolution[itemMonth].totalPaid += item.paidAmount ?? 0;
+      } else {
+        evolution[itemMonth].totalPending += item.expectedAmount;
+      }
+    }
+
+    return evolution;
+  }
+
+  /**
    * Resolve o período de referência (mês/ano).
    * Padrão: mês e ano correntes quando não informados na query.
    */

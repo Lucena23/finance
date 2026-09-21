@@ -1,5 +1,10 @@
-📖 README.md
-Desenvolvido pela Aksurim Software
+<div align="center">
+  <img src="./frontend/public/logo-full.png" alt="Aksurim Software" width="300" />
+  <h1>Finanças Aksurim</h1>
+  <p>Gestão de Compromissos Financeiros Compartilhados</p>
+</div>
+
+---
 
 
 SOBRE O PROJETO

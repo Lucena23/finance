@@ -47,4 +47,18 @@ export class DashboardController {
       query,
     );
   }
+
+  /**
+   * Evolução mensal de despesas ao longo de 12 meses.
+   */
+  @Get('monthly-evolution')
+  getMonthlyEvolution(
+    @FamilyScopeParam() scope: FamilyScope,
+    @Query() query: QueryDashboardDto,
+  ): Promise<{ month: number; totalPaid: number; totalPending: number }[]> {
+    return this.dashboardService.getMonthlyEvolution(
+      scope.familyAccountId,
+      query,
+    );
+  }
 }

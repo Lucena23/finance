@@ -18,6 +18,7 @@ import { FamilyAccountModule } from './family-account/family-account.module';
 import { NotificationModule } from './notification/notification.module';
 import { PaymentItemModule } from './payment-item/payment-item.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { PrismaModule } from './prisma/prisma.module';
     ScheduleModule.forRoot(),
     PrismaModule,
     AuthModule,
+    UserModule,
     FamilyAccountModule,
     CategoryModule,
     ExpenseModule,
