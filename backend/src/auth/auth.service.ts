@@ -10,7 +10,6 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { formatCpf } from '../common/utils/formatters';
 
 const BCRYPT_SALT_ROUNDS = 10;
 
