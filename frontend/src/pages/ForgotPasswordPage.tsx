@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ApiError, post } from '@/lib/api';
+import { ApiError, authApi } from '@/lib/api';
 import { isValidEmail, isNonEmpty } from '@/lib/validators';
 
 export function ForgotPasswordPage(): JSX.Element {
@@ -38,7 +38,7 @@ export function ForgotPasswordPage(): JSX.Element {
     setIsSubmitting(true);
 
     try {
-      await post('/auth/forgot-password', { email });
+      await authApi.forgotPassword({ email });
       setSuccess(true);
     } catch (err) {
       if (err instanceof ApiError) {

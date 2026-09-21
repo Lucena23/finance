@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ApiError, post } from '@/lib/api';
+import { ApiError, authApi } from '@/lib/api';
 import { isValidPassword } from '@/lib/validators';
 
 export function ResetPasswordPage(): JSX.Element {
@@ -44,7 +44,7 @@ export function ResetPasswordPage(): JSX.Element {
     setIsSubmitting(true);
 
     try {
-      await post('/auth/reset-password', { token, newPassword: password });
+      await authApi.resetPassword({ token, newPassword: password });
       setSuccess(true);
       setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
