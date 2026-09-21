@@ -26,6 +26,8 @@ model User {
   email             String             @unique @db.VarChar(255)
   whatsapp          String?            @db.VarChar(20) // Adicionado para coleta de Leads B2B
   isEmailVerified   Boolean            @default(false) // Controle de segurança
+  resetToken        String?            @db.VarChar(255) // Token de recuperação de senha
+  resetTokenExpires DateTime?          // Data de expiração do token de recuperação
   passwordHash      String             @db.VarChar(255)
   role              Role               @default(MEMBER)
   avatarColor       String             @db.VarChar(7)

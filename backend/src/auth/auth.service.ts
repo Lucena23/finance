@@ -1,19 +1,27 @@
-import {
-  ConflictException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Role } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
+import { MailerService } from '@nestjs-modules/mailer';
 
 import { PrismaService } from '../prisma/prisma.service';
-import { pickAvatarColor } from '../common/utils/avatar-color.util';
-import { getInitials } from '../common/utils/initials.util';
+import { Role } from '@prisma/client';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { formatCpf } from '../common/utils/formatters';
 
-const BCRYPT_SALT_ROUNDS = 12;
+const BCRYPT_SALT_ROUNDS = 10;
+
+/**
+ * Cores seguras para o avatar do usuário.
+ */
+const AVATAR_COLORS = [
+  '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e',
+  '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6',
+  '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#f43f5e',
+];
 
 /**
  * Payload do JWT — ARCHITECTURE §5.1.
@@ -25,9 +33,6 @@ export interface JwtPayload {
   familyAccountId: string;
 }
 
-/**
- * Usuário seguro (sem passwordHash) retornado nas responses.
- */
 export interface SafeUser {
   id: string;
   name: string;
@@ -43,15 +48,24 @@ export interface AuthResponse {
   user: SafeUser;
 }
 
-/**
- * AuthService — lógica de autenticação (bcrypt + JWT).
- * ARCHITECTURE §3.2 / §5.1 — TAREFA 10.
- */
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function pickAvatarColor(excludeColors: string[]): string {
+  const available = AVATAR_COLORS.filter((c) => !excludeColors.includes(c));
+  const pool = available.length > 0 ? available : AVATAR_COLORS;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly mailerService: MailerService,
   ) {}
 
   /**
@@ -134,6 +148,67 @@ export class AuthService {
     }
 
     return this.buildAuthResponse(user);
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto): Promise<{ message: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email.toLowerCase().trim() },
+    });
+
+    if (!user) {
+      // Sempre retornar sucesso para não vazar emails existentes
+      return { message: 'Se o e-mail existir, um link de recuperação foi enviado.' };
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpires = new Date(Date.now() + 1000 * 60 * 60); // 1 hora
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { resetToken, resetTokenExpires },
+    });
+
+    const resetUrl = `https://financas.aksurim.com/reset-password?token=${resetToken}`;
+
+    await this.mailerService.sendMail({
+      to: user.email,
+      subject: 'Recuperação de Senha - Finanças Aksurim',
+      html: `
+        <h3>Olá, ${user.name}</h3>
+        <p>Você solicitou a recuperação de senha da sua conta.</p>
+        <p>Clique no link abaixo para criar uma nova senha:</p>
+        <p><a href="${resetUrl}">Redefinir minha senha</a></p>
+        <p>Este link é válido por 1 hora.</p>
+      `,
+    });
+
+    return { message: 'Se o e-mail existir, um link de recuperação foi enviado.' };
+  }
+
+  async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        resetToken: dto.token,
+        resetTokenExpires: { gt: new Date() },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Token inválido ou expirado.');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, BCRYPT_SALT_ROUNDS);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        resetToken: null,
+        resetTokenExpires: null,
+      },
+    });
+
+    return { message: 'Senha atualizada com sucesso.' };
   }
 
   private buildAuthResponse(user: {

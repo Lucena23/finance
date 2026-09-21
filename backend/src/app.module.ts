@@ -1,9 +1,10 @@
 import { join } from 'node:path';
 
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
+import { MailerModule } from '@nestjs-modules/mailer';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -26,6 +27,24 @@ import { UserModule } from './user/user.module';
       isGlobal: true,
       // Resolve o .env relativo à raiz do backend, independente do cwd.
       envFilePath: join(__dirname, '..', '.env'),
+    }),
+    MailerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (config: ConfigService) => ({
+        transport: {
+          host: config.get('SMTP_HOST') || 'mail.aksurim.com',
+          port: config.get('SMTP_PORT') || 465,
+          secure: true,
+          auth: {
+            user: config.get('SMTP_USER') || 'nao-responda@aksurim.com',
+            pass: config.get('SMTP_PASS'),
+          },
+        },
+        defaults: {
+          from: '"Finanças Aksurim" <nao-responda@aksurim.com>',
+        },
+      }),
+      inject: [ConfigService],
     }),
     // Agendador de tarefas — habilita o Cron Job de Web Push (TAREFA 33).
     ScheduleModule.forRoot(),
