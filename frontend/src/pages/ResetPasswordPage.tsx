@@ -63,7 +63,7 @@ export function ResetPasswordPage(): JSX.Element {
       <Card className="w-full max-w-sm">
         <CardHeader className="space-y-4 text-center">
           <div className="flex justify-center">
-            <img src="/logo-icon.jpg" alt="Aksurim Logo" className="h-12 w-12 object-contain" />
+            <img src="/logo-icon.png" alt="Aksurim Logo" className="h-12 w-12 object-contain" />
           </div>
           <div>
             <CardTitle className="text-2xl">Nova Senha</CardTitle>

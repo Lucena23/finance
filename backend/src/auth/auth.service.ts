@@ -175,7 +175,7 @@ export class AuthService {
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px; background-color: #ffffff;">
           <div style="text-align: center; margin-bottom: 20px;">
-            <img src="https://financas.aksurim.com/logo-icon.jpg" alt="Aksurim Logo" style="width: 60px; height: 60px; border-radius: 12px;" />
+            <img src="https://financas.aksurim.com/logo-icon.png" alt="Aksurim Logo" style="width: 60px; height: 60px; border-radius: 12px;" />
           </div>
           <h2 style="color: #111827; text-align: center;">Olá, ${user.name}</h2>
           <p style="color: #4b5563; font-size: 16px; line-height: 1.5; text-align: center;">
