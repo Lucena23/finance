@@ -47,19 +47,19 @@ O sistema de Design inclui nativamente o componente \`AdBanner\` configurado nas
 
 Este repositório é um **monorepo** com dois workspaces independentes:
 
-\`\`\`
+\`\`\`text
 /
-├── backend/            # API NestJS (TypeScript strict)
-│   ├── src/            # Código-fonte da API
-│   ├── prisma/         # Schema de Banco de Dados
-│   └── package.json
-├── frontend/           # PWA React + Vite (TypeScript strict)
-│   ├── src/            # Código-fonte da aplicação
-│   ├── public/         # Assets estáticos e manifesto PWA
-│   └── package.json
-├── deploy/             # Scripts de build e configuração Apache
-├── CHANGELOG.md
-└── README.md
+|-- backend/            # API NestJS (TypeScript strict)
+|   |-- src/            # Código-fonte da API
+|   |-- prisma/         # Schema de Banco de Dados
+|   |-- package.json
+|-- frontend/           # PWA React + Vite (TypeScript strict)
+|   |-- src/            # Código-fonte da aplicação
+|   |-- public/         # Assets estáticos e manifesto PWA
+|   |-- package.json
+|-- deploy/             # Scripts de build e configuração Apache
+|-- CHANGELOG.md
+|-- README.md
 \`\`\`
 
 ## COMO EXECUTAR O PROJETO
