@@ -1,0 +1,16 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  
+  # Ignora a regra se a requisição for para a API (deixa o Node.js/Passenger assumir)
+  RewriteCond %{REQUEST_URI} !^/api/ [NC]
+  
+  # Se for arquivo ou diretório físico real, serve o arquivo (ex: imagens, css, js)
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+  
+  # Caso contrário, redireciona para o index.html (React Router)
+  RewriteCond %{REQUEST_URI} !^/api/ [NC]
+  RewriteRule ^ index.html [L]
+</IfModule>
