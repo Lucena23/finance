@@ -1,19 +1,19 @@
 /**
- * utils.ts — Utilitários de apresentação do frontend Finanças Aksurim.
+ * utils.ts 鈥?Utilit谩rios de apresenta莽茫o do frontend Finan莽as Aksurim.
  *
- * REGRA INEGOCIÁVEL (§8.2): toda conversão de valores monetários de centavos
- * (Int) para formato de exibição ocorre EXCLUSIVAMENTE aqui, na camada de
- * apresentação. O restante da aplicação trafega e armazena inteiros.
+ * REGRA INEGOCI脕VEL (搂8.2): toda convers茫o de valores monet谩rios de centavos
+ * (Int) para formato de exibi莽茫o ocorre EXCLUSIVAMENTE aqui, na camada de
+ * apresenta莽茫o. O restante da aplica莽茫o trafega e armazena inteiros.
  */
 
 import { DEFAULT_LOCALE, DEFAULT_TIMEZONE } from './constants';
 
 /**
- * Formata um valor monetário em centavos (Int) para a representação
+ * Formata um valor monet谩rio em centavos (Int) para a representa莽茫o
  * brasileira "R$ X.XXX,XX".
  *
- * @param centavos Valor inteiro em centavos (ex: 15075 → "R$ 150,75").
- * @returns String formatada em pt-BR com símbolo da moeda.
+ * @param centavos Valor inteiro em centavos (ex: 15075 鈫?"R$ 150,75").
+ * @returns String formatada em pt-BR com s铆mbolo da moeda.
  *
  * @example
  * formatCurrency(15075);   // "R$ 150,75"
@@ -36,13 +36,13 @@ export function formatCurrency(centavos: number): string {
 }
 
 /**
- * Converte uma string de entrada do usuário (ex: "150,75" ou "150.75")
+ * Converte uma string de entrada do usu谩rio (ex: "150,75" ou "150.75")
  * para o inteiro em centavos correspondente (ex: 15075).
  *
- * Utiliza arredondamento para evitar erros de ponto flutuante na conversão.
+ * Utiliza arredondamento para evitar erros de ponto flutuante na convers茫o.
  *
- * @param input Valor textual digitado pelo usuário.
- * @returns Inteiro em centavos, ou 0 se a entrada for inválida.
+ * @param input Valor textual digitado pelo usu谩rio.
+ * @returns Inteiro em centavos, ou 0 se a entrada for inv谩lida.
  */
 export function parseCurrencyToCents(input: string): number {
   if (typeof input !== 'string') {
@@ -65,13 +65,13 @@ export function parseCurrencyToCents(input: string): number {
 }
 
 /**
- * Gera as iniciais do usuário a partir do nome completo (§8.8).
+ * Gera as iniciais do usu谩rio a partir do nome completo (搂8.8).
  *
- * - 1 palavra: primeiras 2 letras em maiúsculo (ex: "João" → "JO").
- * - 2+ palavras: primeira letra das 2 primeiras palavras (ex: "Maria Silva" → "MS").
+ * - 1 palavra: primeiras 2 letras em mai煤sculo (ex: "Jo茫o" 鈫?"JO").
+ * - 2+ palavras: primeira letra das 2 primeiras palavras (ex: "Maria Silva" 鈫?"MS").
  *
- * @param name Nome completo do usuário.
- * @returns Iniciais em maiúsculo (máximo 2 caracteres).
+ * @param name Nome completo do usu谩rio.
+ * @returns Iniciais em mai煤sculo (m谩ximo 2 caracteres).
  */
 export function getInitials(name: string): string {
   if (typeof name !== 'string') {
@@ -98,10 +98,10 @@ export function getInitials(name: string): string {
 }
 
 /**
- * Formata uma data ISO 8601 para o padrão brasileiro "DD/MM/AAAA".
+ * Formata uma data ISO 8601 para o padr茫o brasileiro "DD/MM/AAAA".
  *
  * @param isoDate Data em formato ISO 8601 (ex: "2026-09-17T00:00:00.000Z").
- * @returns Data formatada em pt-BR, ou string vazia se inválida.
+ * @returns Data formatada em pt-BR, ou string vazia se inv谩lida.
  */
 export function formatDate(isoDate: string | Date): string {
   const date = isoDate instanceof Date ? isoDate : new Date(isoDate);
@@ -110,19 +110,24 @@ export function formatDate(isoDate: string | Date): string {
     return '';
   }
 
+  let timeZone = DEFAULT_TIMEZONE;
+  if (typeof isoDate === 'string' && isoDate.endsWith('T00:00:00.000Z')) {
+    timeZone = 'UTC';
+  }
+
   return new Intl.DateTimeFormat(DEFAULT_LOCALE, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
-    timeZone: DEFAULT_TIMEZONE,
+    timeZone,
   }).format(date);
 }
 
 /**
- * Formata uma data ISO 8601 para o padrão brasileiro com hora "DD/MM/AAAA HH:mm".
+ * Formata uma data ISO 8601 para o padr茫o brasileiro com hora "DD/MM/AAAA HH:mm".
  *
  * @param isoDate Data em formato ISO 8601.
- * @returns Data e hora formatadas em pt-BR, ou string vazia se inválida.
+ * @returns Data e hora formatadas em pt-BR, ou string vazia se inv谩lida.
  */
 export function formatDateTime(isoDate: string | Date): string {
   const date = isoDate instanceof Date ? isoDate : new Date(isoDate);
@@ -142,9 +147,9 @@ export function formatDateTime(isoDate: string | Date): string {
 }
 
 /**
- * Formata um percentual (0–100) para exibição "XX,X%".
+ * Formata um percentual (0鈥?00) para exibi莽茫o "XX,X%".
  *
- * @param value Valor percentual numérico.
+ * @param value Valor percentual num茅rico.
  * @returns String formatada em pt-BR.
  */
 export function formatPercentage(value: number): string {
@@ -160,7 +165,7 @@ export function formatPercentage(value: number): string {
 }
 
 /**
- * Mascara um CPF para exibição parcial segura (***.***.XXX-XX — §5.5).
+ * Mascara um CPF para exibi莽茫o parcial segura (***.***.XXX-XX 鈥?搂5.5).
  *
  * @param cpf CPF no formato "XXX.XXX.XXX-XX".
  * @returns CPF parcialmente mascarado.
