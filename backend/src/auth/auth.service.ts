@@ -173,11 +173,29 @@ export class AuthService {
       to: user.email,
       subject: 'Recuperação de Senha - Finanças Aksurim',
       html: `
-        <h3>Olá, ${user.name}</h3>
-        <p>Você solicitou a recuperação de senha da sua conta.</p>
-        <p>Clique no link abaixo para criar uma nova senha:</p>
-        <p><a href="${resetUrl}">Redefinir minha senha</a></p>
-        <p>Este link é válido por 1 hora.</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px; background-color: #ffffff;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="https://financas.aksurim.com/logo-icon.jpg" alt="Aksurim Logo" style="width: 60px; height: 60px; border-radius: 12px;" />
+          </div>
+          <h2 style="color: #111827; text-align: center;">Olá, ${user.name}</h2>
+          <p style="color: #4b5563; font-size: 16px; line-height: 1.5; text-align: center;">
+            Você solicitou a recuperação de senha da sua conta no <strong>Finanças Aksurim</strong>.
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" style="background-color: #D9F924; color: #111827; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px; display: inline-block;">
+              Criar Nova Senha
+            </a>
+          </div>
+          <p style="color: #6b7280; font-size: 14px; text-align: center;">
+            Este link é seguro e válido por 1 hora.<br/>
+            Se você não solicitou essa alteração, ignore este e-mail.
+          </p>
+          <hr style="border: none; border-top: 1px solid #eaeaea; margin: 20px 0;" />
+          <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+            Descubra mais soluções inteligentes em <a href="https://aksurim.com" style="color: #111827; font-weight: bold; text-decoration: none;">aksurim.com</a><br/>
+            &copy; ${new Date().getFullYear()} Aksurim Software. Marca Registrada.
+          </p>
+        </div>
       `,
     });
 

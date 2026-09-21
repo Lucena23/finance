@@ -164,8 +164,8 @@ export function RegisterPage(): JSX.Element {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4 text-center">
           <div className="flex justify-center">
-            {/* Aqui usamos a favicon.png que é apenas o ícone/logo sem o texto */}
-            <img src="/favicon.png" alt="Aksurim Logo" className="h-12 w-12 object-contain" />
+            {/* Aqui usamos a logo-icon.jpg que é apenas o ícone/logo sem o texto */}
+            <img src="/logo-icon.jpg" alt="Aksurim Logo" className="h-12 w-12 object-contain" />
           </div>
           <div>
             <CardTitle className="text-2xl">Criar conta</CardTitle>
