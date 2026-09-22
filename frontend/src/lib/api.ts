@@ -84,6 +84,10 @@ export interface PaymentItem {
   notes: string | null;
   createdAt: string;
   updatedAt: string;
+  expense?: {
+    title: string;
+    categoryId: string;
+  };
 }
 
 export interface PaymentItemWithPayer extends PaymentItem {

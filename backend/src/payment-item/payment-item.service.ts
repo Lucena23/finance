@@ -76,6 +76,9 @@ export class PaymentItemService {
           deletedAt: null,
         },
       },
+      include: {
+        expense: { select: { title: true, categoryId: true } },
+      },
       orderBy: { dueDate: 'asc' },
     });
 
@@ -197,6 +200,7 @@ export class PaymentItemService {
         where,
         include: {
           paidBy: { select: { initials: true, avatarColor: true } },
+          expense: { select: { title: true, categoryId: true } },
         },
         orderBy: { paidAt: 'desc' },
         skip: (page - 1) * limit,

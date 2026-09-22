@@ -89,6 +89,9 @@ export function PaymentCard({
     >
       <div className="flex min-w-0 flex-col gap-1">
         <span className="truncate text-sm font-semibold">
+          {item.expense?.title || 'Despesa Sem Nome'}
+        </span>
+        <span className="text-muted-foreground truncate text-xs">
           {installmentLabel}
         </span>
         <span className="text-muted-foreground flex items-center gap-1 text-[11px]">
