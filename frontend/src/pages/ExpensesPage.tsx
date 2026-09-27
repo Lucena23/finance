@@ -1,5 +1,5 @@
 /**
- * ExpensesPage.tsx — Gestão de despesas (TAREFA 42).
+ * ExpensesPage.tsx — Gestão de despesas (TAREFA 42 / TAREFA 15).
  *
  * Tela de cadastro e gestão de despesas dos três tipos (SINGLE, INSTALLMENT,
  * RECURRENT). Integra:
@@ -9,6 +9,11 @@
  *
  * Consome GET /expenses (via useExpenses) e GET /categories (via
  * useCategories) para resolver nome e cor das categorias vinculadas.
+ *
+ * TAREFA 15: as ações de mutação (excluir/restaurar/encerrar recorrência)
+ * agora exibem spinners individuais por card (via `pendingIds` do hook) e
+ * aplicam atualização otimista — o feedback é instantâneo e a UI não trava
+ * durante a comunicação com a API.
  *
  * REGRA (§8.1): proibido o uso de `any`. Tipos explícitos em todo o módulo.
  */
@@ -20,6 +25,7 @@ import { ExpenseCard } from '@/components/expense/ExpenseCard';
 import { ExpenseForm } from '@/components/expense/ExpenseForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Spinner } from '@/components/ui/spinner';
 import { useCategories } from '@/hooks/useCategories';
 import { useExpenses } from '@/hooks/useExpenses';
 import { ApiError, type Category, type Expense } from '@/lib/api';
@@ -36,12 +42,14 @@ export function ExpensesPage(): JSX.Element {
     remove,
     restore,
     cancelRecurrence,
+    pendingIds,
   } = useExpenses();
   const { categories } = useCategories();
 
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   // Mapa de categorias por id para resolução O(1) no render.
   const categoryById = useMemo<Map<string, Category>>(() => {
@@ -73,6 +81,15 @@ export function ExpensesPage(): JSX.Element {
     handleCloseForm();
     void refetch();
   }, [handleCloseForm, refetch]);
+
+  const handleManualRefresh = useCallback(async (): Promise<void> => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetch]);
 
   const handleDelete = useCallback(
     async (expense: Expense): Promise<void> => {
@@ -132,17 +149,35 @@ export function ExpensesPage(): JSX.Element {
           </p>
         </div>
 
-        {!isFormOpen ? (
+        <div className="flex items-center gap-2">
           <Button
             type="button"
-            size="sm"
-            onClick={handleOpenCreate}
-            data-testid="expenses-new-button"
+            variant="outline"
+            size="icon"
+            aria-label="Atualizar lista de despesas"
+            disabled={isRefreshing}
+            onClick={() => void handleManualRefresh()}
+            data-testid="expenses-refresh-button"
           >
-            <Plus aria-hidden="true" className="h-4 w-4" />
-            Nova
+            {isRefreshing ? (
+              <Spinner label="Atualizando despesas…" />
+            ) : (
+              <RefreshCw aria-hidden="true" className="h-4 w-4" />
+            )}
           </Button>
-        ) : null}
+
+          {!isFormOpen ? (
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleOpenCreate}
+              data-testid="expenses-new-button"
+            >
+              <Plus aria-hidden="true" className="h-4 w-4" />
+              Nova
+            </Button>
+          ) : null}
+        </div>
       </header>
 
       {/* Formulário de criação/edição */}
@@ -257,6 +292,7 @@ export function ExpensesPage(): JSX.Element {
                 expense={expense}
                 category={categoryById.get(expense.categoryId)}
                 isDeleted={expense.deletedAt !== null}
+                isBusy={pendingIds.has(expense.id)}
                 onEdit={handleOpenEdit}
                 onDelete={(item) => void handleDelete(item)}
                 onRestore={(item) => void handleRestore(item)}

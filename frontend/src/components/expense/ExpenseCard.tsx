@@ -1,5 +1,5 @@
 /**
- * ExpenseCard.tsx — Card de uma despesa na listagem (TAREFA 42).
+ * ExpenseCard.tsx — Card de uma despesa na listagem (TAREFA 42 / TAREFA 15).
  *
  * Apresenta os dados essenciais de uma despesa: título, categoria, tipo,
  * valor total formatado (via formatCurrency — §8.2) e status de recorrência.
@@ -10,6 +10,10 @@
  * e a renderização do ícone, derrubando a listagem inteira e impedindo a
  * abertura de qualquer edição subsequente. Agora o tipo é normalizado e o
  * valor monetário é validado antes da formatação.
+ *
+ * TAREFA 15: o card aceita `isBusy` para exibir um spinner no lugar do ícone
+ * da ação em andamento (exclusão/restauração/encerramento de recorrência),
+ * sinalizando o processamento sem travar a interface.
  *
  * REGRA (§8.1): proibido o uso de `any`. Tipos explícitos em todo o módulo.
  */
@@ -26,6 +30,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Spinner } from '@/components/ui/spinner';
 import type { Category, Expense } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { ExpenseRecurrenceStatus, ExpenseType } from '@/lib/constants';
@@ -38,6 +43,8 @@ interface ExpenseCardProps {
   category?: Category;
   /** Indica se a despesa está excluída (soft delete) — habilita restaurar. */
   isDeleted?: boolean;
+  /** Indica se há uma operação de mutação em andamento para esta despesa. */
+  isBusy?: boolean;
   /** Callback de edição. */
   onEdit?: (expense: Expense) => void;
   /** Callback de exclusão (soft delete). */
@@ -100,6 +107,7 @@ export function ExpenseCard({
   expense,
   category,
   isDeleted = false,
+  isBusy = false,
   onEdit,
   onDelete,
   onRestore,
@@ -114,7 +122,8 @@ export function ExpenseCard({
     <Card
       data-testid="expense-card"
       data-expense-id={expense.id}
-      className={cn(isDeleted && 'opacity-60')}
+      aria-busy={isBusy}
+      className={cn(isDeleted && 'opacity-60', isBusy && 'opacity-80')}
     >
       <CardContent className="flex flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-3">
@@ -183,10 +192,15 @@ export function ExpenseCard({
                 type="button"
                 variant="outline"
                 size="sm"
+                disabled={isBusy}
                 onClick={() => onRestore(expense)}
                 data-testid="expense-card-restore"
               >
-                <RotateCcw aria-hidden="true" className="h-4 w-4" />
+                {isBusy ? (
+                  <Spinner label="Restaurando despesa…" />
+                ) : (
+                  <RotateCcw aria-hidden="true" className="h-4 w-4" />
+                )}
                 Restaurar
               </Button>
             ) : null
@@ -197,6 +211,7 @@ export function ExpenseCard({
                   type="button"
                   variant="outline"
                   size="sm"
+                  disabled={isBusy}
                   onClick={() => onEdit(expense)}
                   data-testid="expense-card-edit"
                 >
@@ -210,10 +225,15 @@ export function ExpenseCard({
                   type="button"
                   variant="outline"
                   size="sm"
+                  disabled={isBusy}
                   onClick={() => onCancelRecurrence(expense)}
                   data-testid="expense-card-cancel-recurrence"
                 >
-                  <Ban aria-hidden="true" className="h-4 w-4" />
+                  {isBusy ? (
+                    <Spinner label="Encerrando recorrência…" />
+                  ) : (
+                    <Ban aria-hidden="true" className="h-4 w-4" />
+                  )}
                   Encerrar recorrência
                 </Button>
               ) : null}
@@ -223,10 +243,15 @@ export function ExpenseCard({
                   type="button"
                   variant="destructive"
                   size="sm"
+                  disabled={isBusy}
                   onClick={() => onDelete(expense)}
                   data-testid="expense-card-delete"
                 >
-                  <Trash2 aria-hidden="true" className="h-4 w-4" />
+                  {isBusy ? (
+                    <Spinner label="Excluindo despesa…" />
+                  ) : (
+                    <Trash2 aria-hidden="true" className="h-4 w-4" />
+                  )}
                   Excluir
                 </Button>
               ) : null}
