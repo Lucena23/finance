@@ -5,10 +5,16 @@
  * tanto pelo BottomNav (mobile) quanto pela navegação lateral (desktop),
  * garantindo consistência de rotas, rótulos e ícones.
  *
+ * TAREFA 18 — Adicionado o item "Relatórios" (/reports), tornando a tela de
+ * relatórios acessível a partir de ambos os pontos de navegação global
+ * (BottomNav.tsx mobile e navegação horizontal do Header.tsx desktop), que
+ * consomem este array como fonte única de verdade (RN-16).
+ *
  * REGRA (§8.1): proibido o uso de `any`. Tipos explícitos em todo o módulo.
  */
 
 import {
+  BarChart3,
   LayoutDashboard,
   ListChecks,
   Receipt,
@@ -35,12 +41,14 @@ export interface NavItem {
 }
 
 /**
- * Itens de navegação na ordem de exibição (Fila → Dashboard → Despesas →
- * Categorias → Configurações), conforme critério de aceite da TAREFA 37.
+ * Itens de navegação na ordem de exibição (Fila → Painel → Relatórios →
+ * Despesas → Categorias → Configurações), conforme critério de aceite da
+ * TAREFA 37 e a inclusão da tela de Relatórios (TAREFA 18 / RN-16).
  */
 export const NAV_ITEMS: readonly NavItem[] = [
   { to: '/', label: 'Fila', icon: ListChecks, end: true },
   { to: '/dashboard', label: 'Painel', icon: LayoutDashboard },
+  { to: '/reports', label: 'Relatórios', icon: BarChart3 },
   { to: '/expenses', label: 'Despesas', icon: Receipt },
   { to: '/categories', label: 'Categorias', icon: Tags },
   { to: '/settings', label: 'Config', icon: Settings },
