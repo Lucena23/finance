@@ -86,11 +86,25 @@ export function Header(): JSX.Element {
                 <div className="px-2 py-1.5 text-sm font-medium border-b border-border mb-1 truncate text-foreground">
                   {user.name}
                 </div>
+                {/*
+                  TAREFA 6 — Contraste do botão "Sair" (RN-13 / Dark Theme).
+                  Antes: text-destructive (#FB4629) sobre bg-card escuro -> contraste insuficiente.
+                  Agora: texto claro (foreground) com ícone em destaque Aksurim e
+                  fundo de aviso translúcido no hover, garantindo legibilidade AA.
+                */}
                 <button
                   onClick={handleLogout}
-                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                  className={cn(
+                    'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm font-medium',
+                    'text-foreground transition-colors',
+                    'hover:bg-aksurim-warning/15 hover:text-aksurim-warning',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksurim-warning focus-visible:ring-offset-2 focus-visible:ring-offset-card',
+                  )}
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut
+                    aria-hidden="true"
+                    className="h-4 w-4 text-aksurim-warning"
+                  />
                   Sair do Sistema
                 </button>
               </div>
