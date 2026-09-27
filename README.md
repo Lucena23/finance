@@ -1,83 +1,91 @@
 <div align="center">
-  <img src="./frontend/public/logo-full.png" alt="Aksurim Software" width="300" />
+  <img src="./frontend/public/logo-dark.png" alt="Aksurim Software" width="350" />
   <h1>Finanças Aksurim</h1>
-  <p>Gestão de Compromissos Financeiros Compartilhados</p>
+  <p><b>Plataforma PWA de Gestão e Inteligência Financeira Compartilhada</b></p>
 </div>
 
 ---
 
-## SOBRE O PROJETO
+## 🚀 SOBRE O PROJETO
 
-O **Finanças Aksurim** é um aplicativo web progressivo (PWA) mobile-first para gestão de compromissos financeiros e quitação de despesas compartilhadas dentro de um núcleo familiar.
+O **Finanças Aksurim** é um aplicativo web progressivo (PWA) de alto padrão, desenvolvido sob arquitetura **mobile-first** para o ecossistema SaaS. 
 
-O produto resolve três problemas centrais:
+O produto foi desenhado para resolver o problema de inadimplência e desorganização familiar, fornecendo inteligência operacional:
+1. **Fila Operacional Inteligente:** Ordenação algorítmica de contas por urgência (atrasadas -> vencendo hoje -> próximas).
+2. **Visibilidade Compartilhada:** Rastreabilidade exata de quem pagou cada compromisso dentro da família.
+3. **Prevenção de Juros:** Visão clara de fluxo de caixa e obrigações pendentes.
 
-1. Falta de visibilidade sobre vencimentos e atrasos de contas familiares, causando pagamento de juros e multas evitáveis.
-2. Ausência de rastreabilidade individual sobre quem quitou cada compromisso dentro de uma família.
-3. Inexistência de uma fila operacional priorizada que ordene as obrigações por urgência real (atrasadas -> vencendo hoje -> próximos dias -> futuras).
+## 💎 FUNCIONALIDADES PREMIUM (FinTech Ready)
 
-## STATUS DO PROJETO
+- **Motor de Relatórios Financeiros (PDF):** Sistema nativo de geração de documentos em PDF de altíssima qualidade (padrão corporativo). Os clientes podem exportar Relatórios Sintéticos ou Analíticos, contendo gráficos de distribuição por categoria e **Barras de Proporção Empilhadas (Linear Pie Charts)** desenhadas matematicamente direto no arquivo.
+- **Dashboard Gerencial Unificado:** Interface limpa com métricas de "Qualidade de Histórico", gráficos de rosca e barras de evolução, fornecendo análise de dados em tempo real sobre a saúde financeira do usuário.
+- **Fluxo de Autenticação Robusto:** Sistema de registro protegido por validação de e-mail (Lock Screen de Segurança) e recuperação de senha.
+- **Painel Administrativo Global (Admin):** Área de gestão exclusiva (Cross-Tenant) para extração de Leads B2C (PDF/CSV) com captação de WhatsApp e métricas de uso do produto.
+- **UX/UI Profissional:** Design System baseado em modo escuro nativo (Slate 950) e componentes interativos (Shadcn UI, Modais fluídos, Feedbacks visuais).
 
-- **Versão:** 1.0.0
-- **Status:** MVP (Produção Pronta)
+## 🛡️ ARQUITETURA E SEGURANÇA (Multi-Tenant)
 
-## TECNOLOGIAS
+Construído para escalar, o sistema obedece a rígidos padrões de segurança cibernética corporativa:
+- **Tenant Isolation:** Acesso 100% isolado por `familyAccountId`. Os dados de um núcleo familiar jamais cruzam com outros.
+- **Autenticação:** JWT (JSON Web Tokens) através do NestJS Passport.
+- **Criptografia:** Bcrypt (salt rounds configuráveis) para senhas, e Tokens efêmeros e descartáveis (Burnable Tokens) para validação de e-mail e redefinição de senhas.
+- **Infraestrutura SMTP:** Disparo de e-mails transacionais (Boas-vindas e Confirmação) usando templates HTML customizados de alto padrão via Nodemailer.
 
-- **Linguagem:** TypeScript 5.x (strict mode)
-- **Backend:** NestJS 10+ · Prisma ORM 5+ · MySQL 8.0
-- **Frontend:** React 18+ · Vite 5+ · Tailwind CSS 3+ · Recharts
-- **PWA:** Service Worker customizado · Web Push (VAPID)
-- **Design System:** Dark Theme Nativo (Slate 950) focado em usabilidade noturna.
+## 🛠️ STACK TECNOLÓGICA
 
-## SEGURANÇA CIBERNÉTICA E INTEGRIDADE
+**Backend (API Restful):**
+- **Framework:** NestJS 10+ (TypeScript Strict Mode)
+- **Banco de Dados:** MySQL 8.0 rodando em Docker
+- **ORM:** Prisma ORM 5+
+- **Bibliotecas:** PDFKit (Motor de PDF), Nodemailer (E-mails transacionais), Bcrypt, Passport.
 
-Este sistema foi construído sob rigorosos padrões de segurança:
-- **Criptografia:** Senhas protegidas via bcrypt (salt rounds configuráveis).
-- **Isolamento de Dados (Tenant Isolation):** Entidades protegidas por \`familyAccountId\`. Nenhum dado vaza para outros núcleos.
-- **Autenticação Segura:** Proteção de rotas da API utilizando tokens JWT via NestJS Passport.
-- **Leads Qualificados (Segurança na Identidade):** Validação de telefone (WhatsApp) embutida na modelagem para garantir a veracidade dos usuários no B2C.
+**Frontend (PWA):**
+- **Framework:** React 18+ (Vite 5+)
+- **Estilização:** Tailwind CSS 3+ e Shadcn UI (Radix Primitives)
+- **Data Viz:** Recharts (SVG Charts)
+- **PWA:** Service Worker customizado e suporte a Web Push Notifications (VAPID).
 
-## ESTRATÉGIA B2B E MONETIZAÇÃO (ADS)
+## 💰 ESTRATÉGIA DE NEGÓCIOS E MONETIZAÇÃO
 
-O Finanças Aksurim implementa a arquitetura **"Lead Magnet + Ads"**. A plataforma é distribuída 100% gratuitamente para o usuário final, gerando Leads de altíssimo valor (com CPF, WhatsApp e perfil financeiro) para futuras parcerias de crédito B2B. 
+A plataforma adota a arquitetura **"Lead Magnet + Ads"**. Distribuída gratuitamente para o consumidor final, atua como uma poderosa máquina de captura de Leads (Nome, CPF, E-mail, WhatsApp e Perfil de Pagador) para monetização B2B.
 
-O sistema de Design inclui nativamente o componente \`AdBanner\` configurado nas proporções exigidas pelo Interactive Advertising Bureau (IAB), pronto para receber injetáveis do **Google AdMob / AdSense** ou Parcerias Diretas sem causar quebra de layout (Cumulative Layout Shift).
+Inclui nativamente espaços (AdBanners) dimensionados nas proporções **Interactive Advertising Bureau (IAB)** prontos para integração com **Google AdMob/AdSense**, garantindo renderização assíncrona sem prejudicar a métrica de Cumulative Layout Shift (CLS).
 
-## ESTRUTURA DO PROJETO
+---
 
-Este repositório é um **monorepo** com dois workspaces independentes:
+## ⚙️ AMBIENTE DE DESENVOLVIMENTO
 
-\`\`\`text
-/
-|-- backend/            # API NestJS (TypeScript strict)
-|   |-- src/            # Código-fonte da API
-|   |-- prisma/         # Schema de Banco de Dados
-|   |-- package.json
-|-- frontend/           # PWA React + Vite (TypeScript strict)
-|   |-- src/            # Código-fonte da aplicação
-|   |-- public/         # Assets estáticos e manifesto PWA
-|   |-- package.json
-|-- deploy/             # Scripts de build e configuração Apache
-|-- CHANGELOG.md
-|-- README.md
-\`\`\`
+Pré-requisitos: Node.js 20 LTS, npm e Docker.
 
-## COMO EXECUTAR O PROJETO
+**1. Subindo o Banco de Dados Local:**
+```bash
+# Na raiz do projeto, suba o container do MySQL:
+docker-compose up -d
+```
 
-Pré-requisitos: Node.js 20 LTS e npm.
+**2. Instalando Dependências e Preparando o Banco:**
+```bash
+# Backend
+cd backend
+npm install
+npm run prisma:generate
+npx prisma db push
 
-1. Instalar dependências de cada workspace:
+# Frontend
+cd frontend
+npm install
+```
 
-\`\`\`bash
-npm run install:all
-\`\`\`
-
-2. Inicializar os servidores:
-
-\`\`\`bash
-# Em um terminal (Backend)
+**3. Inicializando os Servidores:**
+```bash
+# Em um terminal (Backend API na porta 3000)
 cd backend && npm run start:dev
 
-# Em outro terminal (Frontend)
+# Em outro terminal (Frontend PWA na porta 5173)
 cd frontend && npm run dev
-\`\`\`
+```
+
+---
+<div align="center">
+  <p>Desenvolvido com excelência por <b>Aksurim Software</b></p>
+</div>
