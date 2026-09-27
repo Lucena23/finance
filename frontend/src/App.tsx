@@ -27,7 +27,6 @@ import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { QueuePage } from '@/pages/QueuePage';
 import { RegisterPage } from '@/pages/RegisterPage';
-import { ReportsPage } from '@/pages/ReportsPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { SupportPage } from '@/pages/SupportPage';
@@ -52,7 +51,6 @@ export function App(): JSX.Element {
           <Route element={<AppShell />}>
             <Route path="/" element={<QueuePage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/reports" element={<ReportsPage />} />
             <Route path="/expenses" element={<ExpensesPage />} />
             <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/settings" element={<SettingsPage />} />

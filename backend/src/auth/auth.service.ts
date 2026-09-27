@@ -10,6 +10,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { getWelcomeEmailHtml, getVerificationSuccessHtml } from './email-templates';
 
 const BCRYPT_SALT_ROUNDS = 10;
 
@@ -30,6 +31,7 @@ export interface JwtPayload {
   email: string;
   role: Role;
   familyAccountId: string;
+  isGlobalAdmin?: boolean;
 }
 
 export interface SafeUser {
@@ -40,6 +42,8 @@ export interface SafeUser {
   initials: string;
   avatarColor: string;
   familyAccountId: string;
+  isEmailVerified: boolean;
+  isGlobalAdmin?: boolean;
 }
 
 export interface AuthResponse {
@@ -96,6 +100,7 @@ export class AuthService {
     const initials = getInitials(dto.name);
     const avatarColor = pickAvatarColor([]);
 
+    const verifyToken = crypto.randomBytes(32).toString('hex');
     const result = await this.prisma.$transaction(async (tx) => {
       const family = await tx.familyAccount.create({
         data: {
@@ -114,13 +119,45 @@ export class AuthService {
           initials,
           avatarColor,
           familyAccountId: family.id,
+          verifyToken,
         },
       });
 
       return user;
     });
 
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const verifyLink = `http://localhost:3000/api/v1/auth/verify?token=${verifyToken}`;
+    const emailHtml = getWelcomeEmailHtml(dto.name.trim(), verifyLink, frontendUrl);
+    
+    await this.mailerService.sendMail({
+      to: email,
+      subject: 'Bem-vindo ao Finanças Aksurim! Confirme seu e-mail.',
+      html: emailHtml,
+    }).catch((err) => console.error('Erro ao enviar e-mail de boas vindas:', err));
+
     return this.buildAuthResponse(result);
+  }
+
+  async verifyEmail(token: string): Promise<string> {
+    const user = await this.prisma.user.findFirst({
+      where: { verifyToken: token },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Token inválido ou expirado.');
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isEmailVerified: true,
+        verifyToken: null,
+      },
+    });
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    return getVerificationSuccessHtml(frontendUrl);
   }
 
   /**
@@ -236,12 +273,15 @@ export class AuthService {
     initials: string;
     avatarColor: string;
     familyAccountId: string;
+    isEmailVerified: boolean;
+    isGlobalAdmin?: boolean;
   }): AuthResponse {
     const payload: JwtPayload = {
       userId: user.id,
       email: user.email,
       role: user.role,
       familyAccountId: user.familyAccountId,
+      isGlobalAdmin: user.isGlobalAdmin,
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -254,6 +294,8 @@ export class AuthService {
       initials: user.initials,
       avatarColor: user.avatarColor,
       familyAccountId: user.familyAccountId,
+      isEmailVerified: user.isEmailVerified,
+      isGlobalAdmin: user.isGlobalAdmin,
     };
 
     return { accessToken, user: safeUser };

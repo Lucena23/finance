@@ -51,6 +51,7 @@ export interface SafeUser {
   initials: string;
   avatarColor: string;
   familyAccountId: string;
+  isEmailVerified: boolean;
   /**
    * Flag de Admin Global (RN-15 / TAREFA 28).
    * Quando `true`, o usuário enxerga a aba "Painel Aksurim" na navegação.

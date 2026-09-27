@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: financas_aksurim_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: financas_aksurim
+    ports:
+      # Mapeia a porta 3307 da sua máquina para a 3306 do container
+      # Usamos 3307 para evitar conflito com qualquer outro MySQL rodando no seu Windows
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

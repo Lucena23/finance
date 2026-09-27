@@ -39,6 +39,7 @@ const AKSURIM_COLORS = {
 const LEAD_COLUMNS: readonly { key: keyof AdminLead; label: string }[] = [
   { key: 'userName', label: 'Nome' },
   { key: 'userEmail', label: 'E-mail' },
+  { key: 'userWhatsapp', label: 'WhatsApp' },
   { key: 'ownerCpfMasked', label: 'CPF' },
   { key: 'createdAt', label: 'Data' },
   { key: 'isEmailVerified', label: 'Status' },
@@ -150,14 +151,24 @@ export class LeadExportService {
       // ── Cabeçalho institucional ──────────────────────────────
       doc.rect(0, 0, pageWidth, 70).fill(AKSURIM_COLORS.dark);
 
-      doc
-        .fillColor(AKSURIM_COLORS.highlight)
-        .fontSize(20)
-        .font('Helvetica-Bold')
-        .text('AKSURIM', margin, 22, { continued: true })
-        .fillColor('#FFFFFF')
-        .font('Helvetica')
-        .text('  ·  Painel Administrativo');
+      const logoPath = require('path').join(process.cwd(), '../frontend/public/logo-full.png');
+      try {
+        doc.image(logoPath, margin, 20, { height: 24 });
+        doc
+          .fillColor('#FFFFFF')
+          .fontSize(18)
+          .font('Helvetica')
+          .text('  ·  Painel Administrativo', margin + 120, 23);
+      } catch (e) {
+        doc
+          .fillColor(AKSURIM_COLORS.highlight)
+          .fontSize(20)
+          .font('Helvetica-Bold')
+          .text('AKSURIM', margin, 22, { continued: true })
+          .fillColor('#FFFFFF')
+          .font('Helvetica')
+          .text('  ·  Painel Administrativo');
+      }
 
       doc
         .fillColor('#C9D1D6')
@@ -298,14 +309,14 @@ export class LeadExportService {
    */
   private computeColumnWidths(contentWidth: number): number[] {
     const weights: Record<keyof AdminLead, number> = {
-      userName: 0.24,
-      userEmail: 0.3,
-      ownerCpfMasked: 0.16,
-      createdAt: 0.16,
-      isEmailVerified: 0.14,
+      userName: 0.20,
+      userEmail: 0.24,
+      userWhatsapp: 0.16,
+      ownerCpfMasked: 0.14,
+      createdAt: 0.14,
+      isEmailVerified: 0.12,
       familyAccountId: 0,
       familyName: 0,
-      userWhatsapp: 0,
       userRole: 0,
     };
 

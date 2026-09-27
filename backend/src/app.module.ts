@@ -22,6 +22,7 @@ import { PaymentItemModule } from './payment-item/payment-item.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SupportModule } from './support/support.module';
 import { UserModule } from './user/user.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { UserModule } from './user/user.module';
     }),
     // Agendador de tarefas — habilita o Cron Job de Web Push (TAREFA 33).
     ScheduleModule.forRoot(),
+    ReportsModule,
     PrismaModule,
     AuthModule,
     UserModule,

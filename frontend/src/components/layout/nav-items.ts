@@ -67,7 +67,6 @@ export interface NavItem {
 export const NAV_ITEMS: readonly NavItem[] = [
   { to: '/', label: 'Fila', icon: ListChecks, end: true },
   { to: '/dashboard', label: 'Painel', icon: LayoutDashboard },
-  { to: '/reports', label: 'Relatórios', icon: BarChart3 },
   { to: '/expenses', label: 'Despesas', icon: Receipt },
   { to: '/categories', label: 'Categorias', icon: Tags },
   { to: '/settings', label: 'Config', icon: Settings },

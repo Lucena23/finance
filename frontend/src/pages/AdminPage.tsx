@@ -299,6 +299,9 @@ function LeadsSection(): JSX.Element {
                     E-mail
                   </th>
                   <th scope="col" className="px-4 py-2 font-medium">
+                    WhatsApp
+                  </th>
+                  <th scope="col" className="px-4 py-2 font-medium">
                     CPF
                   </th>
                   <th scope="col" className="px-4 py-2 font-medium">
@@ -319,6 +322,9 @@ function LeadsSection(): JSX.Element {
                     <td className="px-4 py-2">{lead.userName}</td>
                     <td className="text-muted-foreground px-4 py-2">
                       {lead.userEmail}
+                    </td>
+                    <td className="px-4 py-2 tabular-nums">
+                      {lead.userWhatsapp || '-'}
                     </td>
                     <td className="px-4 py-2 tabular-nums">
                       {lead.ownerCpfMasked}
