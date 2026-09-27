@@ -12,6 +12,26 @@
  * monetário é digitado em reais e convertido para centavos (Int) via
  * parseCurrencyToCents antes do envio à API (§8.2 — regra inegociável).
  *
+ * ─────────────────────────────────────────────────────────────────────────
+ * BUGFIX TAREFA 12 — Edição de despesas RECURRENT / INSTALLMENT
+ * ─────────────────────────────────────────────────────────────────────────
+ * O formulário de edição quebrava a interface (crash silencioso no React) ao
+ * abrir despesas dos tipos RECURRENT ou INSTALLMENT, e ainda impedia a
+ * abertura de qualquer edição subsequente. Causas-raiz corrigidas:
+ *
+ *  1. `(expense.totalAmount / 100).toFixed(2)` lançava TypeError quando o
+ *     payload vinha parcial (totalAmount ausente/undefined/null/NaN). Agora a
+ *     conversão passa por `centsToInputValue`, que é defensiva.
+ *  2. `setType(expense.type)` aceitava qualquer valor. Um `type` inválido
+ *     quebrava a renderização condicional e os lookups de rótulo. Agora o
+ *     tipo é validado por `normalizeExpenseType` (fallback SINGLE).
+ *  3. O `useEffect` de sincronização não resetava `error`/`isSubmitting` ao
+ *     trocar a despesa em edição, deixando estado sujo que bloqueava a
+ *     próxima edição. Agora o efeito reseta o estado de submissão.
+ *  4. A chave de sincronização passou a considerar `expense.id` (e não apenas
+ *     a referência do objeto), garantindo que trocar de despesa re-hidrate o
+ *     formulário mesmo quando o objeto é reutilizado/mutado.
+ *
  * REGRA (§8.1): proibido o uso de `any`. Tipos explícitos em todo o módulo.
  */
 
@@ -80,6 +100,53 @@ const TYPE_OPTIONS: readonly { value: ExpenseType; label: string; hint: string }
   ] as const;
 
 /**
+ * Conjunto imutável dos tipos válidos de despesa, usado para validar o
+ * `type` recebido do payload antes de alimentar o estado do formulário.
+ */
+const VALID_EXPENSE_TYPES: ReadonlySet<string> = new Set<string>([
+  ExpenseType.SINGLE,
+  ExpenseType.INSTALLMENT,
+  ExpenseType.RECURRENT,
+]);
+
+/**
+ * Normaliza o tipo de despesa recebido do payload.
+ *
+ * Defensivo contra payloads parciais/legados: qualquer valor que não seja um
+ * ExpenseType conhecido cai no fallback SINGLE, evitando que a renderização
+ * condicional e os lookups de rótulo quebrem a interface (TAREFA 12).
+ *
+ * @param value Valor bruto recebido (pode ser undefined/null/string inválida).
+ * @returns Um ExpenseType válido.
+ */
+function normalizeExpenseType(value: unknown): ExpenseType {
+  if (typeof value === 'string' && VALID_EXPENSE_TYPES.has(value)) {
+    return value as ExpenseType;
+  }
+
+  return ExpenseType.SINGLE;
+}
+
+/**
+ * Converte um valor monetário em centavos (Int) para a string de entrada do
+ * formulário no padrão brasileiro "1234,56".
+ *
+ * Defensivo (TAREFA 12): retorna string vazia quando o valor é ausente,
+ * nulo, não numérico ou não finito — evitando o TypeError que quebrava a
+ * edição de despesas com payload parcial.
+ *
+ * @param cents Valor em centavos (pode ser undefined/null/NaN).
+ * @returns String formatada para o input, ou '' quando inválido.
+ */
+function centsToInputValue(cents: unknown): string {
+  if (typeof cents !== 'number' || !Number.isFinite(cents)) {
+    return '';
+  }
+
+  return (Math.trunc(cents) / 100).toFixed(2).replace('.', ',');
+}
+
+/**
  * Retorna a data de hoje no formato "YYYY-MM-DD" no fuso America/Sao_Paulo,
  * adequado ao atributo `date` de um <input type="date">.
  */
@@ -134,17 +201,40 @@ export function ExpenseForm({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Identificador estável da despesa em edição. Usado como dependência do
+  // efeito de sincronização para garantir re-hidratação ao trocar de despesa
+  // mesmo quando a referência do objeto é reutilizada (TAREFA 12).
+  const editingExpenseId = expense?.id ?? null;
+
   // Sincroniza o formulário com a despesa em edição.
   useEffect(() => {
+    // Reseta o estado de submissão a cada troca de despesa, evitando que um
+    // erro/submissão anterior bloqueie a próxima edição (TAREFA 12).
+    setError(null);
+    setIsSubmitting(false);
+
     if (expense) {
-      setTitle(expense.title);
-      setDescription(expense.description ?? '');
-      setType(expense.type);
-      setAmountInput((expense.totalAmount / 100).toFixed(2).replace('.', ','));
-      setCategoryId(expense.categoryId);
+      setTitle(typeof expense.title === 'string' ? expense.title : '');
+      setDescription(
+        typeof expense.description === 'string' ? expense.description : '',
+      );
+      setType(normalizeExpenseType(expense.type));
+      setAmountInput(centsToInputValue(expense.totalAmount));
+      setCategoryId(
+        typeof expense.categoryId === 'string' ? expense.categoryId : '',
+      );
       setDueDate(todayIsoDate());
+      return;
     }
-  }, [expense]);
+
+    // Modo criação: restaura os valores padrão.
+    setTitle('');
+    setDescription('');
+    setType(ExpenseType.SINGLE);
+    setAmountInput('');
+    setDueDate(todayIsoDate());
+    setInstallmentsInput('2');
+  }, [editingExpenseId, expense]);
 
   // Pré-seleciona a primeira categoria disponível ao criar.
   useEffect(() => {

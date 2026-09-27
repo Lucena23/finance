@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "financas-aksurim",
   "version": "1.0.0",
   "description": "Financas Aksurim - Gestao de Compromissos Financeiros Compartilhados",
@@ -17,5 +17,8 @@
     "test:backend": "npm test --prefix backend",
     "test:frontend": "npm test --prefix frontend",
     "test": "npm run test:backend && npm run test:frontend"
+  },
+  "devDependencies": {
+    "@testing-library/user-event": "^14.6.7"
   }
 }

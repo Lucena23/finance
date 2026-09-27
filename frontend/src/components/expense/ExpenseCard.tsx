@@ -5,6 +5,12 @@
  * valor total formatado (via formatCurrency — §8.2) e status de recorrência.
  * Expõe ações de editar, excluir (soft delete — RN-11) e restaurar.
  *
+ * BUGFIX TAREFA 12: o card é defensivo contra payloads parciais/legados.
+ * Um `type` inválido antes quebrava o lookup de rótulo (`TYPE_LABEL[type]`)
+ * e a renderização do ícone, derrubando a listagem inteira e impedindo a
+ * abertura de qualquer edição subsequente. Agora o tipo é normalizado e o
+ * valor monetário é validado antes da formatação.
+ *
  * REGRA (§8.1): proibido o uso de `any`. Tipos explícitos em todo o módulo.
  */
 
@@ -52,6 +58,27 @@ const TYPE_LABEL: Record<ExpenseType, string> = {
 };
 
 /**
+ * Conjunto imutável dos tipos válidos de despesa.
+ */
+const VALID_EXPENSE_TYPES: ReadonlySet<string> = new Set<string>([
+  ExpenseType.SINGLE,
+  ExpenseType.INSTALLMENT,
+  ExpenseType.RECURRENT,
+]);
+
+/**
+ * Normaliza o tipo de despesa recebido do payload (defensivo — TAREFA 12).
+ * Qualquer valor desconhecido cai no fallback SINGLE.
+ */
+function normalizeExpenseType(value: unknown): ExpenseType {
+  if (typeof value === 'string' && VALID_EXPENSE_TYPES.has(value)) {
+    return value as ExpenseType;
+  }
+
+  return ExpenseType.SINGLE;
+}
+
+/**
  * Ícone correspondente a cada tipo de despesa.
  */
 function TypeIcon({ type }: { type: ExpenseType }): JSX.Element {
@@ -78,7 +105,8 @@ export function ExpenseCard({
   onRestore,
   onCancelRecurrence,
 }: ExpenseCardProps): JSX.Element {
-  const isRecurrent = expense.type === ExpenseType.RECURRENT;
+  const normalizedType = normalizeExpenseType(expense.type);
+  const isRecurrent = normalizedType === ExpenseType.RECURRENT;
   const isRecurrenceCancelled =
     expense.statusRecurrence === ExpenseRecurrenceStatus.CANCELLED;
 
@@ -108,8 +136,8 @@ export function ExpenseCard({
               ) : null}
 
               <span className="inline-flex items-center gap-1">
-                <TypeIcon type={expense.type} />
-                {TYPE_LABEL[expense.type]}
+                <TypeIcon type={normalizedType} />
+                {TYPE_LABEL[normalizedType]}
               </span>
 
               {isRecurrent ? (
