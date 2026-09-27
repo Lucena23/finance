@@ -5,6 +5,10 @@
  * polegar em smartphones Android (público-alvo primário). Exibe os itens
  * definidos em NAV_ITEMS com destaque visual do item ativo.
  *
+ * TAREFA 28 — A lista de itens é obtida via `getNavItems(user.isGlobalAdmin)`,
+ * de modo que a aba "Aksurim" (Painel Global) só aparece para o Admin Global
+ * (RN-15). A filtragem é centralizada em nav-items.ts.
+ *
  * Acessibilidade:
  *  - <nav> com aria-label descritivo.
  *  - Cada link usa aria-current="page" quando ativo.
@@ -15,22 +19,26 @@
 
 import { NavLink } from 'react-router-dom';
 
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/cn';
 
-import { NAV_ITEMS } from './nav-items';
+import { getNavItems } from './nav-items';
 
 /**
  * Barra de navegação inferior exibida apenas em telas pequenas (mobile).
  * Em telas md+ é ocultada, dando lugar à navegação lateral do AppShell.
  */
 export function BottomNav(): JSX.Element {
+  const { user } = useAuth();
+  const items = getNavItems(user?.isGlobalAdmin === true);
+
   return (
     <nav
       aria-label="Navegação principal"
       className="bg-background/95 supports-[backdrop-filter]:bg-background/80 fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur md:hidden"
     >
       <ul className="mx-auto flex max-w-lg items-stretch justify-around">
-        {NAV_ITEMS.map((item) => {
+        {items.map((item) => {
           const Icon = item.icon;
 
           return (

@@ -5,18 +5,21 @@
  *  - Rotas públicas (/login, /register) protegidas por <PublicRoute>.
  *  - Rotas autenticadas protegidas por <ProtectedRoute> e envolvidas pelo
  *    <AppShell> (Header + BottomNav + área de conteúdo — TAREFA 37).
+ *  - Rota /admin protegida adicionalmente por <GlobalAdminRoute>, acessível
+ *    apenas ao Admin Global (isGlobalAdmin === true — TAREFA 28 / RN-15).
  *
  * As telas internas (fila, dashboard, despesas, categorias, configurações,
- * relatórios, suporte) são implementadas nas tarefas subsequentes (38+).
- * Placeholders mínimos são renderizados para validar a navegação e o
- * pipeline de build.
+ * relatórios, suporte, painel admin) são implementadas nas tarefas
+ * subsequentes (38+).
  */
 
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { AppShell } from '@/components/layout/AppShell';
+import { GlobalAdminRoute } from '@/components/layout/GlobalAdminRoute';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { PublicRoute } from '@/components/layout/PublicRoute';
+import { AdminPage } from '@/pages/AdminPage';
 import { CategoriesPage } from '@/pages/CategoriesPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { ExpensesPage } from '@/pages/ExpensesPage';
@@ -55,6 +58,12 @@ export function App(): JSX.Element {
             <Route path="/settings" element={<SettingsPage />} />
             {/* Suporte ao cliente via Telegram (TAREFA 20 / RN-14) */}
             <Route path="/support" element={<SupportPage />} />
+
+            {/* Painel Aksurim — Admin Global (TAREFA 28 / RN-15).
+                Protegido por GlobalAdminRoute: apenas isGlobalAdmin === true. */}
+            <Route element={<GlobalAdminRoute />}>
+              <Route path="/admin" element={<AdminPage />} />
+            </Route>
           </Route>
         </Route>
 

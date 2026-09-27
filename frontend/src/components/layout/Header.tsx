@@ -5,12 +5,16 @@ import { LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/cn';
 
-import { NAV_ITEMS } from './nav-items';
+import { getNavItems } from './nav-items';
 
 export function Header(): JSX.Element {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // TAREFA 28 — A aba "Aksurim" (Painel Global) só aparece para o Admin
+  // Global (RN-15). A filtragem é centralizada em getNavItems().
+  const items = getNavItems(user?.isGlobalAdmin === true);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -58,7 +62,7 @@ export function Header(): JSX.Element {
           aria-label="Navegação principal"
           className="hidden md:flex md:items-center md:gap-1"
         >
-          {NAV_ITEMS.map((item) => {
+          {items.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink
