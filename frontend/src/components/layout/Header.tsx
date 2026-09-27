@@ -29,10 +29,15 @@ export function Header(): JSX.Element {
    * ignorando o estado do contexto e o storage de sessão (sessionStorage).
    * Agora: delega ao `logout()` do AuthContext, que limpa token + usuário
    * do sessionStorage e zera o estado React, garantindo consistência.
+   *
+   * TAREFA 10 — O `logout()` agora é assíncrono: além de invalidar a sessão,
+   * ele limpa o estado local de Web Push (subscription do navegador + registro
+   * no backend). Aguardamos a conclusão antes do redirect para garantir que a
+   * limpeza seja efetivada com o token ainda válido.
    */
-  const handleLogout = (): void => {
-    logout();
+  const handleLogout = async (): Promise<void> => {
     setMenuOpen(false);
+    await logout();
     window.location.href = '/login';
   };
 

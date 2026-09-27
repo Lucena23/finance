@@ -12,6 +12,12 @@
  * Ao fechar a aba/navegador, a sessão é encerrada automaticamente — o
  * usuário NÃO permanece logado ao retornar (BLUEPRINT §4).
  *
+ * TAREFA 10: O logout agora invalida a sessão (token + usuário) E limpa o
+ * estado local de Web Push (subscription do navegador + registro no backend),
+ * evitando que o dispositivo continue recebendo notificações de um usuário
+ * que encerrou a sessão. A limpeza de push é executada ANTES de remover o
+ * token, pois a remoção no backend exige o JWT ainda válido.
+ *
  * NOTA SOBRE WEB PUSH: A subscription de Web Push é mantida pelo navegador
  * no `pushManager` do Service Worker (persistente, independente do storage
  * de sessão). A migração para `sessionStorage` NÃO causa regressão nas
@@ -42,6 +48,7 @@ import {
   type SafeUser,
 } from '@/lib/api';
 import { AUTH_USER_STORAGE_KEY } from '@/lib/constants';
+import { clearLocalPushState } from '@/lib/pwa';
 
 /**
  * Contrato público do contexto de autenticação.
@@ -59,8 +66,8 @@ export interface AuthContextValue {
   login: (payload: LoginPayload) => Promise<SafeUser>;
   /** Cria FamilyAccount + ADMIN e autentica automaticamente. */
   register: (payload: RegisterPayload) => Promise<SafeUser>;
-  /** Encerra a sessão, limpando token e usuário do storage. */
-  logout: () => void;
+  /** Encerra a sessão, limpando token, usuário e estado local de push. */
+  logout: () => Promise<void>;
 }
 
 /**
@@ -185,7 +192,24 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     [applyAuthResponse],
   );
 
-  const logout = useCallback((): void => {
+  /**
+   * TAREFA 10 — Logout completo.
+   *
+   * Ordem de execução (importante):
+   *  1. Limpa o estado local de Web Push (subscription do navegador + registro
+   *     no backend) ENQUANTO o token ainda está presente — a remoção no backend
+   *     (DELETE /notifications/subscribe) exige o JWT válido.
+   *  2. Invalida a sessão: remove token + usuário do sessionStorage e zera o
+   *     estado React.
+   *
+   * A limpeza de push é tolerante a falhas e nunca impede o encerramento da
+   * sessão (ver `clearLocalPushState` em `@/lib/pwa`).
+   */
+  const logout = useCallback(async (): Promise<void> => {
+    // 1. Limpa o estado local de push antes de invalidar o token.
+    await clearLocalPushState();
+
+    // 2. Invalida a sessão (token + usuário).
     clearAuthToken();
     clearStoredUser();
     setToken(null);

@@ -7,6 +7,9 @@
  *  - TAREFA 49: fluxo de instalação (beforeinstallprompt) e registro de
  *    subscription de Web Push (permissão + pushManager.subscribe + envio
  *    para POST /notifications/subscribe).
+ *  - TAREFA 10: limpeza da subscription de Web Push no logout (remoção no
+ *    backend + cancelamento local no navegador), evitando que o dispositivo
+ *    continue recebendo notificações de um usuário que encerrou a sessão.
  *
  * O arquivo do Service Worker (`/service-worker.js`) é gerado a partir de
  * `src/service-worker.ts` pelo script `scripts/build-service-worker.mjs`
@@ -429,6 +432,67 @@ export async function hasActivePushSubscription(): Promise<boolean> {
     const subscription = await registration.pushManager.getSubscription();
     return subscription !== null;
   } catch {
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════
+// LOGOUT — LIMPEZA DA SUBSCRIPTION DE PUSH (TAREFA 10)
+// ═══════════════════════════════════════════
+
+/**
+ * Limpa o estado local de Web Push no encerramento de sessão (TAREFA 10).
+ *
+ * Fluxo:
+ *  1. Obtém a subscription ativa do navegador (pushManager).
+ *  2. Best-effort: remove o registro no backend (DELETE /notifications/subscribe)
+ *     enquanto o token JWT ainda está válido — por isso esta função DEVE ser
+ *     chamada ANTES de limpar o token do storage.
+ *  3. Cancela a subscription localmente no navegador (`subscription.unsubscribe`),
+ *     garantindo que o dispositivo pare de receber pushes do usuário deslogado.
+ *
+ * Toda a operação é tolerante a falhas: qualquer erro (rede, SW indisponível,
+ * navegador sem suporte) é absorvido e NÃO impede o logout. O objetivo é
+ * garantir que a sessão seja sempre encerrada, mesmo que a limpeza de push
+ * falhe parcialmente.
+ *
+ * @returns true se a subscription local foi removida (ou não havia nenhuma).
+ */
+export async function clearLocalPushState(): Promise<boolean> {
+  if (!isPushSupported()) {
+    return true;
+  }
+
+  const registration = await getReadyServiceWorker();
+
+  if (!registration) {
+    return true;
+  }
+
+  try {
+    const subscription = await registration.pushManager.getSubscription();
+
+    if (!subscription) {
+      return true;
+    }
+
+    // 1. Best-effort: remove o registro no backend (token ainda válido).
+    try {
+      await notificationsApi.unsubscribe(subscription.endpoint);
+    } catch (error) {
+      // Falha de rede/API não deve impedir o logout — apenas registra.
+      console.warn(
+        'Não foi possível remover a subscription de push no backend durante o logout:',
+        error,
+      );
+    }
+
+    // 2. Cancela a subscription localmente no navegador.
+    await subscription.unsubscribe();
+
+    return true;
+  } catch (error) {
+    console.error('Falha ao limpar o estado local de push no logout:', error);
     return false;
   }
 }
