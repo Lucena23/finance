@@ -51,6 +51,12 @@ export interface SafeUser {
   initials: string;
   avatarColor: string;
   familyAccountId: string;
+  /**
+   * Flag de Admin Global (RN-15 / TAREFA 28).
+   * Quando `true`, o usuário enxerga a aba "Painel Aksurim" na navegação.
+   * NÃO confundir com `Role.ADMIN` (chefe de família).
+   */
+  isGlobalAdmin?: boolean;
 }
 
 export interface AuthResponse {
@@ -211,6 +217,42 @@ export interface SupportMessageResult {
 }
 
 /**
+ * Métricas globais do Painel Aksurim (TAREFA 25 / TAREFA 28).
+ * Espelho do contrato `AdminGlobalMetrics` do backend.
+ */
+export interface AdminGlobalMetrics {
+  totalFamilies: number;
+  totalUsers: number;
+  totalActiveUsers: number;
+  totalExpenses: number;
+  totalPaidAmount: number;
+  totalPendingAmount: number;
+  familiesCreatedLast30Days: number;
+  usersCreatedLast30Days: number;
+}
+
+/**
+ * Lead comercial exportável (TAREFA 27 / RN-15).
+ * O CPF é SEMPRE mascarado (***.***.XXX-XX) — LGPD / §5.5.
+ */
+export interface AdminLead {
+  familyAccountId: string;
+  familyName: string;
+  ownerCpfMasked: string;
+  userName: string;
+  userEmail: string;
+  userWhatsapp: string | null;
+  userRole: string;
+  isEmailVerified: boolean;
+  createdAt: string;
+}
+
+/**
+ * Formatos de exportação de leads suportados (TAREFA 27).
+ */
+export type LeadExportFormat = 'pdf' | 'csv';
+
+/**
  * Erro normalizado da API — expõe status HTTP e mensagem legível.
  */
 export class ApiError extends Error {
@@ -336,6 +378,32 @@ async function patch<T>(
 async function del<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
   const response = await httpClient.delete<T>(url, config);
   return response.data;
+}
+
+/**
+ * Dispara o download de um arquivo binário (PDF/CSV) a partir de uma rota
+ * autenticada. O Bearer token é injetado pelo interceptor do httpClient.
+ *
+ * TAREFA 27: usada pela exportação de leads do Painel Aksurim.
+ */
+async function downloadFile(
+  url: string,
+  filename: string,
+  config?: AxiosRequestConfig,
+): Promise<void> {
+  const response = await httpClient.get<Blob>(url, {
+    ...config,
+    responseType: 'blob',
+  });
+
+  const blobUrl = window.URL.createObjectURL(response.data);
+  const anchor = document.createElement('a');
+  anchor.href = blobUrl;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.URL.revokeObjectURL(blobUrl);
 }
 
 // ═══════════════════════════════════════════
@@ -477,6 +545,31 @@ export const supportApi = {
 };
 
 /**
+ * Painel Aksurim — Admin Global (TAREFA 25 / TAREFA 27 / TAREFA 28 / RN-15).
+ *
+ * Todas as rotas exigem `isGlobalAdmin === true` no JWT (GlobalAdminGuard).
+ * Role.ADMIN (chefe de família) NÃO tem acesso a estas rotas.
+ */
+export const adminApi = {
+  /** Métricas globais: total de clientes, ativos por período e volumes. */
+  metrics: (): Promise<AdminGlobalMetrics> =>
+    get<AdminGlobalMetrics>('/admin/metrics'),
+
+  /** Lista de leads comerciais (CPF mascarado) para exibição no painel. */
+  leads: (): Promise<AdminLead[]> => get<AdminLead[]>('/admin/leads'),
+
+  /**
+   * Exporta os leads em PDF ou CSV (TAREFA 27).
+   * Dispara o download do arquivo no navegador.
+   */
+  exportLeads: (format: LeadExportFormat): Promise<void> =>
+    downloadFile(
+      `/admin/leads/export?format=${format}`,
+      `aksurim-leads.${format}`,
+    ),
+};
+
+/**
  * Barrel de conveniência — acesso unificado à API tipada.
  */
 export const api = {
@@ -488,4 +581,5 @@ export const api = {
   dashboard: dashboardApi,
   notifications: notificationsApi,
   support: supportApi,
+  admin: adminApi,
 };
