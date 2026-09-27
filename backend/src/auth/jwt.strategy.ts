@@ -20,12 +20,16 @@ export interface JwtPayload {
 /**
  * Usuário autenticado anexado ao request (request.user).
  * Derivado exclusivamente do JWT validado — nunca de query/body.
+ *
+ * `isGlobalAdmin` (RN-15) é revalidado no banco a cada requisição para
+ * permitir o bypass condicional do FamilyScopeInterceptor no Painel Aksurim.
  */
 export interface AuthenticatedUser {
   userId: string;
   email: string;
   role: Role;
   familyAccountId: string;
+  isGlobalAdmin: boolean;
 }
 
 /**
@@ -48,7 +52,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   /**
    * Revalida o usuário no banco a cada requisição para garantir que o
-   * vínculo familiar e o papel permaneçam consistentes (RN-01 / RN-03).
+   * vínculo familiar, o papel e a flag de Admin Global permaneçam
+   * consistentes (RN-01 / RN-03 / RN-15).
    */
   async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
     const user = await this.prisma.user.findUnique({
@@ -58,6 +63,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         email: true,
         role: true,
         familyAccountId: true,
+        isGlobalAdmin: true,
       },
     });
 
@@ -70,6 +76,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       email: user.email,
       role: user.role,
       familyAccountId: user.familyAccountId,
+      isGlobalAdmin: user.isGlobalAdmin,
     };
   }
 }
