@@ -5,7 +5,7 @@ import { PayDrawer } from '@/components/payment/PayDrawer';
 import { PaymentQueue } from '@/components/payment/PaymentQueue';
 import { PaymentHistory } from '@/components/payment/PaymentHistory';
 import { MonthCarousel } from '@/components/payment/MonthCarousel';
-import { AdBanner } from '@/components/ads/AdBanner';
+import { AnimatedAdBanner } from '@/components/ads/AnimatedAdBanner';
 import type { PaymentItemWithPayer } from '@/lib/api';
 
 /**
@@ -15,6 +15,9 @@ import type { PaymentItemWithPayer } from '@/lib/api';
  * `MonthCarousel` (carrossel acessível por teclado). O offset do mês
  * selecionado é mantido em estado local, preservando o filtro enquanto o
  * usuário navega entre as seções da página.
+ *
+ * TAREFA 19: banner animado (Mobile Leaderboard IAB 320x50) posicionado
+ * logo abaixo do filtro de meses, conforme especificação do BLUEPRINT §4.
  */
 export function QueuePage(): JSX.Element {
   const [selectedItem, setSelectedItem] = useState<PaymentItemWithPayer | null>(null);
@@ -54,13 +57,13 @@ export function QueuePage(): JSX.Element {
       <header className="flex flex-col gap-2">
         <h1 className="text-xl font-bold tracking-tight">Suas Despesas</h1>
 
-        {/* AdBanner Injetado - Placeholders de Ads Mobile Leaderboard */}
-        <div className="py-2">
-          <AdBanner type="leaderboard" />
-        </div>
-
         {/* Seletor de Meses (TAREFA 16) */}
         <MonthCarousel value={monthOffset} onSelect={handleMonthSelect} />
+
+        {/* Banner de Ads animado — Mobile Leaderboard IAB 320x50 (TAREFA 19) */}
+        <div className="py-2">
+          <AnimatedAdBanner type="leaderboard" />
+        </div>
       </header>
 
       {/* Exibimos Pendentes e Histórico do mês selecionado juntos */}

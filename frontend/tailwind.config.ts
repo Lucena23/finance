@@ -79,10 +79,45 @@ const config: Config = {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
+        // ═══════════════════════════════════════════
+        // ANIMAÇÕES DOS BANNERS DE ADS (TAREFA 19)
+        // CSS/HTML5 puro — sem vídeo. Leves e performáticos.
+        // ═══════════════════════════════════════════
+        // Deslize horizontal contínuo (marquee) para o leaderboard 320x50.
+        'ad-marquee': {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+        // Pulso suave de opacidade/escala para o CTA do leaderboard.
+        'ad-pulse': {
+          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+          '50%': { opacity: '0.75', transform: 'scale(1.04)' },
+        },
+        // Gradiente animado (background-position) para o retângulo 300x250.
+        'ad-gradient': {
+          '0%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+          '100%': { backgroundPosition: '0% 50%' },
+        },
+        // Flutuação vertical sutil para o ícone do retângulo.
+        'ad-float': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-6px)' },
+        },
+        // Brilho (shine) que atravessa o retângulo periodicamente.
+        'ad-shine': {
+          '0%': { transform: 'translateX(-120%) skewX(-20deg)' },
+          '60%, 100%': { transform: 'translateX(320%) skewX(-20deg)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'ad-marquee': 'ad-marquee 14s linear infinite',
+        'ad-pulse': 'ad-pulse 1.8s ease-in-out infinite',
+        'ad-gradient': 'ad-gradient 8s ease infinite',
+        'ad-float': 'ad-float 3s ease-in-out infinite',
+        'ad-shine': 'ad-shine 4.5s ease-in-out infinite',
       },
     },
   },

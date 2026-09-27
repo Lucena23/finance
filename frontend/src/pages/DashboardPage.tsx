@@ -7,6 +7,9 @@
  * gráfico de rosca de distribuição por categoria (<CategoryDonut />), que
  * consome GET /dashboard/category-distribution, e o gráfico de barras de
  * evolução mensal (<MonthlyBars />), que consome GET /dashboard/monthly-evolution.
+ *
+ * TAREFA 19: banner animado (Medium Rectangle IAB 300x250) posicionado no
+ * fundo da página, conforme especificação do BLUEPRINT §4.
  */
 
 import { useMemo } from 'react';
@@ -14,7 +17,7 @@ import { useMemo } from 'react';
 import { CategoryDonut } from '@/components/dashboard/CategoryDonut';
 import { MonthlyBars } from '@/components/dashboard/MonthlyBars';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
-import { AdBanner } from '@/components/ads/AdBanner';
+import { AnimatedAdBanner } from '@/components/ads/AnimatedAdBanner';
 import { DEFAULT_TIMEZONE } from '@/lib/constants';
 
 /**
@@ -51,17 +54,14 @@ export function DashboardPage(): JSX.Element {
       </header>
 
       <SummaryCards month={month} year={year} />
-      
-      <div className="py-2">
-        <AdBanner type="leaderboard" className="mb-2" />
-      </div>
 
       <CategoryDonut month={month} year={year} />
 
       <MonthlyBars year={year} />
-      
+
+      {/* Banner de Ads animado — Medium Rectangle IAB 300x250 (TAREFA 19) */}
       <div className="pt-4 pb-8">
-        <AdBanner type="rectangle" />
+        <AnimatedAdBanner type="rectangle" />
       </div>
     </section>
   );
