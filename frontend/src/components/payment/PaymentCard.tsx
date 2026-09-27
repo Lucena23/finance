@@ -5,29 +5,30 @@
  * número da parcela, valor previsto formatado e data de vencimento, além de
  * um indicador colorido de urgência herdado do agrupamento (RN-06 / §8.5).
  *
- * Nota: a versão completa com ações de quitação (abertura do PayDrawer) e
- * acessibilidade por teclado é entregue na TAREFA 39. Este componente já
- * expõe o callback `onSelect` para integração futura.
+ * TAREFA 13: quando o item já possui pagador (`paidBy`), o card exibe
+ * IMEDIATAMENTE o badge com as iniciais de quem quitou — sem refetch. O dado
+ * chega hidratado pelo backend em uma única query (sem N+1).
  *
  * REGRA (§8.1): proibido o uso de `any`. Tipos explícitos em todo o módulo.
  */
 
 import { CalendarClock, Repeat } from 'lucide-react';
 
-import type { PaymentItem } from '@/lib/api';
+import { MemberBadge } from '@/components/member/MemberBadge';
+import type { PaymentItemWithPayer } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { QueueGroup } from '@/lib/constants';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 interface PaymentCardProps {
-  /** Item de pagamento a ser exibido. */
-  item: PaymentItem;
+  /** Item de pagamento a ser exibido (com badge do pagador hidratado). */
+  item: PaymentItemWithPayer;
   /** Agrupamento de urgência ao qual o item pertence. */
   urgency: QueueGroup | string;
   /** Classe de cor da barra lateral de urgência. */
   accentClass: string;
   /** Callback opcional disparado ao selecionar o card. */
-  onSelect?: (item: PaymentItem) => void;
+  onSelect?: (item: PaymentItemWithPayer) => void;
   /** Se true, o card está sendo renderizado no histórico. */
   isHistory?: boolean;
 }
@@ -58,6 +59,7 @@ export function PaymentCard({
     : `Parcela ${item.installmentNumber}/${item.totalInstallments}`;
 
   const isInteractive = typeof onSelect === 'function';
+  const payer = item.paidBy;
 
   const handleSelect = (): void => {
     onSelect?.(item);
@@ -113,10 +115,28 @@ export function PaymentCard({
         </span>
       </div>
 
-      <div className="flex shrink-0 flex-col items-end">
+      <div className="flex shrink-0 flex-col items-end gap-1">
         <span className={cn("text-sm font-bold tabular-nums", isHistory && "text-emerald-700")}>
           {formatCurrency(isHistory ? (item.paidAmount ?? item.expectedAmount) : item.expectedAmount)}
         </span>
+
+        {/* TAREFA 13: badge do pagador exibido imediatamente quando presente. */}
+        {payer ? (
+          <span
+            className="flex items-center gap-1"
+            data-testid="payment-card-payer"
+          >
+            <MemberBadge
+              initials={payer.initials}
+              avatarColor={payer.avatarColor}
+              size="xs"
+              label={`Pago por ${payer.initials}`}
+            />
+            <span className="text-muted-foreground text-[10px] font-medium">
+              {payer.initials}
+            </span>
+          </span>
+        ) : null}
       </div>
     </div>
   );

@@ -102,11 +102,17 @@ export interface PaymentItem {
   };
 }
 
+/**
+ * Badge do pagador (RN-08 / §8.8) — hidratado pelo backend em uma única query
+ * (sem N+1). Presente na fila, no histórico e na resposta de quitação.
+ */
+export interface PayerBadge {
+  initials: string;
+  avatarColor: string;
+}
+
 export interface PaymentItemWithPayer extends PaymentItem {
-  paidBy: {
-    initials: string;
-    avatarColor: string;
-  } | null;
+  paidBy: PayerBadge | null;
 }
 
 export interface Expense {
@@ -128,10 +134,16 @@ export interface ExpenseWithItems extends Expense {
   paymentItems: PaymentItem[];
 }
 
+/**
+ * Fila de pagamentos pendentes agrupada por urgência (RN-06 / §8.5).
+ *
+ * TAREFA 13: cada item carrega o badge do pagador (`paidBy`) já hidratado,
+ * permitindo exibir imediatamente as iniciais de quem quitou sem refetch.
+ */
 export interface PaymentQueue {
-  overdue: PaymentItem[];
-  currentMonth: PaymentItem[];
-  upcoming: PaymentItem[];
+  overdue: PaymentItemWithPayer[];
+  currentMonth: PaymentItemWithPayer[];
+  upcoming: PaymentItemWithPayer[];
 }
 
 export interface Paginated<T> {
@@ -404,8 +416,8 @@ export const paymentItemsApi = {
     limit?: number;
   }): Promise<Paginated<PaymentItemWithPayer>> =>
     get<Paginated<PaymentItemWithPayer>>('/payment-items/history', { params }),
-  pay: (id: string, payload: PayItemPayload): Promise<PaymentItem> =>
-    patch<PaymentItem>(`/payment-items/${id}/pay`, payload),
+  pay: (id: string, payload: PayItemPayload): Promise<PaymentItemWithPayer> =>
+    patch<PaymentItemWithPayer>(`/payment-items/${id}/pay`, payload),
   updateExpectedAmount: (
     id: string,
     expectedAmount: number,

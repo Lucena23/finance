@@ -6,14 +6,14 @@ import { PayDrawer } from '@/components/payment/PayDrawer';
 import { PaymentQueue } from '@/components/payment/PaymentQueue';
 import { PaymentHistory } from '@/components/payment/PaymentHistory';
 import { AdBanner } from '@/components/ads/AdBanner';
-import type { PaymentItem } from '@/lib/api';
+import type { PaymentItemWithPayer } from '@/lib/api';
 import { cn } from '@/lib/cn';
 
 /**
  * Página Principal (Fila unificada).
  */
 export function QueuePage(): JSX.Element {
-  const [selectedItem, setSelectedItem] = useState<PaymentItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<PaymentItemWithPayer | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [reloadKey, setReloadKey] = useState<number>(0);
 
@@ -35,7 +35,7 @@ export function QueuePage(): JSX.Element {
     };
   });
 
-  const handleSelectItem = useCallback((item: PaymentItem): void => {
+  const handleSelectItem = useCallback((item: PaymentItemWithPayer): void => {
     setSelectedItem(item);
     setIsDrawerOpen(true);
   }, []);

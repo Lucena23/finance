@@ -9,6 +9,10 @@
  * futuros, com ORDER BY dueDate ASC em cada grupo). O frontend apenas
  * apresenta os grupos na ordem hierárquica fixa.
  *
+ * TAREFA 13: cada item já chega com o badge do pagador (`paidBy`) hidratado
+ * pelo backend em uma única query (sem N+1), permitindo exibir imediatamente
+ * as iniciais de quem quitou sem refetch adicional.
+ *
  * REGRA (§8.1): proibido o uso de `any`. Tipos explícitos em todo o módulo.
  */
 
@@ -17,7 +21,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ApiError,
   paymentItemsApi,
-  type PaymentItem,
+  type PaymentItemWithPayer,
   type PaymentQueue,
 } from '@/lib/api';
 
@@ -38,11 +42,11 @@ export interface PaymentQueueFilters {
  */
 export interface UsePaymentQueueResult {
   /** Itens em atraso (dueDate < hoje) — agrupamento vermelho. */
-  overdue: PaymentItem[];
+  overdue: PaymentItemWithPayer[];
   /** Itens vencendo no mês corrente — agrupamento laranja. */
-  currentMonth: PaymentItem[];
+  currentMonth: PaymentItemWithPayer[];
   /** Itens com vencimento em meses futuros — agrupamento azul. */
-  upcoming: PaymentItem[];
+  upcoming: PaymentItemWithPayer[];
   /** Total de itens pendentes somando os três agrupamentos. */
   totalPending: number;
   /** Indica se a fila está vazia (nenhum item pendente). */

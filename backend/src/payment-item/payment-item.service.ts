@@ -12,23 +12,31 @@ import { QueryPaymentItemsDto } from './dto/query-payment-items.dto';
 import { UpdatePaymentItemDto } from './dto/update-payment-item.dto';
 
 /**
- * Fila de pagamentos agrupada por urgência (RN-06 / §8.5).
- *  - overdue:      dueDate < hoje (atraso) — indicador vermelho.
- *  - currentMonth: dueDate dentro do mês corrente e >= hoje — laranja.
- *  - upcoming:     dueDate em meses posteriores — azul.
- */
-export interface PaymentQueue {
-  overdue: PaymentItem[];
-  currentMonth: PaymentItem[];
-  upcoming: PaymentItem[];
-}
-
-/**
- * Item de pagamento quitado com o badge do pagador (RN-08 / §8.8).
+ * Item de pagamento com o badge do pagador (RN-08 / §8.8).
+ *
+ * O campo `paidBy` é resolvido via `include` do Prisma em uma ÚNICA query
+ * (join), eliminando qualquer risco de N+1 (TAREFA 13). Quando o item ainda
+ * está PENDING, `paidBy` é `null`.
  */
 export type PaymentItemWithPayer = PaymentItem & {
   paidBy: { initials: string; avatarColor: string } | null;
 };
+
+/**
+ * Fila de pagamentos agrupada por urgência (RN-06 / §8.5).
+ *  - overdue:      dueDate < hoje (atraso) — indicador vermelho.
+ *  - currentMonth: dueDate dentro do mês corrente e >= hoje — laranja.
+ *  - upcoming:     dueDate em meses posteriores — azul.
+ *
+ * Cada item carrega o badge do pagador (`paidBy`) já hidratado, permitindo
+ * que a UI exiba imediatamente as iniciais de quem quitou, sem refetch
+ * adicional (TAREFA 13).
+ */
+export interface PaymentQueue {
+  overdue: PaymentItemWithPayer[];
+  currentMonth: PaymentItemWithPayer[];
+  upcoming: PaymentItemWithPayer[];
+}
 
 /**
  * Resultado paginado do histórico de pagamentos.
@@ -61,6 +69,10 @@ export class PaymentItemService {
    * A hierarquia é aplicada em memória sobre o conjunto já ordenado por
    * `dueDate ASC`, garantindo determinismo e independência do fuso do banco.
    * PaymentItems de despesas soft-deleted são excluídos (RN-11 / §8.7).
+   *
+   * TAREFA 13: o `include` traz `paidBy { initials, avatarColor }` na MESMA
+   * query (join único), sem N+1. Isso permite que a UI exiba imediatamente a
+   * sigla do pagador em cards recém-quitados, sem uma segunda chamada.
    */
   async getQueue(
     familyAccountId: string,
@@ -78,6 +90,7 @@ export class PaymentItemService {
       },
       include: {
         expense: { select: { title: true, categoryId: true } },
+        paidBy: { select: { initials: true, avatarColor: true } },
       },
       orderBy: { dueDate: 'asc' },
     });
@@ -86,9 +99,9 @@ export class PaymentItemService {
     const monthStart = new Date(Date.UTC(year, month - 1, 1));
     const monthEnd = new Date(Date.UTC(year, month, 0));
 
-    const overdue: PaymentItem[] = [];
-    const currentMonth: PaymentItem[] = [];
-    const upcoming: PaymentItem[] = [];
+    const overdue: PaymentItemWithPayer[] = [];
+    const currentMonth: PaymentItemWithPayer[] = [];
+    const upcoming: PaymentItemWithPayer[] = [];
 
     for (const item of items) {
       const due = this.normalizeDate(item.dueDate);
@@ -117,13 +130,17 @@ export class PaymentItemService {
    *
    * Escopo obrigatório por familyAccountId (RN-01 / §8.3): item de outro
    * workspace retorna 404.
+   *
+   * TAREFA 13: a resposta inclui o `paidBy` hidratado (join único), de modo
+   * que o frontend possa atualizar o card com as iniciais do pagador de forma
+   * otimista, sem refetch da fila.
    */
   async pay(
     familyAccountId: string,
     id: string,
     paidById: string,
     dto: PayItemDto,
-  ): Promise<PaymentItem> {
+  ): Promise<PaymentItemWithPayer> {
     const item = await this.findItemInScope(familyAccountId, id);
 
     if (item.status === PaymentStatus.PAID) {
@@ -140,6 +157,9 @@ export class PaymentItemService {
         paidAt,
         paidById,
         notes: dto.notes?.trim() ?? null,
+      },
+      include: {
+        paidBy: { select: { initials: true, avatarColor: true } },
       },
     });
   }

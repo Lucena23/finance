@@ -12,6 +12,9 @@
  * A ordenação dentro de cada grupo (dueDate ASC) é responsabilidade do
  * backend; o componente apenas preserva a ordem recebida.
  *
+ * TAREFA 13: cada item já chega com o badge do pagador (`paidBy`) hidratado
+ * pelo backend em uma única query (sem N+1), permitindo exibição imediata.
+ *
  * Estados tratados:
  *  - Carregando: skeleton de feedback.
  *  - Erro: mensagem com ação de tentar novamente.
@@ -25,7 +28,7 @@ import { AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { usePaymentQueue } from '@/hooks/usePaymentQueue';
-import type { PaymentItem } from '@/lib/api';
+import type { PaymentItemWithPayer } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { QueueGroup } from '@/lib/constants';
 
@@ -83,14 +86,14 @@ interface PaymentQueueProps {
   month?: number;
   year?: number;
   hideUpcoming?: boolean;
-  onSelectItem?: (item: PaymentItem) => void;
+  onSelectItem?: (item: PaymentItemWithPayer) => void;
 }
 
 export function PaymentQueue({ month, year, hideUpcoming, onSelectItem }: PaymentQueueProps): JSX.Element {
   const { overdue, currentMonth, upcoming, isEmpty, isLoading, error, refetch } =
     usePaymentQueue({ month, year });
 
-  const groups: Record<QueueGroup, PaymentItem[]> = {
+  const groups: Record<QueueGroup, PaymentItemWithPayer[]> = {
     [QueueGroup.OVERDUE]: overdue,
     [QueueGroup.CURRENT_MONTH]: currentMonth,
     [QueueGroup.UPCOMING]: upcoming,

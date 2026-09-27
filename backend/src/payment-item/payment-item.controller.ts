@@ -18,6 +18,7 @@ import { UpdatePaymentItemDto } from './dto/update-payment-item.dto';
 import {
   PaginatedHistory,
   PaymentItemService,
+  PaymentItemWithPayer,
   PaymentQueue,
 } from './payment-item.service';
 import { PaymentItem } from '@prisma/client';
@@ -37,6 +38,9 @@ export class PaymentItemController {
    * Retorna a fila de pagamentos pendentes do workspace, ordenada por urgência
    * (atraso → mês atual → futuros → dueDate ASC) — RN-06 / §8.5.
    * Acessível a ADMIN e MEMBER (RN-03).
+   *
+   * TAREFA 13: cada item já traz o badge do pagador (`paidBy`) hidratado em
+   * uma única query (sem N+1), permitindo exibição imediata na UI.
    */
   @Get('queue')
   getQueue(
@@ -61,6 +65,9 @@ export class PaymentItemController {
   /**
    * Quita um PaymentItem (RN-07 — TAREFA 25).
    * Acessível a ADMIN e MEMBER (RN-03): qualquer membro pode registrar baixa.
+   *
+   * TAREFA 13: a resposta inclui o `paidBy` hidratado, permitindo atualização
+   * otimista do card com as iniciais do pagador sem refetch da fila.
    */
   @Patch(':id/pay')
   pay(
@@ -68,7 +75,7 @@ export class PaymentItemController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
     @Body() dto: PayItemDto,
-  ): Promise<PaymentItem> {
+  ): Promise<PaymentItemWithPayer> {
     return this.paymentItemService.pay(
       scope.familyAccountId,
       id,

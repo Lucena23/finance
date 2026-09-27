@@ -1,9 +1,9 @@
 import { RefreshCw, CheckCircle2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { paymentItemsApi } from '@/lib/api';
+import { ApiError, paymentItemsApi } from '@/lib/api';
 import type { PaymentItemWithPayer } from '@/lib/api';
 import { PaymentCard } from './PaymentCard';
 
@@ -17,22 +17,26 @@ export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Elemen
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async (): Promise<void> => {
     try {
       setIsLoading(true);
       setError(null);
       const res = await paymentItemsApi.history({ month, year, limit: 100 });
       setItems(res.data);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao buscar histórico');
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : 'Erro ao buscar histórico';
+      setError(message);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [month, year]);
 
   useEffect(() => {
     void fetchHistory();
-  }, [month, year]);
+  }, [fetchHistory]);
 
   if (isLoading) {
     return (
@@ -49,7 +53,7 @@ export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Elemen
       <Card className="border-destructive/40">
         <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
           <p className="text-sm font-medium">{error}</p>
-          <Button onClick={fetchHistory} variant="outline" size="sm">
+          <Button onClick={() => void fetchHistory()} variant="outline" size="sm">
             <RefreshCw className="mr-2 h-4 w-4" /> Tentar novamente
           </Button>
         </CardContent>

@@ -11,6 +11,10 @@
  * Ao confirmar, dispara PATCH /payment-items/:id/pay (RN-07) e, em caso de
  * sucesso, invoca `onPaid` para que a fila seja atualizada pelo consumidor.
  *
+ * TAREFA 13: a resposta da quitação já traz o `paidBy` hidratado, permitindo
+ * que o consumidor atualize o card com as iniciais do pagador de forma
+ * otimista, sem refetch da fila.
+ *
  * REGRAS:
  *  - §8.2: valores monetários trafegam como inteiros (centavos). A conversão
  *    de/para exibição usa parseCurrencyToCents/formatCurrency (camada de
@@ -28,7 +32,7 @@ import { Label } from '@/components/ui/label';
 import {
   ApiError,
   paymentItemsApi,
-  type PaymentItem,
+  type PaymentItemWithPayer,
 } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { DEFAULT_TIMEZONE } from '@/lib/constants';
@@ -36,13 +40,13 @@ import { formatCurrency, parseCurrencyToCents } from '@/lib/utils';
 
 interface PayDrawerProps {
   /** Item de pagamento a ser quitado. Quando null, o drawer fica fechado. */
-  item: PaymentItem | null;
+  item: PaymentItemWithPayer | null;
   /** Controla a abertura do drawer. */
   open: boolean;
   /** Callback disparado ao fechar o drawer (sem quitar). */
   onOpenChange: (open: boolean) => void;
   /** Callback disparado após uma quitação bem-sucedida. */
-  onPaid?: (paid: PaymentItem) => void;
+  onPaid?: (paid: PaymentItemWithPayer) => void;
 }
 
 /**
