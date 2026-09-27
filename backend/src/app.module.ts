@@ -19,6 +19,7 @@ import { FamilyAccountModule } from './family-account/family-account.module';
 import { NotificationModule } from './notification/notification.module';
 import { PaymentItemModule } from './payment-item/payment-item.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { SupportModule } from './support/support.module';
 import { UserModule } from './user/user.module';
 
 @Module({
@@ -60,6 +61,8 @@ import { UserModule } from './user/user.module';
     PaymentItemModule,
     DashboardModule,
     NotificationModule,
+    // Suporte ao cliente via Telegram (TAREFA 21 / RN-14).
+    SupportModule,
   ],
   controllers: [AppController],
   providers: [

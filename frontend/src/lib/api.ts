@@ -193,6 +193,24 @@ export interface PushSubscriptionPayload {
 }
 
 /**
+ * Payload do formulário de Suporte (TAREFA 20 / RN-14).
+ * O `familyAccountId` NÃO é enviado — o escopo é derivado do JWT no backend.
+ */
+export interface SupportMessagePayload {
+  subject: string;
+  message: string;
+  contact?: string;
+}
+
+/**
+ * Resposta do endpoint POST /support (TAREFA 21).
+ */
+export interface SupportMessageResult {
+  delivered: boolean;
+  message: string;
+}
+
+/**
  * Erro normalizado da API — expõe status HTTP e mensagem legível.
  */
 export class ApiError extends Error {
@@ -450,6 +468,15 @@ export const notificationsApi = {
 };
 
 /**
+ * Suporte ao cliente via Telegram (TAREFA 20 / TAREFA 21 / RN-14).
+ * O backend é o único que fala com a API do Telegram.
+ */
+export const supportApi = {
+  send: (payload: SupportMessagePayload): Promise<SupportMessageResult> =>
+    post<SupportMessageResult>('/support', payload),
+};
+
+/**
  * Barrel de conveniência — acesso unificado à API tipada.
  */
 export const api = {
@@ -460,4 +487,5 @@ export const api = {
   paymentItems: paymentItemsApi,
   dashboard: dashboardApi,
   notifications: notificationsApi,
+  support: supportApi,
 };

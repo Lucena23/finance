@@ -7,8 +7,9 @@
  *    <AppShell> (Header + BottomNav + área de conteúdo — TAREFA 37).
  *
  * As telas internas (fila, dashboard, despesas, categorias, configurações,
- * relatórios) são implementadas nas tarefas subsequentes (38+). Placeholders
- * mínimos são renderizados para validar a navegação e o pipeline de build.
+ * relatórios, suporte) são implementadas nas tarefas subsequentes (38+).
+ * Placeholders mínimos são renderizados para validar a navegação e o
+ * pipeline de build.
  */
 
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
@@ -26,6 +27,7 @@ import { RegisterPage } from '@/pages/RegisterPage';
 import { ReportsPage } from '@/pages/ReportsPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { SupportPage } from '@/pages/SupportPage';
 
 /**
  * Componente raiz de roteamento da aplicação.
@@ -51,6 +53,8 @@ export function App(): JSX.Element {
             <Route path="/expenses" element={<ExpensesPage />} />
             <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            {/* Suporte ao cliente via Telegram (TAREFA 20 / RN-14) */}
+            <Route path="/support" element={<SupportPage />} />
           </Route>
         </Route>
 
