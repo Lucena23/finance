@@ -1,12 +1,22 @@
 /**
  * AuthContext.tsx — Contexto global de autenticação do Finanças Aksurim.
  *
- * Responsabilidades (TAREFA 35):
- *  - Persistir o token JWT e o usuário autenticado no localStorage.
+ * Responsabilidades:
+ *  - Persistir o token JWT e o usuário autenticado no sessionStorage.
  *  - Expor as operações login / register / logout.
  *  - Restaurar a sessão a partir do storage no bootstrap da aplicação.
  *  - Disponibilizar o estado de carregamento (isLoading) para que as rotas
  *    protegidas aguardem a hidratação antes de decidir redirecionar.
+ *
+ * TAREFA 9: A persistência migrou de `localStorage` para `sessionStorage`.
+ * Ao fechar a aba/navegador, a sessão é encerrada automaticamente — o
+ * usuário NÃO permanece logado ao retornar (BLUEPRINT §4).
+ *
+ * NOTA SOBRE WEB PUSH: A subscription de Web Push é mantida pelo navegador
+ * no `pushManager` do Service Worker (persistente, independente do storage
+ * de sessão). A migração para `sessionStorage` NÃO causa regressão nas
+ * subscriptions: o registro no backend permanece válido e o navegador segue
+ * entregando eventos `push` ao Service Worker mesmo com a aba fechada.
  *
  * REGRA (§8.1): proibido o uso de `any`. Todos os tipos são explícitos.
  */
@@ -60,15 +70,15 @@ export interface AuthContextValue {
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
 // ═══════════════════════════════════════════
-// PERSISTÊNCIA DO USUÁRIO
+// PERSISTÊNCIA DO USUÁRIO (sessionStorage — TAREFA 9)
 // ═══════════════════════════════════════════
 
 /**
- * Recupera o usuário persistido no localStorage, validando o formato mínimo.
+ * Recupera o usuário persistido no sessionStorage, validando o formato mínimo.
  */
 function readStoredUser(): SafeUser | null {
   try {
-    const raw = window.localStorage.getItem(AUTH_USER_STORAGE_KEY);
+    const raw = window.sessionStorage.getItem(AUTH_USER_STORAGE_KEY);
 
     if (!raw) {
       return null;
@@ -93,22 +103,22 @@ function readStoredUser(): SafeUser | null {
 }
 
 /**
- * Persiste o usuário autenticado no localStorage.
+ * Persiste o usuário autenticado no sessionStorage.
  */
 function writeStoredUser(user: SafeUser): void {
   try {
-    window.localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user));
+    window.sessionStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user));
   } catch {
     /* storage indisponível — ignora silenciosamente */
   }
 }
 
 /**
- * Remove o usuário persistido do localStorage.
+ * Remove o usuário persistido do sessionStorage.
  */
 function clearStoredUser(): void {
   try {
-    window.localStorage.removeItem(AUTH_USER_STORAGE_KEY);
+    window.sessionStorage.removeItem(AUTH_USER_STORAGE_KEY);
   } catch {
     /* storage indisponível — ignora silenciosamente */
   }

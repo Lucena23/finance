@@ -6,6 +6,7 @@
  *  - Feedback de erro da API exibido ao usuário (401, 400, rede).
  *  - Redirecionamento para a rota de origem (ou raiz) após autenticar.
  *  - Link para a tela de registro.
+ *  - Botão "Instalar App" (TAREFA 8) capturando o evento PWA.
  *
  * REGRA (§8.1): proibido o uso de `any`. Todos os tipos são explícitos.
  */
@@ -24,6 +25,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { InstallAppButton } from '@/components/pwa/InstallAppButton';
 import { useAuth } from '@/hooks/useAuth';
 import { ApiError } from '@/lib/api';
 import { isValidEmail, isNonEmpty } from '@/lib/validators';
@@ -202,6 +204,11 @@ export function LoginPage(): JSX.Element {
               {isSubmitting ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
+
+          {/* Botão "Instalar App" — captura o evento PWA (TAREFA 8) */}
+          <div className="mt-4">
+            <InstallAppButton />
+          </div>
 
           <p className="text-muted-foreground mt-6 text-center text-sm">
             Não tem uma conta?{' '}

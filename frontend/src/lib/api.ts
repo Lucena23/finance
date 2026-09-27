@@ -7,6 +7,18 @@
  *  - Tipagem ponta-a-ponta dos contratos REST (ARCHITECTURE §3.2).
  *
  * REGRA (§8.1): proibido o uso de `any`. Todos os payloads são tipados.
+ *
+ * TAREFA 9: A persistência do token JWT foi migrada de `localStorage` para
+ * `sessionStorage`. Isso garante que, ao fechar a aba/navegador, a sessão
+ * seja encerrada (comportamento esperado pelo produto — BLUEPRINT §4).
+ *
+ * NOTA SOBRE WEB PUSH: A subscription de Web Push NÃO reside no storage do
+ * frontend — ela é mantida pelo navegador no `pushManager` do Service Worker
+ * (persistente e independente do storage de sessão). Portanto, a migração
+ * para `sessionStorage` NÃO causa regressão nas subscriptions de push: o
+ * registro no backend (POST /notifications/subscribe) continua válido e o
+ * navegador segue entregando os eventos `push` ao Service Worker mesmo após
+ * o fechamento da aba. O `sessionStorage` apenas controla a sessão de UI.
  */
 
 import axios, {
@@ -184,37 +196,40 @@ export class ApiError extends Error {
 }
 
 // ═══════════════════════════════════════════
-// GERENCIAMENTO DE TOKEN
+// GERENCIAMENTO DE TOKEN (sessionStorage — TAREFA 9)
 // ═══════════════════════════════════════════
 
 /**
- * Recupera o token JWT persistido no localStorage.
+ * Recupera o token JWT persistido no sessionStorage.
+ *
+ * O sessionStorage é limpo automaticamente pelo navegador ao fechar a aba,
+ * garantindo que a sessão não persista entre visitas (BLUEPRINT §4).
  */
 export function getAuthToken(): string | null {
   try {
-    return window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+    return window.sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
   } catch {
     return null;
   }
 }
 
 /**
- * Persiste o token JWT no localStorage.
+ * Persiste o token JWT no sessionStorage.
  */
 export function setAuthToken(token: string): void {
   try {
-    window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+    window.sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
   } catch {
     /* storage indisponível — ignora silenciosamente */
   }
 }
 
 /**
- * Remove o token JWT do localStorage.
+ * Remove o token JWT do sessionStorage.
  */
 export function clearAuthToken(): void {
   try {
-    window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+    window.sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
   } catch {
     /* storage indisponível — ignora silenciosamente */
   }

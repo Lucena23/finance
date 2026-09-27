@@ -10,10 +10,15 @@
 export const API_BASE_URL: string =
   import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
-/** Chave de persistência do token JWT no localStorage. */
+/**
+ * Chave de persistência do token JWT no sessionStorage (TAREFA 9).
+ * O sessionStorage encerra a sessão ao fechar a aba/navegador.
+ */
 export const AUTH_TOKEN_STORAGE_KEY = 'aksurim.auth.token';
 
-/** Chave de persistência do usuário autenticado no localStorage. */
+/**
+ * Chave de persistência do usuário autenticado no sessionStorage (TAREFA 9).
+ */
 export const AUTH_USER_STORAGE_KEY = 'aksurim.auth.user';
 
 /** Timeout padrão das requisições HTTP (ms). */

@@ -7,6 +7,7 @@
  *  - Máscara progressiva de CPF durante a digitação.
  *  - Feedback de erro da API (409 e-mail/CPF duplicado, 400 validação).
  *  - Autenticação automática e redirecionamento após o cadastro.
+ *  - Botão "Instalar App" (TAREFA 8) capturando o evento PWA.
  *
  * REGRA (§8.1): proibido o uso de `any`. Todos os tipos são explícitos.
  */
@@ -25,6 +26,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { InstallAppButton } from '@/components/pwa/InstallAppButton';
 import { useAuth } from '@/hooks/useAuth';
 import { ApiError } from '@/lib/api';
 import {
@@ -344,6 +346,11 @@ export function RegisterPage(): JSX.Element {
               {isSubmitting ? 'Criando conta…' : 'Criar conta'}
             </Button>
           </form>
+
+          {/* Botão "Instalar App" — captura o evento PWA (TAREFA 8) */}
+          <div className="mt-4">
+            <InstallAppButton />
+          </div>
 
           <p className="text-muted-foreground mt-6 text-center text-sm">
             Já tem uma conta?{' '}

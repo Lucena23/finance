@@ -8,7 +8,7 @@ import { cn } from '@/lib/cn';
 import { NAV_ITEMS } from './nav-items';
 
 export function Header(): JSX.Element {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -22,9 +22,17 @@ export function Header(): JSX.Element {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuRef]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('aksurim.auth.token');
-    localStorage.removeItem('aksurim.auth.user');
+  /**
+   * TAREFA 9 — Logout centralizado via AuthContext.
+   *
+   * Antes: manipulava `localStorage` diretamente e fazia hard redirect,
+   * ignorando o estado do contexto e o storage de sessão (sessionStorage).
+   * Agora: delega ao `logout()` do AuthContext, que limpa token + usuário
+   * do sessionStorage e zera o estado React, garantindo consistência.
+   */
+  const handleLogout = (): void => {
+    logout();
+    setMenuOpen(false);
     window.location.href = '/login';
   };
 
