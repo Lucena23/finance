@@ -23,6 +23,9 @@ yarn-error.log*
 # Service Worker compilado (artefato gerado a partir de src/service-worker.ts)
 /frontend/public/service-worker.js
 
+# Relatórios de performance gerados (Lighthouse)
+/frontend/lighthouse-reports/
+
 # Environment (NUNCA versionar credenciais)
 .env
 .env.*
