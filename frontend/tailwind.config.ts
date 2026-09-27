@@ -12,6 +12,9 @@ const config: Config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['Montserrat', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -42,11 +45,24 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        // ═══════════════════════════════════════════
+        // IDENTIDADE VISUAL OFICIAL AKSURIM (RN-13)
+        // ═══════════════════════════════════════════
+        aksurim: {
+          // Primária / Ciano
+          primary: '#06777F',
+          // Aviso / Vermelho-Laranja
+          warning: '#FB4629',
+          // Destaque / Amarelo-Verde
+          highlight: '#DAF043',
+          // Fundo Escuro / Texto
+          dark: '#282828',
+        },
         // Indicadores de urgência da fila (RN-06 / §8.5)
         urgency: {
-          overdue: '#EF4444', // 🔴 Em atraso
-          current: '#3B82F6', // 🔵 Mês atual
-          upcoming: '#A855F7', // 🟣 Futuro
+          overdue: '#FB4629', // 🔴 Em atraso (Aksurim Warning)
+          current: '#06777F', // 🔵 Mês atual (Aksurim Primary)
+          upcoming: '#DAF043', // 🟢 Futuro (Aksurim Highlight)
         },
       },
       borderRadius: {
