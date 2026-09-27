@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ApiError, paymentItemsApi } from '@/lib/api';
 import type { PaymentItemWithPayer } from '@/lib/api';
 import { PaymentCard } from './PaymentCard';
+import { PaidDetailsDrawer } from './PaidDetailsDrawer';
 
 interface PaymentHistoryProps {
   month?: number;
@@ -16,6 +17,12 @@ export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Elemen
   const [items, setItems] = useState<PaymentItemWithPayer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // TAREFA 14: item selecionado para exibir os detalhes completos da quitação.
+  const [selectedItem, setSelectedItem] = useState<PaymentItemWithPayer | null>(
+    null,
+  );
+  const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
 
   const fetchHistory = useCallback(async (): Promise<void> => {
     try {
@@ -37,6 +44,19 @@ export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Elemen
   useEffect(() => {
     void fetchHistory();
   }, [fetchHistory]);
+
+  // TAREFA 14: abre o drawer de detalhes ao clicar em um card verde (pago).
+  const handleSelectItem = useCallback((item: PaymentItemWithPayer): void => {
+    setSelectedItem(item);
+    setIsDetailsOpen(true);
+  }, []);
+
+  const handleDetailsOpenChange = useCallback((open: boolean): void => {
+    setIsDetailsOpen(open);
+    if (!open) {
+      setSelectedItem(null);
+    }
+  }, []);
 
   if (isLoading) {
     return (
@@ -73,17 +93,27 @@ export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Elemen
   }
 
   return (
-    <ul className="flex flex-col gap-2">
-      {items.map((item) => (
-        <li key={item.id}>
-          <PaymentCard
-            item={item}
-            urgency="OVERDUE"
-            accentClass="border-l-emerald-500"
-            isHistory
-          />
-        </li>
-      ))}
-    </ul>
+    <>
+      <ul className="flex flex-col gap-2">
+        {items.map((item) => (
+          <li key={item.id}>
+            <PaymentCard
+              item={item}
+              urgency="OVERDUE"
+              accentClass="border-l-emerald-500"
+              isHistory
+              onSelect={handleSelectItem}
+            />
+          </li>
+        ))}
+      </ul>
+
+      {/* TAREFA 14: drawer com Data/Hora, Observação e Nome do Pagador. */}
+      <PaidDetailsDrawer
+        item={selectedItem}
+        open={isDetailsOpen}
+        onOpenChange={handleDetailsOpenChange}
+      />
+    </>
   );
 }
