@@ -6,6 +6,7 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MailerModule } from '@nestjs-modules/mailer';
 
+import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -63,6 +64,8 @@ import { UserModule } from './user/user.module';
     NotificationModule,
     // Suporte ao cliente via Telegram (TAREFA 21 / RN-14).
     SupportModule,
+    // Painel Aksurim — Admin Global cross-tenant (TAREFA 25 / RN-15).
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [
