@@ -85,6 +85,18 @@ export class PaymentItemController {
   }
 
   /**
+   * Desfaz a quitação de um PaymentItem (TAREFA 46).
+   * Acessível a ADMIN e MEMBER.
+   */
+  @Patch(':id/undo-pay')
+  undoPay(
+    @FamilyScopeParam() scope: FamilyScope,
+    @Param('id') id: string,
+  ): Promise<PaymentItem> {
+    return this.paymentItemService.undoPay(scope.familyAccountId, id);
+  }
+
+  /**
    * Ajuste fino do valor previsto de uma parcela (TAREFA 26).
    * Acessível a ADMIN e MEMBER (RN-03).
    */

@@ -179,18 +179,40 @@ export class ExpenseService {
       });
 
       // RN-05 / §8.4 — RECURRENT: novo valor base aplica-se apenas a futuros.
-      if (
-        expense.type === ExpenseType.RECURRENT &&
-        dto.totalAmount !== undefined
-      ) {
+      if (dto.totalAmount !== undefined && dto.totalAmount !== expense.totalAmount) {
+        let newExpectedAmount = dto.totalAmount;
+        let totalInst = 0;
+        
+        if (expense.type === 'INSTALLMENT') {
+          const firstItem = await tx.paymentItem.findFirst({ where: { expenseId: id } });
+          if (firstItem && firstItem.totalInstallments > 0) {
+            totalInst = firstItem.totalInstallments;
+            newExpectedAmount = Math.floor(dto.totalAmount / totalInst);
+          }
+        }
+
         await tx.paymentItem.updateMany({
           where: {
             expenseId: id,
             status: 'PENDING',
-            dueDate: { gt: this.today() },
           },
-          data: { expectedAmount: dto.totalAmount },
+          data: { expectedAmount: newExpectedAmount },
         });
+
+        if (expense.type === 'INSTALLMENT' && totalInst > 0) {
+          const lastItem = await tx.paymentItem.findFirst({
+            where: { expenseId: id, installmentNumber: totalInst },
+          });
+          if (lastItem && lastItem.status === 'PENDING') {
+            const remainder = dto.totalAmount - (newExpectedAmount * totalInst);
+            if (remainder > 0) {
+              await tx.paymentItem.update({
+                where: { id: lastItem.id },
+                data: { expectedAmount: newExpectedAmount + remainder },
+              });
+            }
+          }
+        }
       }
 
       return updated;

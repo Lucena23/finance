@@ -23,6 +23,7 @@
  * REGRA (§8.1): proibido o uso de `any`. Tipos explícitos em todo o módulo.
  */
 
+import { useEffect } from 'react';
 import { AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -92,6 +93,12 @@ interface PaymentQueueProps {
 export function PaymentQueue({ month, year, hideUpcoming, onSelectItem }: PaymentQueueProps): JSX.Element {
   const { overdue, currentMonth, upcoming, isEmpty, isLoading, error, refetch } =
     usePaymentQueue({ month, year });
+
+  useEffect(() => {
+    const handleUndone = () => { void refetch(); };
+    window.addEventListener('payment-undone', handleUndone);
+    return () => window.removeEventListener('payment-undone', handleUndone);
+  }, [refetch]);
 
   const groups: Record<QueueGroup, PaymentItemWithPayer[]> = {
     [QueueGroup.OVERDUE]: overdue,

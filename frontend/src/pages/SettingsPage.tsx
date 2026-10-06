@@ -107,7 +107,6 @@ export function SettingsPage(): JSX.Element {
               />
               <input 
                 required 
-                type="password"
                 placeholder="Senha inicial" 
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 value={newUserPassword}
@@ -128,21 +127,21 @@ export function SettingsPage(): JSX.Element {
           ) : (
             <ul className="mt-4 flex flex-col gap-3">
               {users.map(user => (
-                <li key={user.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent transition-colors">
+                <li key={user.id} className="group flex items-center justify-between p-3 rounded-lg border bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
                   <div className="flex items-center gap-3">
                     <div 
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white font-bold text-sm shadow-sm"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-950 font-bold text-sm shadow-sm"
                       style={{ backgroundColor: user.avatarColor || '#3b82f6' }}
                     >
                       {user.initials}
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-foreground">{user.name}</span>
-                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                      <span className="text-sm font-semibold text-foreground group-hover:text-accent-foreground transition-colors">{user.name}</span>
+                      <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/80 transition-colors">{user.email}</span>
                     </div>
                   </div>
                   <div>
-                    <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full ${user.role === 'ADMIN' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                    <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full transition-colors ${user.role === 'ADMIN' ? 'bg-primary/10 text-primary group-hover:bg-primary/20 group-hover:text-primary' : 'bg-muted text-muted-foreground group-hover:bg-black/10 group-hover:text-accent-foreground/80'}`}>
                       {user.role}
                     </span>
                   </div>

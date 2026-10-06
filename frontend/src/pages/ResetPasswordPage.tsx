@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { ApiError, authApi } from '@/lib/api';
 import { isValidPassword } from '@/lib/validators';
@@ -92,9 +92,7 @@ export function ResetPasswordPage(): JSX.Element {
 
               <div className="space-y-2">
                 <Label htmlFor="password">Nova Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
+                <PasswordInput id="password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -121,7 +119,7 @@ export function ResetPasswordPage(): JSX.Element {
       </Card>
       
       <footer className="mt-8 text-center text-xs text-muted-foreground/60">
-        <p>&copy; {new Date().getFullYear()} Aksurim Software.</p>
+        <p>&copy; 2024 - {new Date().getFullYear()} Aksurim Software.</p>
         <p>Marca Registrada. Todos os direitos reservados.</p>
       </footer>
     </main>

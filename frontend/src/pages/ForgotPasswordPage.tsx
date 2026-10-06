@@ -121,7 +121,7 @@ export function ForgotPasswordPage(): JSX.Element {
       </Card>
       
       <footer className="mt-8 text-center text-xs text-muted-foreground/60">
-        <p>&copy; {new Date().getFullYear()} Aksurim Software.</p>
+        <p>&copy; 2024 - {new Date().getFullYear()} Aksurim Software.</p>
         <p>Marca Registrada. Todos os direitos reservados.</p>
       </footer>
     </main>

@@ -165,6 +165,32 @@ export class PaymentItemService {
   }
 
   /**
+   * Desfaz a quitação de um PaymentItem (TAREFA 46).
+   * Retorna o item ao estado PENDING.
+   */
+  async undoPay(
+    familyAccountId: string,
+    id: string,
+  ): Promise<PaymentItem> {
+    const item = await this.findItemInScope(familyAccountId, id);
+
+    if (item.status === 'PENDING') {
+      throw new BadRequestException('Este item não está quitado.');
+    }
+
+    return this.prisma.paymentItem.update({
+      where: { id },
+      data: {
+        status: 'PENDING',
+        paidAmount: null,
+        paidAt: null,
+        paidById: null,
+        notes: null,
+      },
+    });
+  }
+
+  /**
    * Ajuste fino do valor previsto de uma parcela (TAREFA 26).
    *
    * Atualiza expectedAmount de um item PENDING. Valida expectedAmount > 0.

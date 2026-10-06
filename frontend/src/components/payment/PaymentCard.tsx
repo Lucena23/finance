@@ -83,22 +83,22 @@ export function PaymentCard({
       data-testid="payment-card"
       data-urgency={urgency}
       className={cn(
-        'bg-card flex items-center justify-between gap-3 rounded-lg border border-l-4 p-3 shadow-sm transition-colors',
+        'group bg-card text-card-foreground flex items-center justify-between gap-3 rounded-lg border border-l-4 p-3 shadow-sm transition-colors',
         accentClass,
         isInteractive &&
-          'hover:bg-accent focus-visible:ring-ring cursor-pointer focus-visible:outline-none focus-visible:ring-2',
+          'hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring cursor-pointer focus-visible:outline-none focus-visible:ring-2',
       )}
     >
       <div className="flex min-w-0 flex-col gap-1">
-        <span className="truncate text-sm font-semibold">
+        <span className="truncate text-sm font-semibold group-hover:text-accent-foreground">
           {item.expense?.title || 'Despesa Sem Nome'}
         </span>
-        <span className="text-muted-foreground truncate text-xs">
+        <span className="text-muted-foreground group-hover:text-accent-foreground/80 truncate text-xs transition-colors">
           {installmentLabel}
         </span>
-        <span className="text-muted-foreground flex items-center gap-1 text-[11px]">
+        <span className="text-muted-foreground group-hover:text-accent-foreground/80 flex items-center gap-1 text-[11px] transition-colors">
           {isHistory ? (
-             <span className="text-emerald-600 font-medium">Pago em {formatDate(item.paidAt || item.dueDate)}</span>
+             <span className="text-emerald-600 group-hover:text-emerald-800 font-medium transition-colors">Pago em {formatDate(item.paidAt || item.dueDate)}</span>
           ) : (
              <>
                {isRecurrent ? (
@@ -110,13 +110,13 @@ export function PaymentCard({
              </>
           )}
         </span>
-        <span className="text-muted-foreground text-[10px]">
+        <span className="text-muted-foreground group-hover:text-accent-foreground/80 text-[10px] transition-colors">
           {isHistory ? 'Quitado' : URGENCY_LABEL[urgency as string]}
         </span>
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-1">
-        <span className={cn("text-sm font-bold tabular-nums", isHistory && "text-emerald-700")}>
+        <span className={cn("text-sm font-bold tabular-nums transition-colors group-hover:text-accent-foreground", isHistory && "text-emerald-700 group-hover:text-emerald-900")}>
           {formatCurrency(isHistory ? (item.paidAmount ?? item.expectedAmount) : item.expectedAmount)}
         </span>
 

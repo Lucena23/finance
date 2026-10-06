@@ -36,6 +36,10 @@ interface PaidDetailsDrawerProps {
   open: boolean;
   /** Callback disparado ao alterar o estado de abertura. */
   onOpenChange: (open: boolean) => void;
+  /** Callback disparado ao desfazer o pagamento. */
+  onUndoPay?: (item: PaymentItemWithPayer) => void;
+  /** Estado de carregamento do desfazimento */
+  isUndoing?: boolean;
 }
 
 /**
@@ -73,6 +77,8 @@ export function PaidDetailsDrawer({
   item,
   open,
   onOpenChange,
+  onUndoPay,
+  isUndoing,
 }: PaidDetailsDrawerProps): JSX.Element {
   const payer = item?.paidBy ?? null;
   const paidAmount = item?.paidAmount ?? item?.expectedAmount ?? 0;
@@ -199,11 +205,24 @@ export function PaidDetailsDrawer({
             </div>
           ) : null}
 
-          <Dialog.Close asChild>
-            <Button type="button" variant="outline" className="w-full">
-              Fechar
-            </Button>
-          </Dialog.Close>
+          <div className="flex flex-col gap-2 mt-2">
+             <Dialog.Close asChild>
+               <Button type="button" variant="outline" className="w-full">
+                 Fechar
+               </Button>
+             </Dialog.Close>
+             {onUndoPay && item ? (
+               <Button 
+                 type="button" 
+                 variant="ghost" 
+                 className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive" 
+                 onClick={() => onUndoPay(item)}
+                 disabled={isUndoing}
+               >
+                 {isUndoing ? 'Desfazendo...' : 'Desfazer Quitação'}
+               </Button>
+             ) : null}
+          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

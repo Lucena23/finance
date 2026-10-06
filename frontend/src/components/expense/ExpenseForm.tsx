@@ -198,6 +198,7 @@ export function ExpenseForm({
   const [categoryId, setCategoryId] = useState<string>('');
   const [dueDate, setDueDate] = useState<string>(todayIsoDate());
   const [installmentsInput, setInstallmentsInput] = useState<string>('2');
+  const [amountInputMode, setAmountInputMode] = useState<'total' | 'parcel'>('total');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -212,6 +213,7 @@ export function ExpenseForm({
     // erro/submissão anterior bloqueie a próxima edição (TAREFA 12).
     setError(null);
     setIsSubmitting(false);
+    setAmountInputMode('total');
 
     if (expense) {
       setTitle(typeof expense.title === 'string' ? expense.title : '');
@@ -243,15 +245,22 @@ export function ExpenseForm({
     }
   }, [expense, categoryId, categories]);
 
-  const totalAmountCents = useMemo<number>(
-    () => parseCurrencyToCents(amountInput),
-    [amountInput],
-  );
-
   const totalInstallments = useMemo<number>(() => {
     const parsed = Number.parseInt(installmentsInput, 10);
     return Number.isFinite(parsed) ? parsed : 0;
   }, [installmentsInput]);
+
+  const parsedAmountCents = useMemo<number>(
+    () => parseCurrencyToCents(amountInput),
+    [amountInput],
+  );
+  
+  const totalAmountCents = useMemo<number>(() => {
+    if (type === ExpenseType.INSTALLMENT && !isEditing && amountInputMode === 'parcel' && totalInstallments > 0) {
+       return parsedAmountCents * totalInstallments;
+    }
+    return parsedAmountCents;
+  }, [parsedAmountCents, type, isEditing, amountInputMode, totalInstallments]);
 
   const isInstallment = type === ExpenseType.INSTALLMENT;
   const isRecurrent = type === ExpenseType.RECURRENT;
@@ -368,15 +377,15 @@ export function ExpenseForm({
                   aria-pressed={isSelected}
                   data-testid={`expense-form-type-${option.value}`}
                   className={cn(
-                    'flex flex-col gap-1 rounded-md border p-3 text-left transition-colors',
+                    'group flex flex-col gap-1 rounded-md border p-3 text-left transition-colors',
                     'focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2',
                     isSelected
-                      ? 'border-primary bg-primary/5'
-                      : 'border-input hover:bg-accent',
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-input hover:bg-accent hover:text-accent-foreground',
                   )}
                 >
-                  <span className="text-sm font-semibold">{option.label}</span>
-                  <span className="text-muted-foreground text-xs">
+                  <span className={cn("text-sm font-semibold transition-colors", !isSelected && "group-hover:text-accent-foreground")}>{option.label}</span>
+                  <span className={cn("text-muted-foreground text-xs transition-colors", !isSelected && "group-hover:text-accent-foreground/80")}>
                     {option.hint}
                   </span>
                 </button>
@@ -388,8 +397,26 @@ export function ExpenseForm({
 
       {/* Valor total */}
       <div className="flex flex-col gap-2">
+        {!isEditing && isInstallment ? (
+          <fieldset className="flex flex-col gap-2 mb-2 p-3 bg-muted/30 border border-border rounded-md">
+            <legend className="text-sm font-semibold leading-none mb-2">O valor que você vai digitar é referente a:</legend>
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" className="accent-primary w-4 h-4" checked={amountInputMode === 'total'} onChange={() => setAmountInputMode('total')} />
+                Valor TOTAL da compra
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="radio" className="accent-primary w-4 h-4" checked={amountInputMode === 'parcel'} onChange={() => setAmountInputMode('parcel')} />
+                Valor da PARCELA
+              </label>
+            </div>
+          </fieldset>
+        ) : null}
+
         <Label htmlFor={amountFieldId}>
-          {isInstallment ? 'Valor total (R$) *' : 'Valor (R$) *'}
+          {isInstallment && !isEditing 
+             ? (amountInputMode === 'total' ? 'Digite o Valor Total (R$) *' : 'Digite o Valor de 1 Parcela (R$) *')
+             : 'Valor (R$) *'}
         </Label>
         <Input
           id={amountFieldId}
@@ -402,14 +429,17 @@ export function ExpenseForm({
           data-testid="expense-form-amount"
         />
         {isInstallment && isAmountValid && totalInstallments >= 2 ? (
-          <p className="text-muted-foreground text-xs">
-            {totalInstallments}x de aproximadamente{' '}
-            {new Intl.NumberFormat('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-            }).format(Math.floor(totalAmountCents / totalInstallments) / 100)}
-            .
-          </p>
+          <div className="bg-primary/10 border border-primary/20 p-3 rounded-md mt-1">
+            <p className="text-foreground font-semibold text-sm">
+              Custo Total desta Despesa: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalAmountCents / 100)}
+            </p>
+            <p className="text-muted-foreground text-xs mt-1">
+              O sistema vai gerar {totalInstallments} parcelas de {new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+              }).format(Math.floor(totalAmountCents / totalInstallments) / 100)} cada.
+            </p>
+          </div>
         ) : null}
       </div>
 

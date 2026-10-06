@@ -24,6 +24,8 @@ export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Elemen
   );
   const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
 
+  const [isUndoing, setIsUndoing] = useState(false);
+
   const fetchHistory = useCallback(async (): Promise<void> => {
     try {
       setIsLoading(true);
@@ -43,6 +45,24 @@ export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Elemen
 
   useEffect(() => {
     void fetchHistory();
+  }, [fetchHistory]);
+
+  const handleUndoPay = useCallback(async (item: PaymentItemWithPayer) => {
+    try {
+      setIsUndoing(true);
+      await paymentItemsApi.undoPay(item.id);
+      setIsDetailsOpen(false);
+      setSelectedItem(null);
+      // Recarrega todo o histórico (e possivelmente a fila precisará ser recarregada,
+      // mas isso demandaria um evento global ou recarregar a page inteira)
+      void fetchHistory();
+      // Forçar refresh da Queue - podemos disparar um custom event
+      window.dispatchEvent(new CustomEvent('payment-undone'));
+    } catch (err) {
+      alert('Não foi possível desfazer a quitação.');
+    } finally {
+      setIsUndoing(false);
+    }
   }, [fetchHistory]);
 
   // TAREFA 14: abre o drawer de detalhes ao clicar em um card verde (pago).
@@ -113,6 +133,8 @@ export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Elemen
         item={selectedItem}
         open={isDetailsOpen}
         onOpenChange={handleDetailsOpenChange}
+        onUndoPay={handleUndoPay}
+        isUndoing={isUndoing}
       />
     </>
   );

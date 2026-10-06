@@ -25,6 +25,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { InstallAppButton } from '@/components/pwa/InstallAppButton';
 import { useAuth } from '@/hooks/useAuth';
@@ -261,10 +262,8 @@ export function RegisterPage(): JSX.Element {
 
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
+              <PasswordInput id="password"
                 name="password"
-                type="password"
                 autoComplete="new-password"
                 placeholder="Mínimo 8 caracteres"
                 value={form.password}
@@ -366,7 +365,7 @@ export function RegisterPage(): JSX.Element {
 
       {/* Direitos Autorais e Marca Registrada */}
       <footer className="mt-8 text-center text-xs text-muted-foreground/60">
-        <p>&copy; {new Date().getFullYear()} Aksurim Software.</p>
+        <p>&copy; 2024 - {new Date().getFullYear()} Aksurim Software.</p>
         <p>Marca Registrada. Todos os direitos reservados.</p>
       </footer>
     </main>

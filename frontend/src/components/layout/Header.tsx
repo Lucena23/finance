@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
-import { LogOut } from 'lucide-react';
+import { LogOut, ShieldCheck } from 'lucide-react';
 
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/cn';
@@ -109,6 +109,21 @@ export function Header(): JSX.Element {
                   Agora: texto claro (foreground) com ícone em destaque Aksurim e
                   fundo de aviso translúcido no hover, garantindo legibilidade AA.
                 */}
+                {user.isGlobalAdmin && (
+                  <NavLink
+                    to="/admin"
+                    onClick={() => setMenuOpen(false)}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm font-medium',
+                      'text-foreground transition-colors mb-1',
+                      'hover:bg-slate-800 hover:text-slate-50',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                    )}
+                  >
+                    <ShieldCheck aria-hidden="true" className="h-4 w-4 text-primary" />
+                    Painel Aksurim
+                  </NavLink>
+                )}
                 <button
                   onClick={handleLogout}
                   className={cn(

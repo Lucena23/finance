@@ -24,13 +24,11 @@
  */
 
 import {
-  BarChart3,
   LayoutDashboard,
   LifeBuoy,
   ListChecks,
   Receipt,
   Settings,
-  ShieldCheck,
   Tags,
   type LucideIcon,
 } from 'lucide-react';
@@ -71,12 +69,6 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { to: '/categories', label: 'Categorias', icon: Tags },
   { to: '/settings', label: 'Config', icon: Settings },
   { to: '/support', label: 'Suporte', icon: LifeBuoy },
-  {
-    to: '/admin',
-    label: 'Aksurim',
-    icon: ShieldCheck,
-    globalAdminOnly: true,
-  },
 ] as const;
 
 /**

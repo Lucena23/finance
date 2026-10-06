@@ -270,7 +270,14 @@ export class ReportsService {
       for (let i = 0; i < paymentItems.length; i++) {
         const item = paymentItems[i];
         
-        if (currentY > 740) {
+        const hasDesc = !!item.expense.description;
+        const hasNotes = !!item.notes;
+        let extraLines = 0;
+        if (hasDesc) extraLines++;
+        if (hasNotes) extraLines++;
+        const rowHeight = 24 + (extraLines * 12);
+
+        if (currentY + rowHeight > 740) {
           doc.addPage();
           currentY = margin;
           
@@ -286,12 +293,12 @@ export class ReportsService {
         }
 
         if (i % 2 === 0) {
-          doc.rect(margin, currentY - 4, contentWidth, 24).fill('#F8FAFC');
+          doc.rect(margin, currentY - 4, contentWidth, rowHeight).fill('#F8FAFC');
         }
 
         const dateStr = item.dueDate.toLocaleDateString('pt-BR');
         let title = item.expense.title;
-        if (title.length > 20) title = title.substring(0, 20) + '...';
+        if (title.length > 25) title = title.substring(0, 25) + '...';
         
         // NOVO: Adicionado coluna com nome do pagador
         let payerName = item.status === PaymentStatus.PAID && item.paidBy ? item.paidBy.name : '--';
@@ -315,17 +322,32 @@ export class ReportsService {
 
         const textY = currentY + 2;
 
+        doc.font('Helvetica-Bold').fontSize(9).fillColor(colors.dark)
+          .text(title, cols.desc, textY);
+          
+        let descY = textY + 12;
+        if (hasDesc) {
+           let descText = item.expense.description as string;
+           if (descText.length > 35) descText = descText.substring(0, 35) + '...';
+           doc.font('Helvetica').fontSize(8).fillColor(colors.gray).text(descText, cols.desc, descY);
+           descY += 12;
+        }
+        if (hasNotes) {
+           let notesText = `Obs: ${item.notes}`;
+           if (notesText.length > 35) notesText = notesText.substring(0, 35) + '...';
+           doc.font('Helvetica-Oblique').fontSize(8).fillColor(colors.gray).text(notesText, cols.desc, descY);
+        }
+
         doc.font('Helvetica').fontSize(9).fillColor(colors.dark)
           .text(dateStr, cols.date + 5, textY) // 5px padding
-          .text(title, cols.desc, textY)
           .text(payerName, cols.payer, textY)
           .text(catStr, cols.cat, textY);
           
         doc.font('Helvetica-Bold').fillColor(statusColor).text(statusText, cols.status, textY);
         doc.font('Helvetica').fillColor(colors.dark).text(valStr, cols.val, textY);
 
-        doc.moveTo(margin, currentY + 20).lineTo(margin + contentWidth, currentY + 20).lineWidth(0.5).strokeColor('#F1F5F9').stroke();
-        currentY += 24;
+        doc.moveTo(margin, currentY + rowHeight - 4).lineTo(margin + contentWidth, currentY + rowHeight - 4).lineWidth(0.5).strokeColor('#F1F5F9').stroke();
+        currentY += rowHeight;
       }
     }
 

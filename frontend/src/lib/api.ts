@@ -505,6 +505,8 @@ export const paymentItemsApi = {
     get<Paginated<PaymentItemWithPayer>>('/payment-items/history', { params }),
   pay: (id: string, payload: PayItemPayload): Promise<PaymentItemWithPayer> =>
     patch<PaymentItemWithPayer>(`/payment-items/${id}/pay`, payload),
+  undoPay: (id: string): Promise<PaymentItem> =>
+    patch<PaymentItem>(`/payment-items/${id}/undo-pay`, {}),
   updateExpectedAmount: (
     id: string,
     expectedAmount: number,

@@ -94,6 +94,11 @@ export function DashboardPage(): JSX.Element {
       {/* Cartões do Mês Selecionado */}
       <SummaryCards month={month} year={selectedYear} />
 
+      {/* Banner de Ads animado - Medium Rectangle IAB 300x250 (TAREFA 19) */}
+      <div className="pt-2 pb-2">
+        <AnimatedAdBanner type="rectangle" />
+      </div>
+
       {/* Qualidade do Histórico Anual */}
       <YearlyQualityCard year={selectedYear} />
 
@@ -103,10 +108,7 @@ export function DashboardPage(): JSX.Element {
       {/* Evolução Mensal */}
       <MonthlyBars year={selectedYear} />
 
-      {/* Banner de Ads animado - Medium Rectangle IAB 300x250 */}
-      <div className="pt-4 pb-8">
-        <AnimatedAdBanner type="rectangle" />
-      </div>
+      
     </section>
   );
 }
