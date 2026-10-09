@@ -36,10 +36,10 @@ export function LandingPage(): JSX.Element {
           
           <div className="container mx-auto px-4 relative z-10 text-center">
             <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-              Domine o seu dinheiro.<br />Conecte a sua família.
+              Domine o seu dinheiro.<br />Prospere em família.
             </h1>
             <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-              O Aksurim Controle organiza as suas contas em uma fila inteligente para você nunca mais pagar juros. Feito para o seu bolso, perfeito para dividir.
+              O Aksurim Controle organiza as suas contas em uma fila inteligente para você nunca mais pagar juros. Feito para o seu bolso, perfeito para utilizar em família.
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
@@ -98,7 +98,7 @@ export function LandingPage(): JSX.Element {
                     <h3 className="text-2xl font-bold">Fila Inteligente</h3>
                   </div>
                   <p className="text-slate-400 leading-relaxed">
-                    Não perca tempo caçando boletos. Nosso algoritmo prioriza o que está atrasado e o que vence hoje.
+                    Não perca tempo procurando boletos e anotações. Nosso algoritmo prioriza o que está atrasado e o que vence hoje.
                   </p>
                 </div>
               </div>
@@ -116,7 +116,7 @@ export function LandingPage(): JSX.Element {
                     <h3 className="text-2xl font-bold">Gestão Compartilhada</h3>
                   </div>
                   <p className="text-slate-400 leading-relaxed">
-                    Sincronize as finanças da casa. Saiba exatamente quem pagou o quê, com total transparência e sem atritos.
+                    Sincronize as finanças da casa. Saiba exatamente quem pagou e o quê foi pago, com total transparência e sem atritos.
                   </p>
                 </div>
               </div>
@@ -134,7 +134,7 @@ export function LandingPage(): JSX.Element {
                     <h3 className="text-2xl font-bold">Inteligência Visual</h3>
                   </div>
                   <p className="text-slate-400 leading-relaxed">
-                    Transforme dados em decisões com gráficos automáticos, visão de fluxo de caixa e relatórios corporativos.
+                    Transforme dados em decisões com gráficos automáticos, visão de fluxo de receita e relatórios corporativos.
                   </p>
                 </div>
               </div>
