@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
-import { LogOut, ShieldCheck } from 'lucide-react';
+import { LogOut, ShieldCheck, Globe } from 'lucide-react';
 
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/cn';
@@ -52,7 +52,7 @@ export function Header(): JSX.Element {
         <div className="flex items-center gap-2">
           <img
             src="/logo-full.png"
-            alt="Finanças Aksurim"
+            alt="Aksurim Controle"
             className="h-6"
           />
         </div>
@@ -124,6 +124,22 @@ export function Header(): JSX.Element {
                     Painel Aksurim
                   </NavLink>
                 )}
+                
+                <a
+                  href="/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setMenuOpen(false)}
+                  className={cn(
+                    'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm font-medium',
+                    'text-foreground transition-colors mb-1',
+                    'hover:bg-slate-800 hover:text-slate-50',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                  )}
+                >
+                  <Globe aria-hidden="true" className="h-4 w-4 text-slate-400" />
+                  Site Oficial
+                </a>
                 <button
                   onClick={handleLogout}
                   className={cn(

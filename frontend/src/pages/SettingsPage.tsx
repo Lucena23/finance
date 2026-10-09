@@ -128,20 +128,20 @@ export function SettingsPage(): JSX.Element {
             <ul className="mt-4 flex flex-col gap-3">
               {users.map(user => (
                 <li key={user.id} className="group flex items-center justify-between p-3 rounded-lg border bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
                     <div 
                       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-950 font-bold text-sm shadow-sm"
                       style={{ backgroundColor: user.avatarColor || '#3b82f6' }}
                     >
                       {user.initials}
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-foreground group-hover:text-accent-foreground transition-colors">{user.name}</span>
-                      <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/80 transition-colors">{user.email}</span>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-sm font-semibold text-foreground group-hover:text-accent-foreground transition-colors truncate">{user.name}</span>
+                      <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/80 transition-colors truncate">{user.email}</span>
                     </div>
                   </div>
-                  <div>
-                    <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full transition-colors ${user.role === 'ADMIN' ? 'bg-primary/10 text-primary group-hover:bg-primary/20 group-hover:text-primary' : 'bg-muted text-muted-foreground group-hover:bg-black/10 group-hover:text-accent-foreground/80'}`}>
+                  <div className="shrink-0 whitespace-nowrap">
+                    <span className={`text-[10px] uppercase shrink-0 font-bold px-2 py-1 rounded-full transition-colors ${user.role === 'ADMIN' ? 'bg-primary/10 text-primary group-hover:bg-primary/20 group-hover:text-primary' : 'bg-muted text-muted-foreground group-hover:bg-black/10 group-hover:text-accent-foreground/80'}`}>
                       {user.role}
                     </span>
                   </div>

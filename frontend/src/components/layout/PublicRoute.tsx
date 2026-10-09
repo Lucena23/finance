@@ -25,7 +25,7 @@ export function PublicRoute(): JSX.Element {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/queue" replace />;
   }
 
   return <Outlet />;

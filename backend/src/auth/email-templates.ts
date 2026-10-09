@@ -24,7 +24,7 @@ export const getWelcomeEmailHtml = (name: string, verifyLink: string, frontendUr
     </div>
     <div class="content">
       <div class="title">Olá, ${name}!</div>
-      <p>Obrigado por criar sua conta no <span class="highlight">Finanças Aksurim</span>. Estamos muito felizes em tê-lo conosco.</p>
+      <p>Obrigado por criar sua conta no <span class="highlight">Aksurim Controle</span>. Estamos muito felizes em tê-lo conosco.</p>
       <p>Para garantir a segurança da sua conta e liberar seu acesso completo à plataforma, precisamos que você confirme este endereço de e-mail.</p>
       
       <div class="button-container">
@@ -51,7 +51,7 @@ export const getVerificationSuccessHtml = (frontendUrl: string): string => `
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>E-mail Verificado | Finanças Aksurim</title>
+  <title>E-mail Verificado | Aksurim Controle</title>
   <style>
     body { font-family: 'Inter', 'Helvetica Neue', sans-serif; background-color: #0B0E14; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; color: #FFFFFF; }
     .card { background-color: #171A21; padding: 50px 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; max-width: 480px; width: 100%; border-top: 4px solid #DAF043; }
@@ -76,7 +76,7 @@ export const getVerificationSuccessHtml = (frontendUrl: string): string => `
     </div>
     
     <h1>E-mail Verificado com Sucesso!</h1>
-    <p>Parabéns! Sua conta no Finanças Aksurim foi totalmente ativada. Você já pode fechar esta tela e acessar seu painel.</p>
+    <p>Parabéns! Sua conta no Aksurim Controle foi totalmente ativada. Você já pode fechar esta tela e acessar seu painel.</p>
     
     <a href="${frontendUrl}" class="btn">Acessar a Plataforma</a>
   </div>

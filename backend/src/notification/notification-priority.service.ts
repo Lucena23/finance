@@ -196,7 +196,7 @@ export class NotificationPriorityService {
     });
 
     const payload = JSON.stringify({
-      title: 'Finanças Aksurim',
+      title: 'Aksurim Controle',
       body: message,
       priority,
       pendingCount,

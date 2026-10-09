@@ -59,7 +59,7 @@ export function LoginPage(): JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const redirectTo =
-    (location.state as LocationState | null)?.from?.pathname ?? '/';
+    (location.state as LocationState | null)?.from?.pathname ?? '/queue';
 
   /**
    * Valida os campos do formulário e retorna o mapa de erros.

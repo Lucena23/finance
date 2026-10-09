@@ -109,6 +109,15 @@ export class AuthService {
         },
       });
 
+      // Categorias padrão (Moradia, Alimentação, Transporte)
+      await tx.category.createMany({
+        data: [
+          { name: 'Moradia', color: '#3b82f6', icon: 'Home', familyAccountId: family.id },
+          { name: 'Alimentação', color: '#f59e0b', icon: 'ShoppingCart', familyAccountId: family.id },
+          { name: 'Transporte', color: '#10b981', icon: 'CarFront', familyAccountId: family.id },
+        ],
+      });
+
       const user = await tx.user.create({
         data: {
           name: dto.name.trim(),
@@ -132,7 +141,7 @@ export class AuthService {
     
     await this.mailerService.sendMail({
       to: email,
-      subject: 'Bem-vindo ao Finanças Aksurim! Confirme seu e-mail.',
+      subject: 'Bem-vindo ao Aksurim Controle! Confirme seu e-mail.',
       html: emailHtml,
     }).catch((err) => console.error('Erro ao enviar e-mail de boas vindas:', err));
 
@@ -208,7 +217,7 @@ export class AuthService {
 
     await this.mailerService.sendMail({
       to: user.email,
-      subject: 'Recuperação de Senha - Finanças Aksurim',
+      subject: 'Recuperação de Senha - Aksurim Controle',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px; background-color: #ffffff;">
           <div style="text-align: center; margin-bottom: 20px;">
@@ -216,7 +225,7 @@ export class AuthService {
           </div>
           <h2 style="color: #111827; text-align: center;">Olá, ${user.name}</h2>
           <p style="color: #4b5563; font-size: 16px; line-height: 1.5; text-align: center;">
-            Você solicitou a recuperação de senha da sua conta no <strong>Finanças Aksurim</strong>.
+            Você solicitou a recuperação de senha da sua conta no <strong>Aksurim Controle</strong>.
           </p>
           <div style="text-align: center; margin: 30px 0;">
             <a href="${resetUrl}" style="background-color: #D9F924; color: #111827; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px; display: inline-block;">

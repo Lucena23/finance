@@ -38,8 +38,15 @@ function currentPeriod(): { month: number; year: number } {
 }
 
 export function DashboardPage(): JSX.Element {
-  const { month, year: currentYear } = useMemo(currentPeriod, []);
+    const { month, year: currentYear } = useMemo(currentPeriod, []);
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+
+  const [selectedMonth, setSelectedMonth] = useState<number>(month);
+
+  const monthsList = [
+    'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+    'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+  ];
 
   const handlePreviousYear = () => setSelectedYear((v) => v - 1);
   const handleNextYear = () => setSelectedYear((v) => Math.min(currentYear, v + 1));
@@ -91,8 +98,29 @@ export function DashboardPage(): JSX.Element {
         </button>
       </div>
 
+      {/* Seletor de Mês */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x">
+        {monthsList.map((mName, idx) => {
+          const mNum = idx + 1;
+          const isSelected = selectedMonth === mNum;
+          return (
+            <button
+              key={mNum}
+              type="button"
+              onClick={() => setSelectedMonth(mNum)}
+              className={cn(
+                'px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap snap-center transition-colors focus:outline-none',
+                isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+              )}
+            >
+              {mName}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Cartões do Mês Selecionado */}
-      <SummaryCards month={month} year={selectedYear} />
+      <SummaryCards month={selectedMonth} year={selectedYear} />
 
       {/* Banner de Ads animado - Medium Rectangle IAB 300x250 (TAREFA 19) */}
       <div className="pt-2 pb-2">
@@ -103,7 +131,7 @@ export function DashboardPage(): JSX.Element {
       <YearlyQualityCard year={selectedYear} />
 
       {/* Gráfico Rosca */}
-      <CategoryDonut month={month} year={selectedYear} />
+      <CategoryDonut month={selectedMonth} year={selectedYear} />
 
       {/* Evolução Mensal */}
       <MonthlyBars year={selectedYear} />

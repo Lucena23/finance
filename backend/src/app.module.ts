@@ -46,7 +46,7 @@ import { ReportsModule } from './reports/reports.module';
             },
           },
           defaults: {
-            from: '"Finanças Aksurim" <nao-responda@aksurim.com>',
+            from: '"Aksurim Controle" <nao-responda@aksurim.com>',
           },
         };
       },

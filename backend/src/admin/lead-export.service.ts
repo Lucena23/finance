@@ -126,7 +126,7 @@ export class LeadExportService {
         layout: 'landscape',
         margin: 40,
         info: {
-          Title: 'Relatório de Leads — Finanças Aksurim',
+          Title: 'Relatório de Leads — Aksurim Controle',
           Author: 'Aksurim Software',
           Subject: 'Extração de leads comerciais',
         },

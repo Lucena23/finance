@@ -1,91 +1,57 @@
 <div align="center">
   <img src="./frontend/public/logo-dark.png" alt="Aksurim Software" width="350" />
-  <h1>Finanças Aksurim</h1>
+  <h1>Aksurim Controle</h1>
   <p><b>Plataforma PWA de Gestão e Inteligência Financeira Compartilhada</b></p>
+
+  <img src="https://img.shields.io/badge/Architecture-Mobile%20First-06777F?style=for-the-badge" alt="Mobile First" />
+  <img src="https://img.shields.io/badge/Security-OWASP%20Hardened-FB4629?style=for-the-badge" alt="Security" />
+  <img src="https://img.shields.io/badge/Tech-React%20%7C%20NestJS-282828?style=for-the-badge" alt="Tech Stack" />
 </div>
 
----
+<br/>
 
-## 🚀 SOBRE O PROJETO
+## 🚀 VISÃO EXECUTIVA E PORTFÓLIO
 
-O **Finanças Aksurim** é um aplicativo web progressivo (PWA) de alto padrão, desenvolvido sob arquitetura **mobile-first** para o ecossistema SaaS. 
+O **Aksurim Controle** é um aplicativo web progressivo (PWA) de alto padrão, desenvolvido sob arquitetura **mobile-first** para o ecossistema SaaS. Criado e mantido pela **Aksurim Software**, este projeto atua não apenas como uma ferramenta de gestão, mas como o **Portfólio Oficial de Apresentação** da nossa capacidade técnica e engenharia de software para grandes empresas e investidores.
 
-O produto foi desenhado para resolver o problema de inadimplência e desorganização familiar, fornecendo inteligência operacional:
+O produto foi rigorosamente projetado para resolver o problema de inadimplência e desorganização familiar, fornecendo inteligência operacional:
 1. **Fila Operacional Inteligente:** Ordenação algorítmica de contas por urgência (atrasadas -> vencendo hoje -> próximas).
-2. **Visibilidade Compartilhada:** Rastreabilidade exata de quem pagou cada compromisso dentro da família.
-3. **Prevenção de Juros:** Visão clara de fluxo de caixa e obrigações pendentes.
+2. **Visibilidade Compartilhada:** Rastreabilidade exata de quem pagou cada compromisso dentro do núcleo familiar.
+3. **Prevenção de Juros:** Visão clara do fluxo de caixa, despesas categóricas e obrigações pendentes em tempo real.
+
+## 🛡️ CIBERSEGURANÇA E ARQUITETURA (Enterprise-Grade)
+
+O sistema foi estruturado para lidar com dados financeiros sensíveis, seguindo rígidos padrões de segurança cibernética corporativa (OWASP Top 10):
+
+- **Isolamento de Tenant (BOLA/IDOR Prevention):** Acesso 100% isolado por `familyAccountId`. Os dados de um núcleo jamais cruzam com outros. O ID é inferido criptograficamente no backend a partir do JWT, impossibilitando acessos indevidos via manipulação de rotas.
+- **API Hardened (Helmet & CORS):** Servidor NestJS protegido pela biblioteca `Helmet` para ofuscação de tecnologias e mitigação de vulnerabilidades HTTP. Políticas rigorosas de Cross-Origin Resource Sharing (CORS).
+- **Zero Injeção de Código (SQLi / XSS):** Uso estrito do Prisma ORM sem queries manuais (impedindo SQL Injection) e motor React com DOM higienizado contra Cross-Site Scripting (XSS).
+- **Criptografia Avançada:** Hashing de senhas com `Bcrypt` (Salt Rounds de grau comercial) e emissão de tokens de sessão curtos e seguros.
 
 ## 💎 FUNCIONALIDADES PREMIUM (FinTech Ready)
 
-- **Motor de Relatórios Financeiros (PDF):** Sistema nativo de geração de documentos em PDF de altíssima qualidade (padrão corporativo). Os clientes podem exportar Relatórios Sintéticos ou Analíticos, contendo gráficos de distribuição por categoria e **Barras de Proporção Empilhadas (Linear Pie Charts)** desenhadas matematicamente direto no arquivo.
-- **Dashboard Gerencial Unificado:** Interface limpa com métricas de "Qualidade de Histórico", gráficos de rosca e barras de evolução, fornecendo análise de dados em tempo real sobre a saúde financeira do usuário.
-- **Fluxo de Autenticação Robusto:** Sistema de registro protegido por validação de e-mail (Lock Screen de Segurança) e recuperação de senha.
-- **Painel Administrativo Global (Admin):** Área de gestão exclusiva (Cross-Tenant) para extração de Leads B2C (PDF/CSV) com captação de WhatsApp e métricas de uso do produto.
-- **UX/UI Profissional:** Design System baseado em modo escuro nativo (Slate 950) e componentes interativos (Shadcn UI, Modais fluídos, Feedbacks visuais).
-
-## 🛡️ ARQUITETURA E SEGURANÇA (Multi-Tenant)
-
-Construído para escalar, o sistema obedece a rígidos padrões de segurança cibernética corporativa:
-- **Tenant Isolation:** Acesso 100% isolado por `familyAccountId`. Os dados de um núcleo familiar jamais cruzam com outros.
-- **Autenticação:** JWT (JSON Web Tokens) através do NestJS Passport.
-- **Criptografia:** Bcrypt (salt rounds configuráveis) para senhas, e Tokens efêmeros e descartáveis (Burnable Tokens) para validação de e-mail e redefinição de senhas.
-- **Infraestrutura SMTP:** Disparo de e-mails transacionais (Boas-vindas e Confirmação) usando templates HTML customizados de alto padrão via Nodemailer.
+- **Landing Page Profissional:** Uma vitrine (Front Page) imersiva com forte apelo visual, apresentando os pilares de produto (Controle, Redução de Juros e Conexão Familiar) desenhada para converter leads e novos parceiros com alta performance.
+- **Motor de Relatórios Financeiros (PDF):** Geração nativa de documentos corporativos em alta resolução com gráficos vetorizados desenhados matematicamente no backend.
+- **Dashboard Gerencial Analítico:** Interface imersiva que cruza dados analíticos com suporte à filtragem em tempo real de Meses e Anos, apresentando a "Qualidade de Histórico" e comparativos gráficos precisos.
+- **Monetização e Mídia Interativa:** Módulo customizado de Anúncios nativos integrado fluidamente ao PWA. Renderização "Pixel-Perfect" de banners promocionais híbridos direcionando tráfego qualificado para parcerias e patrocínios (Mídia Kit) via modal de Suporte.
+- **Fluxo UX Inteligente:** Autenticação responsiva com rotas restritas e proteção JWT, setup de categorias automáticas padronizadas injetadas no banco de dados no momento do cadastro (Seamless Onboarding) e gerenciamento otimizado de cache.
 
 ## 🛠️ STACK TECNOLÓGICA
 
 **Backend (API Restful):**
 - **Framework:** NestJS 10+ (TypeScript Strict Mode)
-- **Banco de Dados:** MySQL 8.0 rodando em Docker
-- **ORM:** Prisma ORM 5+
-- **Bibliotecas:** PDFKit (Motor de PDF), Nodemailer (E-mails transacionais), Bcrypt, Passport.
+- **Banco de Dados:** Prisma ORM, MySQL/PostgreSQL via Docker
+- **Segurança:** Helmet, Bcrypt, Passport JWT
+- **Serviços:** PDFKit (PDFs), Nodemailer (E-mails transacionais)
 
 **Frontend (PWA):**
 - **Framework:** React 18+ (Vite 5+)
-- **Estilização:** Tailwind CSS 3+ e Shadcn UI (Radix Primitives)
-- **Data Viz:** Recharts (SVG Charts)
-- **PWA:** Service Worker customizado e suporte a Web Push Notifications (VAPID).
-
-## 💰 ESTRATÉGIA DE NEGÓCIOS E MONETIZAÇÃO
-
-A plataforma adota a arquitetura **"Lead Magnet + Ads"**. Distribuída gratuitamente para o consumidor final, atua como uma poderosa máquina de captura de Leads (Nome, CPF, E-mail, WhatsApp e Perfil de Pagador) para monetização B2B.
-
-Inclui nativamente espaços (AdBanners) dimensionados nas proporções **Interactive Advertising Bureau (IAB)** prontos para integração com **Google AdMob/AdSense**, garantindo renderização assíncrona sem prejudicar a métrica de Cumulative Layout Shift (CLS).
+- **Estilização:** Tailwind CSS 3+, Shadcn UI, Lucide Icons
+- **Roteamento:** React Router DOM (Rotas Autenticadas e Públicas)
+- **Data Viz:** Recharts (SVG Charts customizados)
+- **PWA:** Service Worker para caching offline e WebManifest.
 
 ---
-
-## ⚙️ AMBIENTE DE DESENVOLVIMENTO
-
-Pré-requisitos: Node.js 20 LTS, npm e Docker.
-
-**1. Subindo o Banco de Dados Local:**
-```bash
-# Na raiz do projeto, suba o container do MySQL:
-docker-compose up -d
-```
-
-**2. Instalando Dependências e Preparando o Banco:**
-```bash
-# Backend
-cd backend
-npm install
-npm run prisma:generate
-npx prisma db push
-
-# Frontend
-cd frontend
-npm install
-```
-
-**3. Inicializando os Servidores:**
-```bash
-# Em um terminal (Backend API na porta 3000)
-cd backend && npm run start:dev
-
-# Em outro terminal (Frontend PWA na porta 5173)
-cd frontend && npm run dev
-```
-
----
-<div align="center">
-  <p>Desenvolvido com excelência por <b>Aksurim Software</b></p>
-</div>
+<p align="center">
+Desenvolvido com excelência técnica por <b>Aksurim Software</b>.
+</p>

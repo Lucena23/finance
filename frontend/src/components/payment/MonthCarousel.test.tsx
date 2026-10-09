@@ -54,7 +54,7 @@ describe('MonthCarousel (TAREFA 16)', () => {
   it('navega para o último mês com a tecla End', async () => {
     const user = userEvent.setup();
 
-    render(<MonthCarousel value={0} onSelect={vi.fn()} count={6} />);
+    render(<MonthCarousel value={0} onSelect={vi.fn()} futureCount={6} />);
 
     screen.getByTestId('month-option-0').focus();
     await user.keyboard('{End}');

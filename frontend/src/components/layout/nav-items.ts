@@ -63,7 +63,7 @@ export interface NavItem {
  * Painel Aksurim (TAREFA 28 / RN-15).
  */
 export const NAV_ITEMS: readonly NavItem[] = [
-  { to: '/', label: 'Fila', icon: ListChecks, end: true },
+  { to: '/queue', label: 'Fila', icon: ListChecks },
   { to: '/dashboard', label: 'Painel', icon: LayoutDashboard },
   { to: '/expenses', label: 'Despesas', icon: Receipt },
   { to: '/categories', label: 'Categorias', icon: Tags },

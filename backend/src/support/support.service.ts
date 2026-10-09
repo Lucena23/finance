@@ -122,7 +122,7 @@ export class SupportService {
     }).format(new Date());
 
     return [
-      '🆘 <b>Novo chamado de Suporte — Finanças Aksurim</b>',
+      '🆘 <b>Novo chamado de Suporte — Aksurim Controle</b>',
       '',
       `<b>Assunto:</b> ${this.escapeHtml(dto.subject)}`,
       `<b>Mensagem:</b> ${this.escapeHtml(dto.message)}`,

@@ -146,7 +146,7 @@ export function RegisterPage(): JSX.Element {
         familyName: form.familyName.trim(),
         ownerCpf: form.ownerCpf,
       });
-      navigate('/', { replace: true });
+      navigate('/queue', { replace: true });
     } catch (error) {
       if (error instanceof ApiError) {
         setApiError(

@@ -24,6 +24,7 @@ import { CategoriesPage } from '@/pages/CategoriesPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { ExpensesPage } from '@/pages/ExpensesPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
+import { LandingPage } from '@/pages/LandingPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { QueuePage } from '@/pages/QueuePage';
 import { RegisterPage } from '@/pages/RegisterPage';
@@ -39,6 +40,9 @@ export function App(): JSX.Element {
     <BrowserRouter>
       <Routes>
         {/* Rotas públicas — redirecionam se já autenticado */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* Rotas públicas */}
         <Route element={<PublicRoute />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
@@ -49,7 +53,7 @@ export function App(): JSX.Element {
         {/* Rotas autenticadas — envolvidas pelo AppShell (TAREFA 37) */}
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
-            <Route path="/" element={<QueuePage />} />
+            <Route path="/queue" element={<QueuePage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/expenses" element={<ExpensesPage />} />
             <Route path="/categories" element={<CategoriesPage />} />
