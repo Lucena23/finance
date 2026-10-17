@@ -13,15 +13,19 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { usePlan } from '@/contexts/PlanContext';
-import { getAuthToken, reportsApi } from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
+import { ApiError, getAuthToken, reportsApi } from '@/lib/api';
 import { cn } from '@/lib/cn';
-import { API_BASE_URL } from '@/lib/constants';
+import { API_BASE_URL, Role } from '@/lib/constants';
 
 export function ReportModal(): JSX.Element {
+  const { user } = useAuth();
   const { hasPremiumAccess, showGoldCue, openPremiumModal } = usePlan();
   const [isOpen, setIsOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExportingCsv, setIsExportingCsv] = useState(false);
+
+  const isReadOnlyMember = !hasPremiumAccess && user?.role === Role.MEMBER;
 
   // Default values
   const [startDate, setStartDate] = useState(() => format(startOfMonth(new Date()), 'yyyy-MM-dd'));
@@ -31,18 +35,24 @@ export function ReportModal(): JSX.Element {
 
   const handleOpenPdfModal = () => {
     if (!hasPremiumAccess) {
-      openPremiumModal('REPORTS');
+      openPremiumModal(isReadOnlyMember ? 'FAMILY_PLAN_EXPIRED' : 'REPORTS');
       return;
     }
     setIsOpen(true);
   };
 
   const handleExportCsv = async () => {
+    if (isReadOnlyMember) {
+      openPremiumModal('FAMILY_PLAN_EXPIRED');
+      return;
+    }
     try {
       setIsExportingCsv(true);
       await reportsApi.exportCsv();
-    } catch {
-      // ignore
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 402) {
+        openPremiumModal(err.feature ?? 'FAMILY_PLAN_EXPIRED');
+      }
     } finally {
       setIsExportingCsv(false);
     }
@@ -101,9 +111,17 @@ export function ReportModal(): JSX.Element {
         onClick={() => void handleExportCsv()}
         disabled={isExportingCsv}
         title="Exportação básica de dados em CSV (Portabilidade LGPD)"
-        className="gap-1.5 text-xs"
+        className={cn(
+          'gap-1.5 text-xs',
+          isReadOnlyMember &&
+            'border-amber-400/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20',
+        )}
       >
-        <Download className="h-3.5 w-3.5" />
+        {isReadOnlyMember ? (
+          <Lock className="h-3.5 w-3.5 text-amber-400" />
+        ) : (
+          <Download className="h-3.5 w-3.5" />
+        )}
         {isExportingCsv ? 'Exportando...' : 'CSV (LGPD)'}
       </Button>
 

@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ApiError, usersApi, type SafeUser } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { Role } from '@/lib/constants';
-import { AlertTriangle, Crown, Lock, Users, UserPlus } from 'lucide-react';
+import { AlertTriangle, Crown, Lock, ShieldAlert, Trash2, Users, UserPlus } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export function SettingsPage(): JSX.Element {
@@ -20,6 +20,7 @@ export function SettingsPage(): JSX.Element {
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
   const [inviting, setInviting] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   const isAdmin = currentUser?.role === Role.ADMIN;
   const secondaryMembersCount = users.filter((u) => u.role === Role.MEMBER).length;
@@ -80,6 +81,25 @@ export function SettingsPage(): JSX.Element {
     }
   };
 
+  const handleRemoveMember = async (member: SafeUser): Promise<void> => {
+    const confirmed = window.confirm(
+      `Tem certeza que deseja remover o membro "${member.name}" (${member.email}) desta conta?`,
+    );
+    if (!confirmed) return;
+
+    try {
+      setRemovingId(member.id);
+      await usersApi.remove(member.id);
+      setUsers((prev) => prev.filter((u) => u.id !== member.id));
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : 'Não foi possível remover o membro.';
+      alert(msg);
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
   return (
     <section className="flex flex-col gap-6 pb-8">
       <div className="flex flex-col gap-1">
@@ -95,7 +115,7 @@ export function SettingsPage(): JSX.Element {
 
       {/* Seção de Membros do Workspace */}
       <Card className="border-t-4 border-t-primary shadow-sm hover:shadow-md transition-all">
-        <CardHeader className="flex flex-row items-start justify-between pb-2">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between pb-2">
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Users className="h-5 w-5 text-primary" /> Membros
@@ -104,7 +124,7 @@ export function SettingsPage(): JSX.Element {
               Gerencie quem tem acesso compartilhado às despesas e pode realizar pagamentos.
             </CardDescription>
           </div>
-          {isAdmin && (
+          {isAdmin ? (
             <Button
               size="sm"
               variant={showInviteForm ? 'secondary' : 'outline'}
@@ -126,6 +146,11 @@ export function SettingsPage(): JSX.Element {
                 <Crown className="h-3.5 w-3.5" />
               )}
             </Button>
+          ) : (
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground">
+              <ShieldAlert className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span>Apenas o ADMIN pode adicionar ou remover membros</span>
+            </div>
           )}
         </CardHeader>
         <CardContent>
@@ -234,6 +259,20 @@ export function SettingsPage(): JSX.Element {
                     >
                       {user.role}
                     </span>
+                    {isAdmin && user.role === Role.MEMBER && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled={removingId === user.id}
+                        onClick={() => void handleRemoveMember(user)}
+                        aria-label={`Remover membro ${user.name}`}
+                        title={`Remover ${user.name}`}
+                        className="h-8 w-8 text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </li>
               ))}

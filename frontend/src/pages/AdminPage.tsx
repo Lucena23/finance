@@ -303,7 +303,7 @@ function LeadsSection(): JSX.Element {
                     Família
                   </th>
                   <th scope="col" className="px-4 py-2 font-medium">
-                    Titular
+                    Usuário / Papel
                   </th>
                   <th scope="col" className="px-4 py-2 font-medium">
                     E-mail
@@ -342,7 +342,20 @@ function LeadsSection(): JSX.Element {
                           {formatDate(lead.createdAt)}
                         </span>
                       </td>
-                      <td className="px-4 py-2">{lead.userName}</td>
+                      <td className="px-4 py-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="font-medium">{lead.userName}</span>
+                          {lead.userRole === 'ADMIN' ? (
+                            <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-400">
+                              ADMIN · Titular
+                            </span>
+                          ) : (
+                            <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase">
+                              Membro
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="text-muted-foreground px-4 py-2">
                         {lead.userEmail}
                       </td>

@@ -42,11 +42,16 @@ export function CategoriesPage(): JSX.Element {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const canManage = user?.role === Role.ADMIN;
+  const canManage = true;
+  const isReadOnlyMember = !hasPremiumAccess && user?.role === Role.MEMBER;
   const reachedFreeLimit = categories.length >= 5;
-  const isNewButtonGold = showGoldCue && reachedFreeLimit;
+  const isNewButtonGold = isReadOnlyMember || (showGoldCue && reachedFreeLimit);
 
   const handleOpenCreate = useCallback((): void => {
+    if (isReadOnlyMember) {
+      openPremiumModal('FAMILY_PLAN_EXPIRED');
+      return;
+    }
     if (!hasPremiumAccess && categories.length >= 5) {
       openPremiumModal('CATEGORY_LIMIT');
       return;
@@ -54,13 +59,20 @@ export function CategoriesPage(): JSX.Element {
     setEditingCategory(null);
     setIsFormOpen(true);
     setActionError(null);
-  }, [hasPremiumAccess, categories.length, openPremiumModal]);
+  }, [isReadOnlyMember, hasPremiumAccess, categories.length, openPremiumModal]);
 
-  const handleOpenEdit = useCallback((category: Category): void => {
-    setEditingCategory(category);
-    setIsFormOpen(true);
-    setActionError(null);
-  }, []);
+  const handleOpenEdit = useCallback(
+    (category: Category): void => {
+      if (isReadOnlyMember) {
+        openPremiumModal('FAMILY_PLAN_EXPIRED');
+        return;
+      }
+      setEditingCategory(category);
+      setIsFormOpen(true);
+      setActionError(null);
+    },
+    [isReadOnlyMember, openPremiumModal],
+  );
 
   const handleCloseForm = useCallback((): void => {
     setIsFormOpen(false);
@@ -83,7 +95,7 @@ export function CategoriesPage(): JSX.Element {
       } catch (err) {
         if (err instanceof ApiError && err.status === 402) {
           handleCloseForm();
-          openPremiumModal('CATEGORY_LIMIT');
+          openPremiumModal(err.feature ?? 'CATEGORY_LIMIT');
           return;
         }
         throw err;
@@ -94,10 +106,18 @@ export function CategoriesPage(): JSX.Element {
 
   const handleDelete = useCallback(
     async (category: Category): Promise<void> => {
+      if (isReadOnlyMember) {
+        openPremiumModal('FAMILY_PLAN_EXPIRED');
+        return;
+      }
       setActionError(null);
       try {
         await remove(category.id);
       } catch (err) {
+        if (err instanceof ApiError && err.status === 402) {
+          openPremiumModal(err.feature ?? 'FAMILY_PLAN_EXPIRED');
+          return;
+        }
         // 409 → categoria possui despesas vinculadas (RN-03 / TAREFA 17).
         if (err instanceof ApiError && err.status === 409) {
           setActionError(
@@ -113,7 +133,7 @@ export function CategoriesPage(): JSX.Element {
         setActionError(message);
       }
     },
-    [remove],
+    [isReadOnlyMember, openPremiumModal, remove],
   );
 
   return (

@@ -18,7 +18,7 @@
  * REGRA (§8.1): proibido o uso de `any`. Tipos explícitos em todo o módulo.
  */
 
-import { AlertCircle, Plus, RefreshCw, X } from 'lucide-react';
+import { AlertCircle, Crown, Lock, Plus, RefreshCw, X } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 
 import { ExpenseCard } from '@/components/expense/ExpenseCard';
@@ -26,14 +26,20 @@ import { ExpenseForm } from '@/components/expense/ExpenseForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
+import { usePlan } from '@/contexts/PlanContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
 import { useExpenses } from '@/hooks/useExpenses';
 import { ApiError, type Category, type Expense } from '@/lib/api';
+import { cn } from '@/lib/cn';
+import { Role } from '@/lib/constants';
 
 /**
  * Página de Despesas (rota "/expenses").
  */
 export function ExpensesPage(): JSX.Element {
+  const { user } = useAuth();
+  const { hasPremiumAccess, openPremiumModal } = usePlan();
   const {
     expenses,
     isLoading,
@@ -51,6 +57,8 @@ export function ExpensesPage(): JSX.Element {
   const [actionError, setActionError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
+  const isReadOnlyMember = !hasPremiumAccess && user?.role === Role.MEMBER;
+
   // Mapa de categorias por id para resolução O(1) no render.
   const categoryById = useMemo<Map<string, Category>>(() => {
     const map = new Map<string, Category>();
@@ -61,16 +69,27 @@ export function ExpensesPage(): JSX.Element {
   }, [categories]);
 
   const handleOpenCreate = useCallback((): void => {
+    if (isReadOnlyMember) {
+      openPremiumModal('FAMILY_PLAN_EXPIRED');
+      return;
+    }
     setEditingExpense(null);
     setIsFormOpen(true);
     setActionError(null);
-  }, []);
+  }, [isReadOnlyMember, openPremiumModal]);
 
-  const handleOpenEdit = useCallback((expense: Expense): void => {
-    setEditingExpense(expense);
-    setIsFormOpen(true);
-    setActionError(null);
-  }, []);
+  const handleOpenEdit = useCallback(
+    (expense: Expense): void => {
+      if (isReadOnlyMember) {
+        openPremiumModal('FAMILY_PLAN_EXPIRED');
+        return;
+      }
+      setEditingExpense(expense);
+      setIsFormOpen(true);
+      setActionError(null);
+    },
+    [isReadOnlyMember, openPremiumModal],
+  );
 
   const handleCloseForm = useCallback((): void => {
     setIsFormOpen(false);
@@ -93,10 +112,18 @@ export function ExpensesPage(): JSX.Element {
 
   const handleDelete = useCallback(
     async (expense: Expense): Promise<void> => {
+      if (isReadOnlyMember) {
+        openPremiumModal('FAMILY_PLAN_EXPIRED');
+        return;
+      }
       setActionError(null);
       try {
         await remove(expense.id);
       } catch (err) {
+        if (err instanceof ApiError && err.status === 402) {
+          openPremiumModal(err.feature ?? 'FAMILY_PLAN_EXPIRED');
+          return;
+        }
         const message =
           err instanceof ApiError
             ? err.message
@@ -104,15 +131,23 @@ export function ExpensesPage(): JSX.Element {
         setActionError(message);
       }
     },
-    [remove],
+    [isReadOnlyMember, openPremiumModal, remove],
   );
 
   const handleRestore = useCallback(
     async (expense: Expense): Promise<void> => {
+      if (isReadOnlyMember) {
+        openPremiumModal('FAMILY_PLAN_EXPIRED');
+        return;
+      }
       setActionError(null);
       try {
         await restore(expense.id);
       } catch (err) {
+        if (err instanceof ApiError && err.status === 402) {
+          openPremiumModal(err.feature ?? 'FAMILY_PLAN_EXPIRED');
+          return;
+        }
         const message =
           err instanceof ApiError
             ? err.message
@@ -120,15 +155,23 @@ export function ExpensesPage(): JSX.Element {
         setActionError(message);
       }
     },
-    [restore],
+    [isReadOnlyMember, openPremiumModal, restore],
   );
 
   const handleCancelRecurrence = useCallback(
     async (expense: Expense): Promise<void> => {
+      if (isReadOnlyMember) {
+        openPremiumModal('FAMILY_PLAN_EXPIRED');
+        return;
+      }
       setActionError(null);
       try {
         await cancelRecurrence(expense.id);
       } catch (err) {
+        if (err instanceof ApiError && err.status === 402) {
+          openPremiumModal(err.feature ?? 'FAMILY_PLAN_EXPIRED');
+          return;
+        }
         const message =
           err instanceof ApiError
             ? err.message
@@ -136,7 +179,7 @@ export function ExpensesPage(): JSX.Element {
         setActionError(message);
       }
     },
-    [cancelRecurrence],
+    [isReadOnlyMember, openPremiumModal, cancelRecurrence],
   );
 
   return (
@@ -172,9 +215,20 @@ export function ExpensesPage(): JSX.Element {
               size="sm"
               onClick={handleOpenCreate}
               data-testid="expenses-new-button"
+              className={cn(
+                isReadOnlyMember &&
+                  'border border-amber-400 bg-gradient-to-r from-amber-500 to-yellow-500 font-bold text-slate-950 hover:brightness-105',
+              )}
             >
-              <Plus aria-hidden="true" className="h-4 w-4" />
-              Nova
+              {isReadOnlyMember ? (
+                <Lock aria-hidden="true" className="h-3.5 w-3.5" />
+              ) : (
+                <Plus aria-hidden="true" className="h-4 w-4" />
+              )}
+              <span>Nova</span>
+              {isReadOnlyMember && (
+                <Crown aria-hidden="true" className="h-3.5 w-3.5" />
+              )}
             </Button>
           ) : null}
         </div>

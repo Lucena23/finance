@@ -112,6 +112,30 @@ export class UserService {
       if (admins <= 1) throw new BadRequestException('Não é possível remover o único ADMIN.');
     }
 
-    await this.prisma.user.delete({ where: { id } });
+    const fallbackAdmin = await this.prisma.user.findFirst({
+      where: {
+        familyAccountId,
+        role: Role.ADMIN,
+        id: { not: id },
+      },
+      select: { id: true },
+    });
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.pushSubscription.deleteMany({ where: { userId: id } });
+      await tx.paymentItem.updateMany({
+        where: { paidById: id },
+        data: { paidById: null },
+      });
+
+      if (fallbackAdmin) {
+        await tx.expense.updateMany({
+          where: { familyAccountId, createdById: id },
+          data: { createdById: fallbackAdmin.id },
+        });
+      }
+
+      await tx.user.delete({ where: { id } });
+    });
   }
 }

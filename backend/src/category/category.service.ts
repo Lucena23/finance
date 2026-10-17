@@ -2,8 +2,9 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
-import { Category } from '@prisma/client';
+import { Category, Role } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { PlanService } from '../plan/plan.service';
@@ -22,7 +23,7 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 export class CategoryService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly planService?: PlanService,
+    @Optional() private readonly planService?: PlanService,
   ) {}
 
   /**
@@ -43,8 +44,12 @@ export class CategoryService {
   async create(
     familyAccountId: string,
     dto: CreateCategoryDto,
+    userRole?: Role,
   ): Promise<Category> {
     if (this.planService) {
+      if (userRole) {
+        await this.planService.assertMemberCanWrite(familyAccountId, userRole);
+      }
       await this.planService.assertCanCreateCategory(familyAccountId);
     }
 
@@ -66,7 +71,12 @@ export class CategoryService {
     familyAccountId: string,
     id: string,
     dto: UpdateCategoryDto,
+    userRole?: Role,
   ): Promise<Category> {
+    if (this.planService && userRole) {
+      await this.planService.assertMemberCanWrite(familyAccountId, userRole);
+    }
+
     await this.findOneOrFail(familyAccountId, id);
 
     return this.prisma.category.update({
@@ -85,7 +95,15 @@ export class CategoryService {
    * pois a FK permanece válida e a restauração deve ser possível (RN-11).
    * Retorna 404 se a categoria não pertencer ao workspace (RN-01 / §8.3).
    */
-  async remove(familyAccountId: string, id: string): Promise<void> {
+  async remove(
+    familyAccountId: string,
+    id: string,
+    userRole?: Role,
+  ): Promise<void> {
+    if (this.planService && userRole) {
+      await this.planService.assertMemberCanWrite(familyAccountId, userRole);
+    }
+
     await this.findOneOrFail(familyAccountId, id);
 
     const linkedExpenses = await this.prisma.expense.count({

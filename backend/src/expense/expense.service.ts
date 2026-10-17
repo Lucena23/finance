@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import {
   Expense,
@@ -9,8 +10,10 @@ import {
   ExpenseType,
   PaymentItem,
   Prisma,
+  Role,
 } from '@prisma/client';
 
+import { PlanService } from '../plan/plan.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { QueryExpensesDto } from './dto/query-expenses.dto';
@@ -48,7 +51,10 @@ export class ExpenseService {
    */
   private static readonly RECURRENT_PROJECTION_MONTHS = 12;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly planService?: PlanService,
+  ) {}
 
   /**
    * Lista despesas ativas do workspace (filtra deletedAt IS NULL — RN-11 / §8.7).
@@ -113,7 +119,12 @@ export class ExpenseService {
     familyAccountId: string,
     createdById: string,
     dto: CreateExpenseDto,
+    userRole?: Role,
   ): Promise<ExpenseWithItems> {
+    if (this.planService && userRole) {
+      await this.planService.assertMemberCanWrite(familyAccountId, userRole);
+    }
+
     await this.assertCategoryInScope(familyAccountId, dto.categoryId);
 
     const dueDate = this.parseDueDate(dto.dueDate);
@@ -154,7 +165,12 @@ export class ExpenseService {
     familyAccountId: string,
     id: string,
     dto: UpdateExpenseDto,
+    userRole?: Role,
   ): Promise<Expense> {
+    if (this.planService && userRole) {
+      await this.planService.assertMemberCanWrite(familyAccountId, userRole);
+    }
+
     const expense = await this.findOneOrFail(familyAccountId, id);
 
     if (dto.categoryId !== undefined) {
@@ -223,7 +239,15 @@ export class ExpenseService {
    * Soft delete — preenche deletedAt com o timestamp atual (RN-11 / §8.7).
    * O registro NÃO é apagado fisicamente.
    */
-  async softDelete(familyAccountId: string, id: string): Promise<void> {
+  async softDelete(
+    familyAccountId: string,
+    id: string,
+    userRole?: Role,
+  ): Promise<void> {
+    if (this.planService && userRole) {
+      await this.planService.assertMemberCanWrite(familyAccountId, userRole);
+    }
+
     await this.findOneOrFail(familyAccountId, id);
 
     await this.prisma.expense.update({
@@ -235,7 +259,15 @@ export class ExpenseService {
   /**
    * Restaura uma despesa soft-deleted — limpa deletedAt (RN-11 / §8.7).
    */
-  async restore(familyAccountId: string, id: string): Promise<Expense> {
+  async restore(
+    familyAccountId: string,
+    id: string,
+    userRole?: Role,
+  ): Promise<Expense> {
+    if (this.planService && userRole) {
+      await this.planService.assertMemberCanWrite(familyAccountId, userRole);
+    }
+
     const expense = await this.prisma.expense.findFirst({
       where: { id, familyAccountId, deletedAt: { not: null } },
     });
@@ -258,7 +290,12 @@ export class ExpenseService {
   async cancelRecurrence(
     familyAccountId: string,
     id: string,
+    userRole?: Role,
   ): Promise<Expense> {
+    if (this.planService && userRole) {
+      await this.planService.assertMemberCanWrite(familyAccountId, userRole);
+    }
+
     const expense = await this.findOneOrFail(familyAccountId, id);
 
     if (expense.type !== ExpenseType.RECURRENT) {
