@@ -157,6 +157,69 @@ export class AuthService {
     return this.buildAuthResponse(result);
   }
 
+  private readonly resendCooldowns = new Map<string, number>();
+
+  /**
+   * Reenvia o e-mail de confirmação para o usuário autenticado, respeitando
+   * cooldown de 60 segundos por usuário para evitar abuso de SMTP.
+   */
+  async resendVerificationEmail(userId: string): Promise<{ message: string; cooldownSeconds: number }> {
+    const COOLDOWN_MS = 60 * 1000;
+    const now = Date.now();
+    const lastSentAt = this.resendCooldowns.get(userId) ?? 0;
+    const elapsed = now - lastSentAt;
+
+    if (elapsed < COOLDOWN_MS) {
+      const remaining = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
+      return {
+        message: `Aguarde ${remaining}s antes de solicitar um novo reenvio.`,
+        cooldownSeconds: remaining,
+      };
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Usuário não encontrado.');
+    }
+
+    if (user.isEmailVerified) {
+      return {
+        message: 'Seu e-mail já está confirmado! Faça login novamente para atualizar a sessão.',
+        cooldownSeconds: 0,
+      };
+    }
+
+    const verifyToken = user.verifyToken || crypto.randomBytes(32).toString('hex');
+
+    if (!user.verifyToken) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { verifyToken },
+      });
+    }
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+    const verifyLink = `${backendUrl}/api/v1/auth/verify?token=${verifyToken}`;
+    const emailHtml = getWelcomeEmailHtml(user.name, verifyLink, frontendUrl);
+
+    await this.mailerService.sendMail({
+      to: user.email,
+      subject: 'Confirme seu e-mail — Aksurim Controle',
+      html: emailHtml,
+    });
+
+    this.resendCooldowns.set(userId, now);
+
+    return {
+      message: 'Novo link de ativação enviado com sucesso! Verifique sua caixa de entrada e a pasta de Spam.',
+      cooldownSeconds: 60,
+    };
+  }
+
   async verifyEmail(token: string): Promise<string> {
     const user = await this.prisma.user.findFirst({
       where: { verifyToken: token },

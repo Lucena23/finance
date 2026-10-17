@@ -494,6 +494,8 @@ export const authApi = {
     post<AuthResponse>('/auth/login', payload),
   register: (payload: RegisterPayload): Promise<AuthResponse> =>
     post<AuthResponse>('/auth/register', payload),
+  resendVerification: (): Promise<{ message: string; cooldownSeconds: number }> =>
+    post<{ message: string; cooldownSeconds: number }>('/auth/resend-verification'),
   forgotPassword: (payload: { email: string }): Promise<{ message: string }> =>
     post<{ message: string }>('/auth/forgot-password', payload),
   resetPassword: (payload: { token: string; newPassword: string }): Promise<{ message: string }> =>

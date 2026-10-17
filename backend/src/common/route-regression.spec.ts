@@ -124,6 +124,7 @@ const EXPECTED_ROUTES: Record<string, string[]> = {
     'POST /auth/forgot-password',
     'POST /auth/login',
     'POST /auth/register',
+    'POST /auth/resend-verification',
     'POST /auth/reset-password',
   ],
   UserController: [
