@@ -273,6 +273,27 @@ export class PlanService {
     }
   }
 
+  /**
+   * Garante que membros secundários (Role.MEMBER) fiquem em modo somente leitura
+   * quando o plano da conta está no Free. No Trial/Premium/Grace, membros têm
+   * acesso completo de escrita.
+   */
+  async assertMemberCanWrite(
+    familyAccountId: string,
+    role: 'ADMIN' | 'MEMBER',
+  ): Promise<void> {
+    if (role !== 'MEMBER') {
+      return;
+    }
+
+    if (!(await this.hasPremiumAccess(familyAccountId))) {
+      throw new PlanRequiredException(
+        PremiumFeature.FAMILY_PLAN_EXPIRED,
+        'O plano Premium desta conta expirou. Peça ao titular para assinar e liberar suas ações.',
+      );
+    }
+  }
+
   /** Último dia (inclusive, UTC @db.Date) visível no Free — fim do próximo mês. */
   freeWindowEnd(now: Date = new Date()): Date {
     const periods = freeAllowedPeriods(now);
