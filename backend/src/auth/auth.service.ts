@@ -10,7 +10,11 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { getWelcomeEmailHtml, getVerificationSuccessHtml } from './email-templates';
+import {
+  getLogoCidAttachment,
+  getWelcomeEmailHtml,
+  getVerificationSuccessHtml,
+} from './email-templates';
 
 const BCRYPT_SALT_ROUNDS = 10;
 
@@ -152,6 +156,7 @@ export class AuthService {
       to: email,
       subject: 'Bem-vindo ao Aksurim Controle! Confirme seu e-mail.',
       html: emailHtml,
+      attachments: [getLogoCidAttachment()],
     }).catch((err) => console.error('Erro ao enviar e-mail de boas vindas:', err));
 
     return this.buildAuthResponse(result);
@@ -210,6 +215,7 @@ export class AuthService {
       to: user.email,
       subject: 'Confirme seu e-mail — Aksurim Controle',
       html: emailHtml,
+      attachments: [getLogoCidAttachment()],
     });
 
     this.resendCooldowns.set(userId, now);
@@ -291,10 +297,11 @@ export class AuthService {
     await this.mailerService.sendMail({
       to: user.email,
       subject: 'Recuperação de Senha - Aksurim Controle',
+      attachments: [getLogoCidAttachment()],
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px; background-color: #ffffff;">
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px; background-color: #1C1F22; color: #FFFFFF;">
           <div style="text-align: center; margin-bottom: 20px;">
-            <img src="${frontendUrl}/logo-icon.png" alt="Aksurim Logo" style="width: 60px; height: 60px; border-radius: 12px;" />
+            <img src="cid:aksurim-logo" alt="Aksurim Logo" style="height: 42px; display: inline-block;" />
           </div>
           <h2 style="color: #111827; text-align: center;">Olá, ${user.name}</h2>
           <p style="color: #4b5563; font-size: 16px; line-height: 1.5; text-align: center;">

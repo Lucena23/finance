@@ -3,7 +3,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { getWelcomeEmailHtml } from '../auth/email-templates';
+import { getLogoCidAttachment, getWelcomeEmailHtml } from '../auth/email-templates';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Role } from '@prisma/client';
@@ -55,6 +55,7 @@ export class UserService {
           to: email,
           subject: 'Bem-vindo ao Aksurim Controle! Confirme seu e-mail.',
           html: emailHtml,
+          attachments: [getLogoCidAttachment()],
         })
         .catch((err) => console.error('Erro ao enviar e-mail de convite de membro:', err));
     }
