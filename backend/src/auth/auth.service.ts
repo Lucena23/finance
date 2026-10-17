@@ -101,11 +101,19 @@ export class AuthService {
     const avatarColor = pickAvatarColor([]);
 
     const verifyToken = crypto.randomBytes(32).toString('hex');
+    const trialDaysRaw = Number(process.env.TRIAL_DAYS);
+    const trialDays =
+      Number.isFinite(trialDaysRaw) && trialDaysRaw > 0
+        ? Math.floor(trialDaysRaw)
+        : 15;
+    const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
+
     const result = await this.prisma.$transaction(async (tx) => {
       const family = await tx.familyAccount.create({
         data: {
           name: dto.familyName.trim(),
           ownerCpf: dto.ownerCpf,
+          trialEndsAt,
         },
       });
 
@@ -136,7 +144,8 @@ export class AuthService {
     });
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const verifyLink = `http://localhost:3000/api/v1/auth/verify?token=${verifyToken}`;
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+    const verifyLink = `${backendUrl}/api/v1/auth/verify?token=${verifyToken}`;
     const emailHtml = getWelcomeEmailHtml(dto.name.trim(), verifyLink, frontendUrl);
     
     await this.mailerService.sendMail({
@@ -213,7 +222,8 @@ export class AuthService {
       data: { resetToken, resetTokenExpires },
     });
 
-    const resetUrl = `https://financas.aksurim.com/reset-password?token=${resetToken}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'https://controle.aksurim.com';
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
     await this.mailerService.sendMail({
       to: user.email,
@@ -221,7 +231,7 @@ export class AuthService {
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px; background-color: #ffffff;">
           <div style="text-align: center; margin-bottom: 20px;">
-            <img src="https://financas.aksurim.com/logo-icon.png" alt="Aksurim Logo" style="width: 60px; height: 60px; border-radius: 12px;" />
+            <img src="${frontendUrl}/logo-icon.png" alt="Aksurim Logo" style="width: 60px; height: 60px; border-radius: 12px;" />
           </div>
           <h2 style="color: #111827; text-align: center;">Olá, ${user.name}</h2>
           <p style="color: #4b5563; font-size: 16px; line-height: 1.5; text-align: center;">

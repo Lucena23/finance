@@ -5,7 +5,11 @@ import { PayDrawer } from '@/components/payment/PayDrawer';
 import { PaymentQueue } from '@/components/payment/PaymentQueue';
 import { PaymentHistory } from '@/components/payment/PaymentHistory';
 import { MonthCarousel } from '@/components/payment/MonthCarousel';
+import { LockedMonthOverlay } from '@/components/plan/LockedMonthOverlay';
 import { AnimatedAdBanner } from '@/components/ads/AnimatedAdBanner';
+import { usePlan } from '@/contexts/PlanContext';
+import { useAuth } from '@/hooks/useAuth';
+import { Role } from '@/lib/constants';
 import type { PaymentItemWithPayer } from '@/lib/api';
 
 /**
@@ -20,6 +24,8 @@ import type { PaymentItemWithPayer } from '@/lib/api';
  * logo abaixo do filtro de meses, conforme especificação do BLUEPRINT §4.
  */
 export function QueuePage(): JSX.Element {
+  const { user } = useAuth();
+  const { canViewPeriod, hasPremiumAccess, openPremiumModal } = usePlan();
   const [selectedItem, setSelectedItem] = useState<PaymentItemWithPayer | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [reloadKey, setReloadKey] = useState<number>(0);
@@ -31,11 +37,19 @@ export function QueuePage(): JSX.Element {
   const referenceDate = addMonths(new Date(), monthOffset);
   const selectedMonth = referenceDate.getMonth() + 1;
   const selectedYear = referenceDate.getFullYear();
+  const isMonthUnlocked = canViewPeriod(selectedMonth, selectedYear);
 
-  const handleSelectItem = useCallback((item: PaymentItemWithPayer): void => {
-    setSelectedItem(item);
-    setIsDrawerOpen(true);
-  }, []);
+  const handleSelectItem = useCallback(
+    (item: PaymentItemWithPayer): void => {
+      if (user?.role === Role.MEMBER && !hasPremiumAccess) {
+        openPremiumModal('FAMILY_PLAN_EXPIRED');
+        return;
+      }
+      setSelectedItem(item);
+      setIsDrawerOpen(true);
+    },
+    [user?.role, hasPremiumAccess, openPremiumModal],
+  );
 
   const handleOpenChange = useCallback((open: boolean): void => {
     setIsDrawerOpen(open);
@@ -66,29 +80,38 @@ export function QueuePage(): JSX.Element {
         </div>
       </header>
 
-      {/* Exibimos Pendentes e Histórico do mês selecionado juntos */}
-      <div className="flex flex-col gap-8">
-        <div className="flex flex-col gap-2">
-          <PaymentQueue
-            key={`queue-${reloadKey}-${monthOffset}`}
-            month={selectedMonth}
-            year={selectedYear}
-            onSelectItem={handleSelectItem}
-            hideUpcoming={true}
-          />
-        </div>
+      {!isMonthUnlocked ? (
+        <LockedMonthOverlay
+          month={selectedMonth}
+          year={selectedYear}
+          variant="queue"
+          onBackToCurrentMonth={() => setMonthOffset(0)}
+        />
+      ) : (
+        /* Exibimos Pendentes e Histórico do mês selecionado juntos */
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-2">
+            <PaymentQueue
+              key={`queue-${reloadKey}-${monthOffset}`}
+              month={selectedMonth}
+              year={selectedYear}
+              onSelectItem={handleSelectItem}
+              hideUpcoming={true}
+            />
+          </div>
 
-        <div className="flex flex-col gap-3">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-emerald-600 px-3 py-2 bg-emerald-50 rounded-md">
-            <span>🟢</span> Pagas neste Mês
-          </h2>
-          <PaymentHistory
-            key={`hist-${reloadKey}-${monthOffset}`}
-            month={selectedMonth}
-            year={selectedYear}
-          />
+          <div className="flex flex-col gap-3">
+            <h2 className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-300">
+              <span>🟢</span> Pagas neste Mês
+            </h2>
+            <PaymentHistory
+              key={`hist-${reloadKey}-${monthOffset}`}
+              month={selectedMonth}
+              year={selectedYear}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <PayDrawer
         item={selectedItem}

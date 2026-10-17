@@ -388,7 +388,7 @@ describe('ExpenseService — geração de PaymentItems', () => {
       ).toBe(true);
     });
 
-    it('edita totalAmount de RECURRENT aplicando apenas a itens futuros PENDING (§8.4)', async () => {
+    it('edita totalAmount de RECURRENT aplicando apenas a itens PENDING (§8.4)', async () => {
       mockTransaction();
       prisma.expense.findFirst.mockResolvedValue({
         id: 'exp-5',
@@ -407,17 +407,14 @@ describe('ExpenseService — geração de PaymentItems', () => {
 
       expect(prisma.paymentItem.updateMany).toHaveBeenCalledTimes(1);
       const arg = prisma.paymentItem.updateMany.mock.calls[0][0];
-      expect(arg.where).toMatchObject({
+      expect(arg.where).toEqual({
         expenseId: 'exp-5',
         status: PaymentStatus.PENDING,
       });
-      // Filtro de data: apenas itens com dueDate > hoje.
-      expect(arg.where.dueDate).toHaveProperty('gt');
-      expect(arg.where.dueDate.gt).toBeInstanceOf(Date);
       expect(arg.data).toEqual({ expectedAmount: 9990 });
     });
 
-    it('NÃO propaga alteração de valor para despesas não recorrentes', async () => {
+    it('propaga alteração de valor para itens PENDING de despesas avulsas', async () => {
       mockTransaction();
       prisma.expense.findFirst.mockResolvedValue({
         id: 'exp-6',
@@ -430,10 +427,17 @@ describe('ExpenseService — geração de PaymentItems', () => {
         type: ExpenseType.SINGLE,
         totalAmount: 6000,
       });
+      prisma.paymentItem.updateMany.mockResolvedValue({ count: 1 });
 
       await service.update('fam-1', 'exp-6', { totalAmount: 6000 });
 
-      expect(prisma.paymentItem.updateMany).not.toHaveBeenCalled();
+      expect(prisma.paymentItem.updateMany).toHaveBeenCalledWith({
+        where: {
+          expenseId: 'exp-6',
+          status: PaymentStatus.PENDING,
+        },
+        data: { expectedAmount: 6000 },
+      });
     });
 
     it('encerra recorrência removendo apenas PaymentItems PENDING futuros (TAREFA 23)', async () => {

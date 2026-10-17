@@ -26,6 +26,7 @@ import { ExpensesPage } from '@/pages/ExpensesPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { LandingPage } from '@/pages/LandingPage';
 import { LoginPage } from '@/pages/LoginPage';
+import { PlansPage } from '@/pages/PlansPage';
 import { QueuePage } from '@/pages/QueuePage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
@@ -60,6 +61,7 @@ export function App(): JSX.Element {
             <Route path="/settings" element={<SettingsPage />} />
             {/* Suporte ao cliente via Telegram (TAREFA 20 / RN-14) */}
             <Route path="/support" element={<SupportPage />} />
+            <Route path="/plans" element={<PlansPage />} />
 
             {/* Painel Aksurim — Admin Global (TAREFA 28 / RN-15).
                 Protegido por GlobalAdminRoute: apenas isGlobalAdmin === true. */}

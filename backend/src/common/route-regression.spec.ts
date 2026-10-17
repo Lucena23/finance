@@ -9,6 +9,8 @@ import { ExpenseController } from '../expense/expense.controller';
 import { FamilyAccountController } from '../family-account/family-account.controller';
 import { NotificationController } from '../notification/notification.controller';
 import { PaymentItemController } from '../payment-item/payment-item.controller';
+import { PlanController } from '../plan/plan.controller';
+import { ReportsController } from '../reports/reports.controller';
 import { SupportController } from '../support/support.controller';
 import { UserController } from '../user/user.controller';
 
@@ -16,7 +18,7 @@ import { UserController } from '../user/user.controller';
  * Testes de Regressão de Rotas (TAREFA 29).
  *
  * Objetivo: garantir que NENHUMA rota anterior foi quebrada/removida durante a
- * evolução v1.1. Este teste introspecciona os metadados dos controllers do
+ * evolução v1.1 / v1.2. Este teste introspecciona os metadados dos controllers do
  * NestJS (via Reflect) e valida que o inventário COMPLETO de rotas — conforme
  * o contrato REST do ARCHITECTURE §3.2 — permanece registrado e estável.
  *
@@ -113,11 +115,12 @@ function extractRoutes(
 }
 
 /**
- * Inventário CONGELADO de rotas — contrato REST do ARCHITECTURE §3.2.
+ * Inventário CONGELADO de rotas — contrato REST do ARCHITECTURE §3.2 + Freemium v1.2.
  * Este é o "golden master": qualquer divergência indica regressão.
  */
 const EXPECTED_ROUTES: Record<string, string[]> = {
   AuthController: [
+    'GET /auth/verify',
     'POST /auth/forgot-password',
     'POST /auth/login',
     'POST /auth/register',
@@ -154,6 +157,7 @@ const EXPECTED_ROUTES: Record<string, string[]> = {
     'GET /payment-items/queue',
     'PATCH /payment-items/:id',
     'PATCH /payment-items/:id/pay',
+    'PATCH /payment-items/:id/undo-pay',
   ],
   DashboardController: [
     'GET /dashboard/category-distribution',
@@ -169,6 +173,15 @@ const EXPECTED_ROUTES: Record<string, string[]> = {
     'GET /admin/leads',
     'GET /admin/leads/export',
     'GET /admin/metrics',
+    'PATCH /admin/families/:id/plan',
+  ],
+  PlanController: [
+    'GET /plan',
+    'GET /plan/locked-summary',
+  ],
+  ReportsController: [
+    'GET /reports/csv',
+    'GET /reports/pdf',
   ],
 };
 
@@ -187,6 +200,8 @@ describe('Regressão de Rotas (TAREFA 29) — contrato REST §3.2', () => {
     { name: 'NotificationController', controller: NotificationController },
     { name: 'SupportController', controller: SupportController },
     { name: 'AdminController', controller: AdminController },
+    { name: 'PlanController', controller: PlanController },
+    { name: 'ReportsController', controller: ReportsController },
   ];
 
   it.each(controllers)(
@@ -236,7 +251,7 @@ describe('Regressão de Rotas (TAREFA 29) — contrato REST §3.2', () => {
     }
   });
 
-  it('as novas rotas da v1.1 estão registradas (Support + Admin)', () => {
+  it('as novas rotas da v1.1 e v1.2 estão registradas (Support + Admin + Plan + Reports)', () => {
     const allActual = controllers.flatMap(({ controller }) =>
       extractRoutes(controller),
     );
@@ -245,5 +260,10 @@ describe('Regressão de Rotas (TAREFA 29) — contrato REST §3.2', () => {
     expect(allActual).toContain('GET /admin/metrics');
     expect(allActual).toContain('GET /admin/leads');
     expect(allActual).toContain('GET /admin/leads/export');
+    expect(allActual).toContain('PATCH /admin/families/:id/plan');
+    expect(allActual).toContain('GET /plan');
+    expect(allActual).toContain('GET /plan/locked-summary');
+    expect(allActual).toContain('GET /reports/pdf');
+    expect(allActual).toContain('GET /reports/csv');
   });
 });

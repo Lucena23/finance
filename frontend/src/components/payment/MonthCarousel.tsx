@@ -1,6 +1,6 @@
 import { addMonths, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -9,6 +9,7 @@ import {
   type KeyboardEvent,
 } from 'react';
 
+import { usePlan } from '@/contexts/PlanContext';
 import { cn } from '@/lib/cn';
 
 export interface MonthOption {
@@ -50,6 +51,7 @@ export function MonthCarousel({
   futureCount = 12,
   className,
 }: MonthCarouselProps): JSX.Element {
+  const { showGoldCue, isFreeAllowedPeriod } = usePlan();
   const months = useMemo<MonthOption[]>(() => buildMonths(pastCount, futureCount), [pastCount, futureCount]);
   const listRef = useRef<HTMLUListElement>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -147,6 +149,8 @@ export function MonthCarousel({
         >
           {months.map((option, index) => {
             const isActive = option.offset === value;
+            const isGoldMonth =
+              showGoldCue && !isFreeAllowedPeriod(option.month, option.year);
 
             return (
               <li key={option.offset} className="snap-center">
@@ -162,20 +166,39 @@ export function MonthCarousel({
                   onClick={() => onSelect(option.offset)}
                   data-testid={`month-option-${option.offset}`}
                   className={cn(
-                    'flex min-w-[64px] flex-col items-center whitespace-nowrap rounded-xl border px-3 py-1.5 transition-all',
+                    'flex min-w-[68px] flex-col items-center whitespace-nowrap rounded-xl border px-3 py-1.5 transition-all',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     isActive
-                      ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                      : 'border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+                      ? isGoldMonth
+                        ? 'border-amber-400 bg-gradient-to-b from-amber-400 to-yellow-500 text-slate-950 shadow-sm'
+                        : 'border-primary bg-primary text-primary-foreground shadow-sm'
+                      : isGoldMonth
+                        ? 'border-amber-400/45 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'
+                        : 'border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
                   )}
                 >
-                  <span className="text-xs font-bold leading-tight">
+                  <span className="inline-flex items-center gap-1 text-xs font-bold leading-tight">
+                    {isGoldMonth && (
+                      <Lock
+                        aria-hidden="true"
+                        className={cn(
+                          'h-2.5 w-2.5 shrink-0',
+                          isActive ? 'text-slate-950' : 'text-amber-400',
+                        )}
+                      />
+                    )}
                     {option.label}
                   </span>
                   <span
                     className={cn(
                       'text-[10px] leading-tight',
-                      isActive ? 'text-primary-foreground/80' : 'text-muted-foreground/70'
+                      isActive
+                        ? isGoldMonth
+                          ? 'text-slate-950/80'
+                          : 'text-primary-foreground/80'
+                        : isGoldMonth
+                          ? 'text-amber-300/80'
+                          : 'text-muted-foreground/70'
                     )}
                   >
                     {option.year}

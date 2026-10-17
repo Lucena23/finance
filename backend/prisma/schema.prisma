@@ -11,6 +11,10 @@ model FamilyAccount {
   id         String     @id @default(uuid())
   name       String     @db.VarChar(100)
   ownerCpf   String     @unique @db.VarChar(14)
+  // ─── Freemium (v1.2) — status efetivo calculado pelo PlanService ───
+  trialEndsAt   DateTime?     // Fim do teste Premium (cadastro + TRIAL_DAYS)
+  premiumEndsAt DateTime?     // Fim do período Premium pago/concedido
+  billingCycle  BillingCycle? // Ciclo da assinatura vigente
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
   categories Category[]
@@ -143,4 +147,10 @@ enum ExpenseRecurrenceStatus {
 enum PaymentStatus {
   PENDING
   PAID
+}
+
+enum BillingCycle {
+  MONTHLY
+  SEMIANNUAL
+  ANNUAL
 }

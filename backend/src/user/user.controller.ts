@@ -6,12 +6,15 @@ import { FamilyScopeParam } from '../common/decorators/family-scope.decorator';
 import { FamilyScope } from '../common/interceptors/family-scope.interceptor';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '@prisma/client';
+import { RequiresPremium } from '../plan/plan.decorators';
+import { PremiumFeature } from '../plan/plan.constants';
 
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Roles(Role.ADMIN)
+  @RequiresPremium(PremiumFeature.MEMBERS)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(@FamilyScopeParam() scope: FamilyScope, @Body() createUserDto: CreateUserDto) {

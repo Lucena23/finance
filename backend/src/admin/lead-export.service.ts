@@ -318,6 +318,9 @@ export class LeadExportService {
       familyAccountId: 0,
       familyName: 0,
       userRole: 0,
+      planStatus: 0,
+      planDaysLeft: 0,
+      billingCycle: 0,
     };
 
     return LEAD_COLUMNS.map((column) =>

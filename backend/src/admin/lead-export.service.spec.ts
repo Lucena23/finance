@@ -51,7 +51,7 @@ describe('LeadExportService', () => {
 
       const text = result.buffer.toString('utf-8');
       expect(text.startsWith('\uFEFF')).toBe(true);
-      expect(text).toContain('Nome;E-mail;CPF;Data;Status');
+      expect(text).toContain('Nome;E-mail;WhatsApp;CPF;Data;Status');
     });
 
     it('deve conter os campos obrigatórios de cada lead', async () => {

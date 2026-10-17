@@ -1,6 +1,9 @@
 import {
+  Body,
   Controller,
   Get,
+  Param,
+  Patch,
   Query,
   Res,
   UseGuards,
@@ -18,6 +21,8 @@ import {
   LeadExportFormat,
   LeadExportService,
 } from './lead-export.service';
+import { UpdateFamilyPlanDto } from './dto/update-family-plan.dto';
+import { PlanInfo } from '../plan/plan.service';
 
 /**
  * AdminController — Painel Aksurim (Admin Global). RN-15 / TAREFA 25 / 27.
@@ -55,6 +60,18 @@ export class AdminController {
   @Get('leads')
   getLeads(): Promise<AdminLead[]> {
     return this.adminService.getLeads();
+  }
+
+  /**
+   * PATCH /api/v1/admin/families/:id/plan
+   * Ativa, estende ou revoga o plano Premium de uma Conta Familiar.
+   */
+  @Patch('families/:id/plan')
+  updateFamilyPlan(
+    @Param('id') id: string,
+    @Body() dto: UpdateFamilyPlanDto,
+  ): Promise<PlanInfo> {
+    return this.adminService.updateFamilyPlan(id, dto);
   }
 
   /**

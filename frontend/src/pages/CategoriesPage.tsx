@@ -13,17 +13,19 @@
  * REGRA (§8.1): proibido o uso de `any`. Tipos explícitos em todo o módulo.
  */
 
-import { AlertCircle, Plus, RefreshCw, X } from 'lucide-react';
+import { AlertCircle, Crown, Lock, Plus, RefreshCw, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
 import { CategoryCard } from '@/components/category/CategoryCard';
 import { CategoryForm } from '@/components/category/CategoryForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { usePlan } from '@/contexts/PlanContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
 import { useCategoryMutations } from '@/hooks/useCategoryMutations';
 import { ApiError, type Category } from '@/lib/api';
+import { cn } from '@/lib/cn';
 import { Role } from '@/lib/constants';
 
 /**
@@ -31,6 +33,7 @@ import { Role } from '@/lib/constants';
  */
 export function CategoriesPage(): JSX.Element {
   const { user } = useAuth();
+  const { hasPremiumAccess, showGoldCue, openPremiumModal } = usePlan();
   const { categories, isLoading, error, refetch } = useCategories();
   const { create, update, remove, isSubmitting } =
     useCategoryMutations(refetch);
@@ -40,12 +43,18 @@ export function CategoriesPage(): JSX.Element {
   const [actionError, setActionError] = useState<string | null>(null);
 
   const canManage = user?.role === Role.ADMIN;
+  const reachedFreeLimit = categories.length >= 5;
+  const isNewButtonGold = showGoldCue && reachedFreeLimit;
 
   const handleOpenCreate = useCallback((): void => {
+    if (!hasPremiumAccess && categories.length >= 5) {
+      openPremiumModal('CATEGORY_LIMIT');
+      return;
+    }
     setEditingCategory(null);
     setIsFormOpen(true);
     setActionError(null);
-  }, []);
+  }, [hasPremiumAccess, categories.length, openPremiumModal]);
 
   const handleOpenEdit = useCallback((category: Category): void => {
     setEditingCategory(category);
@@ -64,14 +73,23 @@ export function CategoriesPage(): JSX.Element {
       color: string;
       icon: string;
     }): Promise<void> => {
-      if (editingCategory) {
-        await update(editingCategory.id, values);
-      } else {
-        await create(values);
+      try {
+        if (editingCategory) {
+          await update(editingCategory.id, values);
+        } else {
+          await create(values);
+        }
+        handleCloseForm();
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 402) {
+          handleCloseForm();
+          openPremiumModal('CATEGORY_LIMIT');
+          return;
+        }
+        throw err;
       }
-      handleCloseForm();
     },
-    [editingCategory, update, create, handleCloseForm],
+    [editingCategory, update, create, handleCloseForm, openPremiumModal],
   );
 
   const handleDelete = useCallback(
@@ -115,9 +133,20 @@ export function CategoriesPage(): JSX.Element {
             size="sm"
             onClick={handleOpenCreate}
             data-testid="categories-new-button"
+            className={cn(
+              isNewButtonGold &&
+                'border border-amber-400 bg-gradient-to-r from-amber-500 to-yellow-500 font-bold text-slate-950 hover:brightness-105',
+            )}
           >
-            <Plus aria-hidden="true" className="h-4 w-4" />
-            Nova
+            {isNewButtonGold ? (
+              <Lock aria-hidden="true" className="h-3.5 w-3.5" />
+            ) : (
+              <Plus aria-hidden="true" className="h-4 w-4" />
+            )}
+            <span>Nova</span>
+            {isNewButtonGold && (
+              <Crown aria-hidden="true" className="h-3.5 w-3.5" />
+            )}
           </Button>
         ) : null}
       </header>

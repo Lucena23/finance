@@ -192,11 +192,19 @@ function MetricsSection(): JSX.Element {
 }
 
 /**
- * Bloco de leads comerciais + exportação (PDF/CSV).
+ * Bloco de leads comerciais + exportação (PDF/CSV) + gestão manual de planos.
  */
 function LeadsSection(): JSX.Element {
-  const { leads, isLoading, isExporting, error, refetch, exportLeads } =
-    useAdminLeads();
+  const {
+    leads,
+    isLoading,
+    isExporting,
+    updatingFamilyId,
+    error,
+    refetch,
+    exportLeads,
+    updateFamilyPlan,
+  } = useAdminLeads();
   const [pendingFormat, setPendingFormat] = useState<LeadExportFormat | null>(
     null,
   );
@@ -216,7 +224,9 @@ function LeadsSection(): JSX.Element {
     <Card data-testid="admin-leads">
       <CardHeader className="flex flex-col gap-3 pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <CardTitle className="text-base">Leads comerciais</CardTitle>
+          <CardTitle className="text-base">
+            Leads comerciais e Gestão de Assinaturas
+          </CardTitle>
           <p className="text-muted-foreground text-xs">
             {rows.length} lead(s) · CPF sempre mascarado (LGPD)
           </p>
@@ -305,47 +315,146 @@ function LeadsSection(): JSX.Element {
                     CPF
                   </th>
                   <th scope="col" className="px-4 py-2 font-medium">
-                    Cadastro
+                    Plano
                   </th>
                   <th scope="col" className="px-4 py-2 font-medium">
                     Status
                   </th>
+                  <th scope="col" className="px-4 py-2 font-medium">
+                    Ações de Plano
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((lead, index) => (
-                  <tr
-                    key={`${lead.familyAccountId}-${lead.userEmail}-${index}`}
-                    className="border-border border-t"
-                  >
-                    <td className="px-4 py-2 font-medium">{lead.familyName}</td>
-                    <td className="px-4 py-2">{lead.userName}</td>
-                    <td className="text-muted-foreground px-4 py-2">
-                      {lead.userEmail}
-                    </td>
-                    <td className="px-4 py-2 tabular-nums">
-                      {lead.userWhatsapp || '-'}
-                    </td>
-                    <td className="px-4 py-2 tabular-nums">
-                      {lead.ownerCpfMasked}
-                    </td>
-                    <td className="px-4 py-2 tabular-nums">
-                      {formatDate(lead.createdAt)}
-                    </td>
-                    <td className="px-4 py-2">
-                      <span
-                        className={cn(
-                          'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold',
-                          lead.isEmailVerified
-                            ? 'bg-emerald-500/15 text-emerald-500'
-                            : 'bg-aksurim-warning/15 text-aksurim-warning',
+                {rows.map((lead, index) => {
+                  const isUpdating = updatingFamilyId === lead.familyAccountId;
+                  const planStatus = lead.planStatus ?? 'FREE';
+                  const planDaysLeft = lead.planDaysLeft ?? 0;
+
+                  return (
+                    <tr
+                      key={`${lead.familyAccountId}-${lead.userEmail}-${index}`}
+                      className="border-border border-t"
+                    >
+                      <td className="px-4 py-2 font-medium">
+                        {lead.familyName}
+                        <span className="text-muted-foreground block text-[11px] font-normal">
+                          {formatDate(lead.createdAt)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2">{lead.userName}</td>
+                      <td className="text-muted-foreground px-4 py-2">
+                        {lead.userEmail}
+                      </td>
+                      <td className="px-4 py-2 tabular-nums">
+                        {lead.userWhatsapp || '-'}
+                      </td>
+                      <td className="px-4 py-2 tabular-nums">
+                        {lead.ownerCpfMasked}
+                      </td>
+                      <td className="px-4 py-2">
+                        {planStatus === 'PREMIUM' ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold text-amber-300">
+                            👑 Premium ({planDaysLeft}d)
+                          </span>
+                        ) : planStatus === 'TRIAL' ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
+                            👑 Teste ({planDaysLeft}d)
+                          </span>
+                        ) : planStatus === 'GRACE' ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-orange-400/40 bg-orange-500/15 px-2 py-0.5 text-[11px] font-semibold text-orange-300">
+                            ⚠️ Carência ({planDaysLeft}d)
+                          </span>
+                        ) : (
+                          <span className="bg-muted text-muted-foreground inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium">
+                            Gratuito
+                          </span>
                         )}
-                      >
-                        {lead.isEmailVerified ? 'Ativo' : 'Pendente'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-4 py-2">
+                        <span
+                          className={cn(
+                            'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold',
+                            lead.isEmailVerified
+                              ? 'bg-emerald-500/15 text-emerald-500'
+                              : 'bg-aksurim-warning/15 text-aksurim-warning',
+                          )}
+                        >
+                          {lead.isEmailVerified ? 'Ativo' : 'Pendente'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex flex-wrap items-center gap-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={isUpdating}
+                            className="h-7 border-amber-400/40 bg-amber-500/10 px-2 text-[11px] font-semibold text-amber-300 hover:bg-amber-500/20"
+                            onClick={() =>
+                              void updateFamilyPlan(lead.familyAccountId, {
+                                action: 'GRANT_PREMIUM',
+                                billingCycle: 'MONTHLY',
+                              })
+                            }
+                            title="Ativar 30 dias de Premium Mensal"
+                          >
+                            👑 +30d
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={isUpdating}
+                            className="h-7 border-amber-400/40 bg-amber-500/10 px-2 text-[11px] font-semibold text-amber-300 hover:bg-amber-500/20"
+                            onClick={() =>
+                              void updateFamilyPlan(lead.familyAccountId, {
+                                action: 'GRANT_PREMIUM',
+                                billingCycle: 'ANNUAL',
+                              })
+                            }
+                            title="Ativar 365 dias de Premium Anual"
+                          >
+                            👑 +1 ano
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            disabled={isUpdating}
+                            className="h-7 px-2 text-[11px]"
+                            onClick={() =>
+                              void updateFamilyPlan(lead.familyAccountId, {
+                                action: 'EXTEND_TRIAL',
+                                trialDays: 15,
+                              })
+                            }
+                            title="Renovar 15 dias de teste gratuito"
+                          >
+                            +15d Teste
+                          </Button>
+                          {planStatus !== 'FREE' ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              disabled={isUpdating}
+                              className="text-destructive hover:text-destructive h-7 px-2 text-[11px]"
+                              onClick={() =>
+                                void updateFamilyPlan(lead.familyAccountId, {
+                                  action: 'REVOKE',
+                                })
+                              }
+                              title="Revogar assinatura (voltar para Free)"
+                            >
+                              Revogar
+                            </Button>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

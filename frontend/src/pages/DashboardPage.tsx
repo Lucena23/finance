@@ -8,7 +8,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 
 import { cn } from '@/lib/cn';
 import { CategoryDonut } from '@/components/dashboard/CategoryDonut';
@@ -16,7 +16,9 @@ import { MonthlyBars } from '@/components/dashboard/MonthlyBars';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
 import { YearlyQualityCard } from '@/components/dashboard/YearlyQualityCard';
 import { ReportModal } from '@/components/dashboard/ReportModal';
+import { LockedMonthOverlay } from '@/components/plan/LockedMonthOverlay';
 import { AnimatedAdBanner } from '@/components/ads/AnimatedAdBanner';
+import { usePlan } from '@/contexts/PlanContext';
 import { DEFAULT_TIMEZONE } from '@/lib/constants';
 
 /**
@@ -38,9 +40,9 @@ function currentPeriod(): { month: number; year: number } {
 }
 
 export function DashboardPage(): JSX.Element {
-    const { month, year: currentYear } = useMemo(currentPeriod, []);
+  const { month, year: currentYear } = useMemo(currentPeriod, []);
+  const { showGoldCue, isFreeAllowedPeriod, canViewPeriod } = usePlan();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-
   const [selectedMonth, setSelectedMonth] = useState<number>(month);
 
   const monthsList = [
@@ -49,9 +51,10 @@ export function DashboardPage(): JSX.Element {
   ];
 
   const handlePreviousYear = () => setSelectedYear((v) => v - 1);
-  const handleNextYear = () => setSelectedYear((v) => Math.min(currentYear, v + 1));
+  const handleNextYear = () => setSelectedYear((v) => Math.min(currentYear + 1, v + 1));
 
-  const isCurrentYear = selectedYear === currentYear;
+  const isCurrentYear = selectedYear >= currentYear;
+  const isMonthUnlocked = canViewPeriod(selectedMonth, selectedYear);
 
   return (
     <section className="flex flex-col gap-5 pb-16">
@@ -62,7 +65,7 @@ export function DashboardPage(): JSX.Element {
             Total pago e a pagar no mês, divisão por membro e gráficos de saídas.
           </p>
         </div>
-        
+
         {/* Modal de Gerar Relatório (Substitui antiga aba Relatórios) */}
         <ReportModal />
       </header>
@@ -103,40 +106,75 @@ export function DashboardPage(): JSX.Element {
         {monthsList.map((mName, idx) => {
           const mNum = idx + 1;
           const isSelected = selectedMonth === mNum;
+          const isGoldMonth =
+            showGoldCue && !isFreeAllowedPeriod(mNum, selectedYear);
+
           return (
             <button
               key={mNum}
               type="button"
               onClick={() => setSelectedMonth(mNum)}
               className={cn(
-                'px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap snap-center transition-colors focus:outline-none',
-                isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                'inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap snap-center transition-colors focus:outline-none',
+                isSelected
+                  ? isGoldMonth
+                    ? 'border border-amber-400 bg-gradient-to-r from-amber-400 to-yellow-500 font-bold text-slate-950'
+                    : 'bg-primary text-primary-foreground'
+                  : isGoldMonth
+                    ? 'border border-amber-400/45 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'
+                    : 'bg-muted/50 text-muted-foreground hover:bg-muted'
               )}
             >
+              {isGoldMonth && (
+                <Lock
+                  aria-hidden="true"
+                  className={cn(
+                    'h-3 w-3 shrink-0',
+                    isSelected ? 'text-slate-950' : 'text-amber-400',
+                  )}
+                />
+              )}
               {mName}
             </button>
           );
         })}
       </div>
 
-      {/* Cartões do Mês Selecionado */}
-      <SummaryCards month={selectedMonth} year={selectedYear} />
+      {!isMonthUnlocked ? (
+        <>
+          <LockedMonthOverlay
+            month={selectedMonth}
+            year={selectedYear}
+            variant="dashboard"
+            onBackToCurrentMonth={() => {
+              setSelectedMonth(month);
+              setSelectedYear(currentYear);
+            }}
+          />
+          <div className="pt-2 pb-2">
+            <AnimatedAdBanner type="rectangle" />
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Cartões do Mês Selecionado */}
+          <SummaryCards month={selectedMonth} year={selectedYear} />
 
-      {/* Banner de Ads animado - Medium Rectangle IAB 300x250 (TAREFA 19) */}
-      <div className="pt-2 pb-2">
-        <AnimatedAdBanner type="rectangle" />
-      </div>
+          {/* Banner de Ads animado - Medium Rectangle IAB 300x250 (TAREFA 19) */}
+          <div className="pt-2 pb-2">
+            <AnimatedAdBanner type="rectangle" />
+          </div>
 
-      {/* Qualidade do Histórico Anual */}
-      <YearlyQualityCard year={selectedYear} />
+          {/* Qualidade do Histórico Anual */}
+          <YearlyQualityCard year={selectedYear} />
 
-      {/* Gráfico Rosca */}
-      <CategoryDonut month={selectedMonth} year={selectedYear} />
+          {/* Gráfico Rosca */}
+          <CategoryDonut month={selectedMonth} year={selectedYear} />
 
-      {/* Evolução Mensal */}
-      <MonthlyBars year={selectedYear} />
-
-      
+          {/* Evolução Mensal */}
+          <MonthlyBars year={selectedYear} />
+        </>
+      )}
     </section>
   );
 }

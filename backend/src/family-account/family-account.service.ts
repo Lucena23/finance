@@ -47,10 +47,18 @@ export class FamilyAccountService {
       throw new ConflictException('CPF já cadastrado.');
     }
 
+    const trialDaysRaw = Number(process.env.TRIAL_DAYS);
+    const trialDays =
+      Number.isFinite(trialDaysRaw) && trialDaysRaw > 0
+        ? Math.floor(trialDaysRaw)
+        : 15;
+    const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
+
     const family = await this.prisma.familyAccount.create({
       data: {
         name: dto.name.trim(),
         ownerCpf,
+        trialEndsAt,
       },
     });
 

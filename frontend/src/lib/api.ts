@@ -246,6 +246,9 @@ export interface AdminLead {
   userRole: string;
   isEmailVerified: boolean;
   createdAt: string;
+  planStatus?: PlanStatus;
+  planDaysLeft?: number | null;
+  billingCycle?: BillingCycle | null;
 }
 
 /**
@@ -253,18 +256,79 @@ export interface AdminLead {
  */
 export type LeadExportFormat = 'pdf' | 'csv';
 
+// ═══════════════════════════════════════════
+// TIPOS DO MODELO FREEMIUM (v1.2)
+// ═══════════════════════════════════════════
+
+export type PlanStatus = 'TRIAL' | 'PREMIUM' | 'GRACE' | 'FREE';
+
+export type BillingCycle = 'MONTHLY' | 'SEMIANNUAL' | 'ANNUAL';
+
+export type PremiumFeature =
+  | 'MONTH_HISTORY'
+  | 'REPORTS'
+  | 'YEARLY_ANALYTICS'
+  | 'CATEGORY_LIMIT'
+  | 'MEMBERS'
+  | 'FAMILY_PLAN_EXPIRED';
+
+export interface MonthPeriod {
+  month: number;
+  year: number;
+}
+
+export interface PlanInfo {
+  status: PlanStatus;
+  hasPremiumAccess: boolean;
+  trialEndsAt: string | null;
+  premiumEndsAt: string | null;
+  currentPeriodEndsAt: string | null;
+  daysLeft: number | null;
+  billingCycle: BillingCycle | null;
+  isTrialOfferEligible: boolean;
+  limits: {
+    maxCategories: number | null;
+    allowedPeriods: MonthPeriod[] | null;
+  };
+}
+
+export interface LockedMonthSummary {
+  month: number;
+  year: number;
+  count: number;
+  totalAmount: number;
+}
+
+export type AdminPlanAction = 'GRANT_PREMIUM' | 'EXTEND_TRIAL' | 'REVOKE';
+
+export interface UpdateFamilyPlanPayload {
+  action: AdminPlanAction;
+  billingCycle?: BillingCycle;
+  trialDays?: number;
+}
+
 /**
- * Erro normalizado da API — expõe status HTTP e mensagem legível.
+ * Erro normalizado da API — expõe status HTTP, código e recurso Premium bloqueado.
  */
 export class ApiError extends Error {
   public readonly status: number;
   public readonly path?: string;
+  public readonly code?: string;
+  public readonly feature?: PremiumFeature;
 
-  constructor(message: string, status: number, path?: string) {
+  constructor(
+    message: string,
+    status: number,
+    path?: string,
+    code?: string,
+    feature?: PremiumFeature,
+  ) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.path = path;
+    this.code = code;
+    this.feature = feature;
   }
 }
 
@@ -336,16 +400,30 @@ httpClient.interceptors.request.use(
 // Normalização de erros da API.
 httpClient.interceptors.response.use(
   (response: AxiosResponse): AxiosResponse => response,
-  (error: AxiosError<{ message?: string | string[] }>): Promise<never> => {
+  (
+    error: AxiosError<{
+      message?: string | string[];
+      code?: string;
+      feature?: PremiumFeature;
+    }>,
+  ): Promise<never> => {
     const status = error.response?.status ?? 0;
     const rawMessage = error.response?.data?.message;
+    const code = error.response?.data?.code;
+    const feature = error.response?.data?.feature;
     const message = Array.isArray(rawMessage)
       ? rawMessage.join(', ')
       : (rawMessage ??
         error.message ??
         'Erro inesperado na comunicação com a API.');
 
-    return Promise.reject(new ApiError(message, status, error.config?.url));
+    if (status === 402 && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('plan-updated'));
+    }
+
+    return Promise.reject(
+      new ApiError(message, status, error.config?.url, code, feature),
+    );
   },
 );
 
@@ -547,6 +625,20 @@ export const supportApi = {
     post<SupportMessageResult>('/support', payload),
 };
 
+export const planApi = {
+  get: (): Promise<PlanInfo> => get<PlanInfo>('/plan'),
+  lockedSummary: (params: {
+    month: number;
+    year: number;
+  }): Promise<LockedMonthSummary> =>
+    get<LockedMonthSummary>('/plan/locked-summary', { params }),
+};
+
+export const reportsApi = {
+  exportCsv: (): Promise<void> =>
+    downloadFile('/reports/csv', 'Dados_Aksurim_Controle.csv'),
+};
+
 /**
  * Painel Aksurim — Admin Global (TAREFA 25 / TAREFA 27 / TAREFA 28 / RN-15).
  *
@@ -560,6 +652,13 @@ export const adminApi = {
 
   /** Lista de leads comerciais (CPF mascarado) para exibição no painel. */
   leads: (): Promise<AdminLead[]> => get<AdminLead[]>('/admin/leads'),
+
+  /** Atualiza manualmente o plano de uma família (Admin Global). */
+  updateFamilyPlan: (
+    familyAccountId: string,
+    payload: UpdateFamilyPlanPayload,
+  ): Promise<PlanInfo> =>
+    patch<PlanInfo>(`/admin/families/${familyAccountId}/plan`, payload),
 
   /**
    * Exporta os leads em PDF ou CSV (TAREFA 27).
@@ -584,5 +683,7 @@ export const api = {
   dashboard: dashboardApi,
   notifications: notificationsApi,
   support: supportApi,
+  plan: planApi,
+  reports: reportsApi,
   admin: adminApi,
 };

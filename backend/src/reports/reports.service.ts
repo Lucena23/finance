@@ -380,4 +380,68 @@ export class ReportsService {
 
     return doc;
   }
+
+  /**
+   * Exportação simples em CSV de todos os lançamentos da família (LGPD — portabilidade).
+   * Disponível para todos os planos (Free e Premium).
+   */
+  async generateCsvExport(familyAccountId: string): Promise<string> {
+    const items = await this.prisma.paymentItem.findMany({
+      where: {
+        expense: { familyAccountId, deletedAt: null },
+      },
+      include: {
+        expense: { select: { title: true, type: true, category: { select: { name: true } } } },
+        paidBy: { select: { name: true } },
+      },
+      orderBy: { dueDate: 'asc' },
+    });
+
+    const escapeCsv = (val: string | number | null | undefined): string => {
+      const str = val === null || val === undefined ? '' : String(val);
+      if (str.includes(';') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const header = [
+      'Data Vencimento',
+      'Despesa',
+      'Categoria',
+      'Tipo',
+      'Parcela',
+      'Valor Previsto (R$)',
+      'Status',
+      'Valor Pago (R$)',
+      'Data Pagamento',
+      'Pago Por',
+    ].join(';');
+
+    const rows = items.map((item) => {
+      const dueStr = item.dueDate.toISOString().slice(0, 10);
+      const paidAtStr = item.paidAt ? item.paidAt.toISOString().slice(0, 10) : '';
+      const expectedBrl = (item.expectedAmount / 100).toFixed(2).replace('.', ',');
+      const paidBrl =
+        item.paidAmount !== null && item.paidAmount !== undefined
+          ? (item.paidAmount / 100).toFixed(2).replace('.', ',')
+          : '';
+      const installmentStr = `${item.installmentNumber}/${item.totalInstallments}`;
+
+      return [
+        escapeCsv(dueStr),
+        escapeCsv(item.expense.title),
+        escapeCsv(item.expense.category.name),
+        escapeCsv(item.expense.type),
+        escapeCsv(installmentStr),
+        escapeCsv(expectedBrl),
+        escapeCsv(item.status === 'PAID' ? 'PAGO' : 'PENDENTE'),
+        escapeCsv(paidBrl),
+        escapeCsv(paidAtStr),
+        escapeCsv(item.paidBy?.name ?? ''),
+      ].join(';');
+    });
+
+    return '\uFEFF' + [header, ...rows].join('\r\n');
+  }
 }

@@ -22,6 +22,7 @@ import {
   PaymentQueue,
 } from './payment-item.service';
 import { PaymentItem } from '@prisma/client';
+import { MemberWriteRequiresPlan } from '../plan/plan.decorators';
 
 /**
  * PaymentItemController — Fila de Pagamentos, quitação e histórico.
@@ -69,6 +70,7 @@ export class PaymentItemController {
    * TAREFA 13: a resposta inclui o `paidBy` hidratado, permitindo atualização
    * otimista do card com as iniciais do pagador sem refetch da fila.
    */
+  @MemberWriteRequiresPlan()
   @Patch(':id/pay')
   pay(
     @FamilyScopeParam() scope: FamilyScope,
@@ -88,6 +90,7 @@ export class PaymentItemController {
    * Desfaz a quitação de um PaymentItem (TAREFA 46).
    * Acessível a ADMIN e MEMBER.
    */
+  @MemberWriteRequiresPlan()
   @Patch(':id/undo-pay')
   undoPay(
     @FamilyScopeParam() scope: FamilyScope,
@@ -100,6 +103,7 @@ export class PaymentItemController {
    * Ajuste fino do valor previsto de uma parcela (TAREFA 26).
    * Acessível a ADMIN e MEMBER (RN-03).
    */
+  @MemberWriteRequiresPlan()
   @Patch(':id')
   updateExpectedAmount(
     @FamilyScopeParam() scope: FamilyScope,

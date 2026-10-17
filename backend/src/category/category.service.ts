@@ -6,6 +6,7 @@ import {
 import { Category } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { PlanService } from '../plan/plan.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 
@@ -19,7 +20,10 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
  */
 @Injectable()
 export class CategoryService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly planService?: PlanService,
+  ) {}
 
   /**
    * Lista todas as categorias do workspace familiar autenticado.
@@ -40,6 +44,10 @@ export class CategoryService {
     familyAccountId: string,
     dto: CreateCategoryDto,
   ): Promise<Category> {
+    if (this.planService) {
+      await this.planService.assertCanCreateCategory(familyAccountId);
+    }
+
     return this.prisma.category.create({
       data: {
         name: dto.name.trim(),
