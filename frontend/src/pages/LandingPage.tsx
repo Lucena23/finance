@@ -80,6 +80,8 @@ export function LandingPage(): JSX.Element {
                 <img
                   src="/images/hero-sad.png"
                   alt="Preocupação com contas no fim do mês"
+                  loading="eager"
+                  decoding="async"
                   className="h-64 w-full object-cover object-center opacity-80 transition-transform duration-700 group-hover:scale-105"
                 />
                 <div className="absolute right-6 bottom-6 left-6 z-20 text-left">
@@ -93,6 +95,8 @@ export function LandingPage(): JSX.Element {
                 <img
                   src="/images/hero-happy.png"
                   alt="Tranquilidade e organização financeira"
+                  loading="eager"
+                  decoding="async"
                   className="h-64 w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
                 />
                 <div className="absolute right-6 bottom-6 left-6 z-20 text-left">
@@ -125,6 +129,8 @@ export function LandingPage(): JSX.Element {
                   <img
                     src="/images/pillar-1.jpg"
                     alt="Fila Inteligente"
+                    loading="lazy"
+                    decoding="async"
                     className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
@@ -148,6 +154,8 @@ export function LandingPage(): JSX.Element {
                   <img
                     src="/images/pillar-2.jpg"
                     alt="Gestão Compartilhada"
+                    loading="lazy"
+                    decoding="async"
                     className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
@@ -172,6 +180,8 @@ export function LandingPage(): JSX.Element {
                   <img
                     src="/images/pillar-3.jpg"
                     alt="Inteligência Visual"
+                    loading="lazy"
+                    decoding="async"
                     className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
