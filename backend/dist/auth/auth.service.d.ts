@@ -34,6 +34,8 @@ export declare class AuthService {
     private readonly mailerService;
     constructor(prisma: PrismaService, jwtService: JwtService, mailerService: MailerService);
     register(dto: RegisterDto): Promise<AuthResponse>;
+    private getFrontendUrl;
+    private getBackendUrl;
     private readonly resendCooldowns;
     resendVerificationEmail(userId: string): Promise<{
         message: string;

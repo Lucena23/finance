@@ -130,8 +130,8 @@ let AuthService = class AuthService {
             });
             return user;
         });
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+        const frontendUrl = this.getFrontendUrl();
+        const backendUrl = this.getBackendUrl();
         const verifyLink = `${backendUrl}/api/v1/auth/verify?token=${verifyToken}`;
         const emailHtml = (0, email_templates_1.getWelcomeEmailHtml)(dto.name.trim(), verifyLink, frontendUrl);
         await this.mailerService.sendMail({
@@ -141,6 +141,22 @@ let AuthService = class AuthService {
             attachments: [(0, email_templates_1.getLogoCidAttachment)()],
         }).catch((err) => console.error('Erro ao enviar e-mail de boas vindas:', err));
         return this.buildAuthResponse(result);
+    }
+    getFrontendUrl() {
+        if (process.env.FRONTEND_URL) {
+            return process.env.FRONTEND_URL;
+        }
+        return process.env.NODE_ENV === 'production'
+            ? 'https://controle.aksurim.com'
+            : 'http://localhost:5173';
+    }
+    getBackendUrl() {
+        if (process.env.BACKEND_URL) {
+            return process.env.BACKEND_URL;
+        }
+        return process.env.NODE_ENV === 'production'
+            ? 'https://controle.aksurim.com'
+            : 'http://localhost:3000';
     }
     async resendVerificationEmail(userId) {
         const COOLDOWN_MS = 60 * 1000;
@@ -173,8 +189,8 @@ let AuthService = class AuthService {
                 data: { verifyToken },
             });
         }
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+        const frontendUrl = this.getFrontendUrl();
+        const backendUrl = this.getBackendUrl();
         const verifyLink = `${backendUrl}/api/v1/auth/verify?token=${verifyToken}`;
         const emailHtml = (0, email_templates_1.getWelcomeEmailHtml)(user.name, verifyLink, frontendUrl);
         await this.mailerService.sendMail({
@@ -203,7 +219,7 @@ let AuthService = class AuthService {
                 verifyToken: null,
             },
         });
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const frontendUrl = this.getFrontendUrl();
         return (0, email_templates_1.getVerificationSuccessHtml)(frontendUrl);
     }
     async login(dto) {

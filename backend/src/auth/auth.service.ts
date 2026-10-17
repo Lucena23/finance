@@ -147,8 +147,8 @@ export class AuthService {
       return user;
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+    const frontendUrl = this.getFrontendUrl();
+    const backendUrl = this.getBackendUrl();
     const verifyLink = `${backendUrl}/api/v1/auth/verify?token=${verifyToken}`;
     const emailHtml = getWelcomeEmailHtml(dto.name.trim(), verifyLink, frontendUrl);
     
@@ -160,6 +160,24 @@ export class AuthService {
     }).catch((err) => console.error('Erro ao enviar e-mail de boas vindas:', err));
 
     return this.buildAuthResponse(result);
+  }
+
+  private getFrontendUrl(): string {
+    if (process.env.FRONTEND_URL) {
+      return process.env.FRONTEND_URL;
+    }
+    return process.env.NODE_ENV === 'production'
+      ? 'https://controle.aksurim.com'
+      : 'http://localhost:5173';
+  }
+
+  private getBackendUrl(): string {
+    if (process.env.BACKEND_URL) {
+      return process.env.BACKEND_URL;
+    }
+    return process.env.NODE_ENV === 'production'
+      ? 'https://controle.aksurim.com'
+      : 'http://localhost:3000';
   }
 
   private readonly resendCooldowns = new Map<string, number>();
@@ -206,8 +224,8 @@ export class AuthService {
       });
     }
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+    const frontendUrl = this.getFrontendUrl();
+    const backendUrl = this.getBackendUrl();
     const verifyLink = `${backendUrl}/api/v1/auth/verify?token=${verifyToken}`;
     const emailHtml = getWelcomeEmailHtml(user.name, verifyLink, frontendUrl);
 
@@ -243,7 +261,7 @@ export class AuthService {
       },
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = this.getFrontendUrl();
     return getVerificationSuccessHtml(frontendUrl);
   }
 
