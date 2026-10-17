@@ -49,9 +49,9 @@ Na versão **1.2**, o **Aksurim Controle** opera sob uma arquitetura de monetiza
 | **Rolagem de Contas Atrasadas** | Contas vencidas aparecem normalmente no mês atual para baixa | Histórico completo + visão mensal detalhada |
 | **Gráfico de Evolução Anual (12 Meses)** | Meses fora da janela exibidos com indicador Premium | **Comparativo analítico completo dos 12 meses** |
 | **Categorias Personalizadas** | Até **5 categorias** ativas | **Categorias ilimitadas** |
-| **Membros e Participantes** | Membros convidados em modo **Somente Leitura** | **Acesso completo** para criar e dar baixa em contas |
+| **Membros e Participantes** | Membros convidados em modo **Somente Leitura** | **Acesso colaborativo completo** (criar, editar, categorizar e quitar) |
 | **Relatórios Executivos em PDF** | Exclusivo 👑 Premium | **Relatórios Sintético e Analítico com gráficos vetoriais** |
-| **Portabilidade de Dados (CSV — LGPD)** | **Liberado gratuitamente** | **Liberado gratuitamente** |
+| **Portabilidade de Dados (CSV — LGPD)** | **Liberado gratuitamente para o Titular** | **Liberado para Titular e Membros** |
 | **Suporte & Mídia de Parceiros** | Acesso total ao suporte e ofertas de parceiros | Acesso total ao suporte e ofertas de parceiros |
 
 ---
@@ -61,9 +61,10 @@ Na versão **1.2**, o **Aksurim Controle** opera sob uma arquitetura de monetiza
 O sistema foi arquitetado sob princípios de **Security by Design** e **Defense in Depth**, alinhado às diretrizes corporativas **OWASP Top 10** e à **Lei Geral de Proteção de Dados (Lei nº 13.709/2018)**:
 
 - **Isolamento Criptográfico Multi-Tenant:** Acesso 100% segregado por conta/núcleo diretamente na camada de sessão autenticada, impedindo qualquer vazamento horizontal de dados entre diferentes grupos (*Zero-Trust Tenant Isolation*).
+- **Higiene de Sessão Padrão FinTech:** Controle ativo de ciclo de vida de sessão com expiração automática por inatividade (*Idle Timeout*) em navegadores e PWAs instalados, revogação imediata em caso de invalidação de credenciais e limpeza segura de estado local.
 - **Validação em Dupla Camada:** Todas as regras de negócio, limites operacionais e controles de assinatura são auditados e validados no servidor, independentemente da interface cliente.
 - **Hardening de API & Criptografia:** Proteção de cabeçalhos HTTP de segurança, políticas estritas de origem cruzada (CORS), sanitização rigorosa de payloads contra injeção de código (SQLi / XSS), hashing criptográfico de credenciais e controle de frequência (*Cooldown / Rate-Limiting*) em fluxos sensíveis de mensageria.
-- **Conformidade LGPD Nativa:** Garantia do direito de **Portabilidade de Dados (Art. 18, V)** com exportação estruturada em CSV disponível para todos os usuários, além de verificação de unicidade cadastral para prevenção de fraudes.
+- **Conformidade LGPD Nativa:** Garantia do direito de **Portabilidade de Dados (Art. 18, V)** com exportação estruturada em CSV para o titular da conta, mascaramento de dados sensíveis e preservação íntegra do histórico financeiro em desligamentos de membros.
 
 ---
 
