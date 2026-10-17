@@ -13,15 +13,10 @@ yarn-error.log*
 /.pnp
 .pnp.js
 
-# Build outputs
+# Build outputs (backend/dist e frontend/dist são versionados para deploy instantâneo via SSH na Superdomínios)
 /dist
-/backend/dist
-/frontend/dist
 /out-tsc
 /tmp
-
-# Service Worker compilado (artefato gerado a partir de src/service-worker.ts)
-/frontend/public/service-worker.js
 
 # Relatórios de performance gerados (Lighthouse)
 /frontend/lighthouse-reports/
