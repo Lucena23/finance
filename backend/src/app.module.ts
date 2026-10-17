@@ -23,6 +23,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { SupportModule } from './support/support.module';
 import { UserModule } from './user/user.module';
 import { ReportsModule } from './reports/reports.module';
+import { PlanModule } from './plan/plan.module';
+import { PlanGuard } from './plan/plan.guard';
 
 @Module({
   imports: [
@@ -54,6 +56,7 @@ import { ReportsModule } from './reports/reports.module';
     }),
     // Agendador de tarefas — habilita o Cron Job de Web Push (TAREFA 33).
     ScheduleModule.forRoot(),
+    PlanModule,
     ReportsModule,
     PrismaModule,
     AuthModule,
@@ -81,6 +84,11 @@ import { ReportsModule } from './reports/reports.module';
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    // Guard global Freemium (v1.2) — aplicado após autenticação e papéis.
+    {
+      provide: APP_GUARD,
+      useClass: PlanGuard,
     },
     // Interceptor global de isolamento multi-tenant (TAREFA 13).
     // Deriva o familyAccountId do JWT e o injeta como escopo obrigatório.

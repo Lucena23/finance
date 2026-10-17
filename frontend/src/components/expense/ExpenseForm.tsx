@@ -41,6 +41,7 @@ import { useEffect, useId, useMemo, useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { usePlan } from '@/contexts/PlanContext';
 import {
   ApiError,
   expensesApi,
@@ -182,6 +183,7 @@ export function ExpenseForm({
   onSuccess,
   onCancel,
 }: ExpenseFormProps): JSX.Element {
+  const { openPremiumModal } = usePlan();
   const titleFieldId = useId();
   const descriptionFieldId = useId();
   const amountFieldId = useId();
@@ -315,6 +317,11 @@ export function ExpenseForm({
         onSuccess?.(created);
       }
     } catch (err) {
+      if (err instanceof ApiError && err.status === 402) {
+        onCancel?.();
+        openPremiumModal(err.feature ?? 'FAMILY_PLAN_EXPIRED');
+        return;
+      }
       const message =
         err instanceof ApiError
           ? err.message

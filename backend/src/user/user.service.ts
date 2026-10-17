@@ -1,13 +1,19 @@
-import { ConflictException, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
+import { MailerService } from '@nestjs-modules/mailer';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { getLogoCidAttachment, getWelcomeEmailHtml } from '../auth/email-templates';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Role } from '@prisma/client';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly mailerService?: MailerService,
+  ) {}
 
   private getInitials(name: string): string {
     const parts = name.trim().split(/\s+/);
@@ -17,25 +23,44 @@ export class UserService {
   }
 
   async create(familyAccountId: string, dto: CreateUserDto) {
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const email = dto.email.toLowerCase().trim();
+    const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) throw new ConflictException('Email já em uso.');
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
     const initials = this.getInitials(dto.name);
+    const verifyToken = crypto.randomBytes(32).toString('hex');
 
     const user = await this.prisma.user.create({
       data: {
-        name: dto.name,
-        email: dto.email,
+        name: dto.name.trim(),
+        email,
         passwordHash,
         role: dto.role,
         avatarColor: dto.avatarColor,
         initials,
         familyAccountId,
+        verifyToken,
       },
     });
 
-    const { passwordHash: _, ...safeUser } = user;
+    if (this.mailerService) {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+      const verifyLink = `${backendUrl}/api/v1/auth/verify?token=${verifyToken}`;
+      const emailHtml = getWelcomeEmailHtml(dto.name.trim(), verifyLink, frontendUrl);
+
+      await this.mailerService
+        .sendMail({
+          to: email,
+          subject: 'Bem-vindo ao Aksurim Controle! Confirme seu e-mail.',
+          html: emailHtml,
+          attachments: [getLogoCidAttachment()],
+        })
+        .catch((err) => console.error('Erro ao enviar e-mail de convite de membro:', err));
+    }
+
+    const { passwordHash: _, verifyToken: __, ...safeUser } = user;
     return safeUser;
   }
 
@@ -87,6 +112,30 @@ export class UserService {
       if (admins <= 1) throw new BadRequestException('Não é possível remover o único ADMIN.');
     }
 
-    await this.prisma.user.delete({ where: { id } });
+    const fallbackAdmin = await this.prisma.user.findFirst({
+      where: {
+        familyAccountId,
+        role: Role.ADMIN,
+        id: { not: id },
+      },
+      select: { id: true },
+    });
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.pushSubscription.deleteMany({ where: { userId: id } });
+      await tx.paymentItem.updateMany({
+        where: { paidById: id },
+        data: { paidById: null },
+      });
+
+      if (fallbackAdmin) {
+        await tx.expense.updateMany({
+          where: { familyAccountId, createdById: id },
+          data: { createdById: fallbackAdmin.id },
+        });
+      }
+
+      await tx.user.delete({ where: { id } });
+    });
   }
 }

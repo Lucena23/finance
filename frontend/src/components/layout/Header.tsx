@@ -1,7 +1,8 @@
 import { NavLink } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
-import { LogOut, ShieldCheck, Globe } from 'lucide-react';
+import { Crown, LogOut, ShieldCheck, Globe } from 'lucide-react';
 
+import { PremiumBadge } from '@/components/plan/PremiumBadge';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/cn';
 
@@ -86,32 +87,27 @@ export function Header(): JSX.Element {
           })}
         </nav>
 
-        {/* Avatar do usuário autenticado e Menu */}
+        {/* Selo Premium + Avatar do usuário autenticado e Menu */}
         {user ? (
-          <div className="relative" ref={menuRef}>
-            <button
-              aria-label={`Menu de usuário: ${user.name}`}
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-slate-950 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-slate-950 shadow-[0_0_10px_rgba(217,249,36,0.3)]"
-              style={{ backgroundColor: user.avatarColor || '#D9F924' }}
-            >
-              {user.initials}
-            </button>
+          <div className="flex items-center gap-2.5">
+            <PremiumBadge />
+            <div className="relative" ref={menuRef}>
+              <button
+                aria-label={`Menu de usuário: ${user.name}`}
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-slate-950 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-slate-950 shadow-[0_0_10px_rgba(217,249,36,0.3)]"
+                style={{ backgroundColor: user.avatarColor || '#D9F924' }}
+              >
+                {user.initials}
+              </button>
 
-            {menuOpen && (
-              <div className="absolute right-0 mt-2 w-48 rounded-md border border-border bg-card p-1 shadow-lg animate-in fade-in zoom-in-95 duration-200">
-                <div className="px-2 py-1.5 text-sm font-medium border-b border-border mb-1 truncate text-foreground">
-                  {user.name}
-                </div>
-                {/*
-                  TAREFA 6 — Contraste do botão "Sair" (RN-13 / Dark Theme).
-                  Antes: text-destructive (#FB4629) sobre bg-card escuro -> contraste insuficiente.
-                  Agora: texto claro (foreground) com ícone em destaque Aksurim e
-                  fundo de aviso translúcido no hover, garantindo legibilidade AA.
-                */}
-                {user.isGlobalAdmin && (
+              {menuOpen && (
+                <div className="absolute right-0 mt-2 w-48 rounded-md border border-border bg-card p-1 shadow-lg animate-in fade-in zoom-in-95 duration-200">
+                  <div className="px-2 py-1.5 text-sm font-medium border-b border-border mb-1 truncate text-foreground">
+                    {user.name}
+                  </div>
                   <NavLink
-                    to="/admin"
+                    to="/plans"
                     onClick={() => setMenuOpen(false)}
                     className={cn(
                       'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm font-medium',
@@ -120,43 +116,58 @@ export function Header(): JSX.Element {
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                     )}
                   >
-                    <ShieldCheck aria-hidden="true" className="h-4 w-4 text-primary" />
-                    Painel Aksurim
+                    <Crown aria-hidden="true" className="h-4 w-4 text-amber-500" />
+                    Meu Plano
                   </NavLink>
-                )}
-                
-                <a
-                  href="/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setMenuOpen(false)}
-                  className={cn(
-                    'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm font-medium',
-                    'text-foreground transition-colors mb-1',
-                    'hover:bg-slate-800 hover:text-slate-50',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                  {user.isGlobalAdmin && (
+                    <NavLink
+                      to="/admin"
+                      onClick={() => setMenuOpen(false)}
+                      className={cn(
+                        'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm font-medium',
+                        'text-foreground transition-colors mb-1',
+                        'hover:bg-slate-800 hover:text-slate-50',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                      )}
+                    >
+                      <ShieldCheck aria-hidden="true" className="h-4 w-4 text-primary" />
+                      Painel Aksurim
+                    </NavLink>
                   )}
-                >
-                  <Globe aria-hidden="true" className="h-4 w-4 text-slate-400" />
-                  Site Oficial
-                </a>
-                <button
-                  onClick={handleLogout}
-                  className={cn(
-                    'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm font-medium',
-                    'text-foreground transition-colors',
-                    'hover:bg-aksurim-warning/15 hover:text-aksurim-warning',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksurim-warning focus-visible:ring-offset-2 focus-visible:ring-offset-card',
-                  )}
-                >
-                  <LogOut
-                    aria-hidden="true"
-                    className="h-4 w-4 text-aksurim-warning"
-                  />
-                  Sair do Sistema
-                </button>
-              </div>
-            )}
+                  
+                  <a
+                    href="/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMenuOpen(false)}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm font-medium',
+                      'text-foreground transition-colors mb-1',
+                      'hover:bg-slate-800 hover:text-slate-50',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                    )}
+                  >
+                    <Globe aria-hidden="true" className="h-4 w-4 text-slate-400" />
+                    Site Oficial
+                  </a>
+                  <button
+                    onClick={handleLogout}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm font-medium',
+                      'text-foreground transition-colors',
+                      'hover:bg-aksurim-warning/15 hover:text-aksurim-warning',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-aksurim-warning focus-visible:ring-offset-2 focus-visible:ring-offset-card',
+                    )}
+                  >
+                    <LogOut
+                      aria-hidden="true"
+                      className="h-4 w-4 text-aksurim-warning"
+                    />
+                    Sair do Sistema
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         ) : null}
       </div>

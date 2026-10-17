@@ -35,20 +35,20 @@ export function BottomNav(): JSX.Element {
   return (
     <nav
       aria-label="Navegação principal"
-      className="bg-background/95 supports-[backdrop-filter]:bg-background/80 fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur md:hidden"
+      className="bg-background/95 supports-[backdrop-filter]:bg-background/80 fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >
       <ul className="mx-auto flex max-w-lg items-stretch justify-around">
         {items.map((item) => {
           const Icon = item.icon;
 
           return (
-            <li key={item.to} className="flex-1">
+            <li key={item.to} className="min-w-0 flex-1">
               <NavLink
                 to={item.to}
                 end={item.end}
                 className={({ isActive }) =>
                   cn(
-                    'flex min-h-[44px] flex-col items-center justify-center gap-1 px-1 py-2 text-[11px] font-medium transition-colors',
+                    'flex min-h-[48px] flex-col items-center justify-center gap-1 px-1 py-2 text-[10px] font-medium transition-colors sm:text-[11px]',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
                     isActive
                       ? 'text-primary'
@@ -61,11 +61,11 @@ export function BottomNav(): JSX.Element {
                     <Icon
                       aria-hidden="true"
                       className={cn(
-                        'h-5 w-5 transition-transform',
+                        'h-5 w-5 shrink-0 transition-transform',
                         isActive && 'scale-110',
                       )}
                     />
-                    <span>{item.label}</span>
+                    <span className="max-w-full truncate">{item.label}</span>
                   </>
                 )}
               </NavLink>

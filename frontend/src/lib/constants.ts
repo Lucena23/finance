@@ -21,6 +21,19 @@ export const AUTH_TOKEN_STORAGE_KEY = 'aksurim.auth.token';
  */
 export const AUTH_USER_STORAGE_KEY = 'aksurim.auth.user';
 
+/**
+ * Chave de persistência do timestamp da última atividade do usuário
+ * para controle de expiração por inatividade (Idle Timeout) em PWAs e abas restauradas.
+ */
+export const AUTH_LAST_ACTIVITY_STORAGE_KEY = 'aksurim.auth.lastActivity';
+
+/**
+ * Tempo máximo de inatividade permitido antes de encerrar a sessão (30 minutos).
+ * Garante segurança padrão FinTech mesmo quando o navegador ("Continuar de onde parei")
+ * ou o SO mobile (PWA em segundo plano) preserva o sessionStorage.
+ */
+export const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+
 /** Timeout padrão das requisições HTTP (ms). */
 export const HTTP_TIMEOUT_MS = 15000;
 

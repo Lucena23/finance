@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PaymentStatus } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { PlanService, isPeriodAllowedForFree } from '../plan/plan.service';
 import { QueryDashboardDto } from './dto/query-dashboard.dto';
 
 /**
@@ -55,7 +56,10 @@ export interface CategoryDistribution {
  */
 @Injectable()
 export class DashboardService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly planService?: PlanService,
+  ) {}
 
   /**
    * Resumo do mês: total pago, total a pagar e divisão proporcional por membro
@@ -70,6 +74,14 @@ export class DashboardService {
     familyAccountId: string,
     query: QueryDashboardDto,
   ): Promise<DashboardSummary> {
+    if (this.planService) {
+      await this.planService.assertMonthAccess(
+        familyAccountId,
+        query.month,
+        query.year,
+      );
+    }
+
     const { month, year } = this.resolveReferencePeriod(query);
     const monthStart = new Date(Date.UTC(year, month - 1, 1));
     const monthEnd = new Date(Date.UTC(year, month, 0));
@@ -155,6 +167,14 @@ export class DashboardService {
     familyAccountId: string,
     query: QueryDashboardDto,
   ): Promise<CategoryDistribution[]> {
+    if (this.planService) {
+      await this.planService.assertMonthAccess(
+        familyAccountId,
+        query.month,
+        query.year,
+      );
+    }
+
     const { month, year } = this.resolveReferencePeriod(query);
     const monthStart = new Date(Date.UTC(year, month - 1, 1));
     const monthEnd = new Date(Date.UTC(year, month, 0));
@@ -229,6 +249,10 @@ export class DashboardService {
     query: QueryDashboardDto,
   ): Promise<{ month: number; totalPaid: number; totalPending: number }[]> {
     const { year } = this.resolveReferencePeriod(query);
+    const hasPremium = this.planService
+      ? await this.planService.hasPremiumAccess(familyAccountId)
+      : true;
+    const now = new Date();
     const yearStart = new Date(Date.UTC(year, 0, 1));
     const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
 
@@ -253,6 +277,9 @@ export class DashboardService {
 
     for (const item of items) {
       const itemMonth = item.dueDate.getUTCMonth(); // 0-11
+      if (!hasPremium && !isPeriodAllowedForFree({ month: itemMonth + 1, year }, now)) {
+        continue;
+      }
       if (item.status === 'PAID') {
         evolution[itemMonth].totalPaid += item.paidAmount ?? 0;
       } else {

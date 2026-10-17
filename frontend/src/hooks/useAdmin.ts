@@ -21,6 +21,7 @@ import {
   adminApi,
   type AdminGlobalMetrics,
   type AdminLead,
+  type UpdateFamilyPlanPayload,
   type LeadExportFormat,
 } from '@/lib/api';
 
@@ -95,10 +96,17 @@ export interface UseAdminLeadsResult {
   error: string | null;
   /** Indica se uma exportação está em andamento. */
   isExporting: boolean;
+  /** ID da família em atualização de plano no momento. */
+  updatingFamilyId: string | null;
   /** Recarrega a lista de leads a partir da API. */
   refetch: () => Promise<void>;
   /** Exporta os leads no formato informado (pdf | csv). */
   exportLeads: (format: LeadExportFormat) => Promise<void>;
+  /** Atualiza manualmente o plano de uma família (Premium / Trial / Free). */
+  updateFamilyPlan: (
+    familyId: string,
+    payload: UpdateFamilyPlanPayload,
+  ) => Promise<void>;
 }
 
 /**
@@ -113,6 +121,7 @@ export function useAdminLeads(): UseAdminLeadsResult {
   const [leads, setLeads] = useState<AdminLead[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [updatingFamilyId, setUpdatingFamilyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchLeads = useCallback(async (): Promise<void> => {
@@ -158,12 +167,41 @@ export function useAdminLeads(): UseAdminLeadsResult {
     [],
   );
 
+  const updateFamilyPlan = useCallback(
+    async (
+      familyId: string,
+      payload: UpdateFamilyPlanPayload,
+    ): Promise<void> => {
+      setUpdatingFamilyId(familyId);
+      setError(null);
+
+      try {
+        await adminApi.updateFamilyPlan(familyId, payload);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('plan-updated'));
+        }
+        await fetchLeads();
+      } catch (err) {
+        const message =
+          err instanceof ApiError
+            ? err.message
+            : 'Não foi possível atualizar o plano da família.';
+        setError(message);
+      } finally {
+        setUpdatingFamilyId(null);
+      }
+    },
+    [fetchLeads],
+  );
+
   return {
     leads,
     isLoading,
     isExporting,
+    updatingFamilyId,
     error,
     refetch: fetchLeads,
     exportLeads,
+    updateFamilyPlan,
   };
 }

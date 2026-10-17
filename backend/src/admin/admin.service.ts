@@ -1,7 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { BillingCycle } from '@prisma/client';
 
 import { maskCpfForDisplay } from '../common/utils/cpf.util';
 import { PrismaService } from '../prisma/prisma.service';
+import { PlanInfo, PlanService, computePlanStatus } from '../plan/plan.service';
+import { PlanStatus } from '../plan/plan.constants';
+import { AdminPlanAction, UpdateFamilyPlanDto } from './dto/update-family-plan.dto';
 
 /**
  * Métricas globais do Painel Aksurim (RN-15 / TAREFA 25).
@@ -17,6 +21,9 @@ export interface AdminGlobalMetrics {
   totalPendingAmount: number;
   familiesCreatedLast30Days: number;
   usersCreatedLast30Days: number;
+  premiumFamilies?: number;
+  trialFamilies?: number;
+  freeFamilies?: number;
 }
 
 /**
@@ -33,6 +40,9 @@ export interface AdminLead {
   userRole: string;
   isEmailVerified: boolean;
   createdAt: string;
+  planStatus?: PlanStatus;
+  planDaysLeft?: number | null;
+  billingCycle?: BillingCycle | null;
 }
 
 /**
@@ -45,7 +55,10 @@ export interface AdminLead {
  */
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly planService?: PlanService,
+  ) {}
 
   /**
    * Agrega as métricas globais de toda a base de clientes.
@@ -106,6 +119,9 @@ export class AdminService {
         id: true,
         name: true,
         ownerCpf: true,
+        trialEndsAt: true,
+        premiumEndsAt: true,
+        billingCycle: true,
         createdAt: true,
         users: {
           select: {
@@ -122,9 +138,20 @@ export class AdminService {
       orderBy: { createdAt: 'desc' },
     });
 
+    const now = new Date();
+    const graceDays = this.planService?.graceDays ?? 3;
     const leads: AdminLead[] = [];
 
     for (const family of families) {
+      const computed = computePlanStatus(
+        {
+          trialEndsAt: family.trialEndsAt ?? null,
+          premiumEndsAt: family.premiumEndsAt ?? null,
+        },
+        now,
+        graceDays,
+      );
+
       for (const user of family.users) {
         leads.push({
           familyAccountId: family.id,
@@ -136,10 +163,42 @@ export class AdminService {
           userRole: user.role,
           isEmailVerified: user.isEmailVerified,
           createdAt: user.createdAt.toISOString(),
+          planStatus: computed.status,
+          planDaysLeft: computed.daysLeft,
+          billingCycle: family.billingCycle ?? null,
         });
       }
     }
 
     return leads;
+  }
+
+  /**
+   * Atualiza manualmente o plano de uma família (Admin Global).
+   */
+  async updateFamilyPlan(
+    targetFamilyId: string,
+    dto: UpdateFamilyPlanDto,
+  ): Promise<PlanInfo> {
+    if (!this.planService) {
+      throw new BadRequestException('PlanService indisponível.');
+    }
+
+    switch (dto.action) {
+      case AdminPlanAction.GRANT_PREMIUM:
+        return this.planService.grantPremium(
+          targetFamilyId,
+          dto.billingCycle ?? BillingCycle.MONTHLY,
+        );
+      case AdminPlanAction.EXTEND_TRIAL:
+        return this.planService.extendTrial(
+          targetFamilyId,
+          dto.trialDays ?? this.planService.trialDays,
+        );
+      case AdminPlanAction.REVOKE:
+        return this.planService.revokePremium(targetFamilyId);
+      default:
+        throw new BadRequestException('Ação de plano inválida.');
+    }
   }
 }

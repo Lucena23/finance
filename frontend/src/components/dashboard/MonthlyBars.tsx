@@ -12,7 +12,7 @@
  * §8.1: proibido o uso de `any`. Tipos explícitos em todo o módulo.
  */
 
-import { AlertCircle, BarChart3, RefreshCw } from 'lucide-react';
+import { AlertCircle, BarChart3, Lock, RefreshCw } from 'lucide-react';
 import { useMemo } from 'react';
 import {
   Bar,
@@ -28,6 +28,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { usePlan } from '@/contexts/PlanContext';
 import { useMonthlyEvolution } from '@/hooks/useDashboard';
 import type { MonthlyEvolution } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
@@ -161,6 +162,7 @@ function formatAxisValue(centavos: number): string {
  * 12 meses do ano, comparando total pago versus total a pagar.
  */
 export function MonthlyBars({ year }: MonthlyBarsProps): JSX.Element {
+  const { hasPremiumAccess, openPremiumModal } = usePlan();
   const { evolution, isLoading, error, refetch } = useMonthlyEvolution({ year });
 
   const points = useMemo(() => toBarPoints(evolution), [evolution]);
@@ -250,10 +252,20 @@ export function MonthlyBars({ year }: MonthlyBarsProps): JSX.Element {
   // ── Gráfico de barras ─────────────────────────────────────────────────
   return (
     <Card data-testid="monthly-bars">
-      <CardHeader className="pb-2">
+      <CardHeader className="flex flex-col gap-2 pb-2 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="text-muted-foreground text-sm font-medium">
           Evolução Mensal (12 meses)
         </CardTitle>
+        {!hasPremiumAccess && (
+          <button
+            type="button"
+            onClick={() => openPremiumModal('YEARLY_ANALYTICS')}
+            className="inline-flex items-center gap-1.5 self-start rounded-full border border-amber-400/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-300 transition hover:bg-amber-500/20 sm:self-auto"
+          >
+            <Lock className="h-3 w-3 text-amber-400" />
+            <span>Exibindo apenas mês atual e próximo · Liberar 12 meses 👑</span>
+          </button>
+        )}
       </CardHeader>
       <CardContent>
         <div className="h-64 w-full" data-testid="monthly-bars-chart">

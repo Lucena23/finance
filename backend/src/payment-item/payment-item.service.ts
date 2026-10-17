@@ -6,6 +6,7 @@ import {
 import { PaymentItem, PaymentStatus, Prisma } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { PlanService } from '../plan/plan.service';
 import { PayItemDto } from './dto/pay-item.dto';
 import { QueryHistoryDto } from './dto/query-history.dto';
 import { QueryPaymentItemsDto } from './dto/query-payment-items.dto';
@@ -60,7 +61,10 @@ export interface PaginatedHistory {
  */
 @Injectable()
 export class PaymentItemService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly planService?: PlanService,
+  ) {}
 
   /**
    * Retorna a fila de pagamentos pendentes do workspace, ordenada por urgência
@@ -78,7 +82,20 @@ export class PaymentItemService {
     familyAccountId: string,
     query: QueryPaymentItemsDto,
   ): Promise<PaymentQueue> {
+    if (this.planService) {
+      await this.planService.assertMonthAccess(
+        familyAccountId,
+        query.month,
+        query.year,
+      );
+    }
+
     const today = this.today();
+    const hasPremium = this.planService
+      ? await this.planService.hasPremiumAccess(familyAccountId)
+      : true;
+    const freeWindowEnd =
+      !hasPremium && this.planService ? this.planService.freeWindowEnd() : null;
 
     const items = await this.prisma.paymentItem.findMany({
       where: {
@@ -113,7 +130,7 @@ export class PaymentItemService {
         due.getTime() <= monthEnd.getTime()
       ) {
         currentMonth.push(item);
-      } else {
+      } else if (!freeWindowEnd || due.getTime() <= freeWindowEnd.getTime()) {
         upcoming.push(item);
       }
     }
@@ -225,6 +242,14 @@ export class PaymentItemService {
     familyAccountId: string,
     query: QueryHistoryDto,
   ): Promise<PaginatedHistory> {
+    if (this.planService) {
+      await this.planService.assertMonthAccess(
+        familyAccountId,
+        query.month,
+        query.year,
+      );
+    }
+
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
 

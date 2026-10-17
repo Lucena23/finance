@@ -9,11 +9,12 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { Category, Role } from '@prisma/client';
+import { Category } from '@prisma/client';
 
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { FamilyScopeParam } from '../common/decorators/family-scope.decorator';
-import { Roles } from '../common/decorators/roles.decorator';
 import { FamilyScope } from '../common/interceptors/family-scope.interceptor';
+import { AuthenticatedUser } from '../auth/jwt.strategy';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -24,7 +25,8 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
  *
  * O familyAccountId é SEMPRE derivado do JWT via FamilyScopeInterceptor
  * (RN-01 / §8.3) — nunca aceito como parâmetro de query/body.
- * Escrita (POST/PATCH/DELETE) restrita a ADMIN (RN-03).
+ * Membros secundários podem gerenciar categorias no Premium/Trial e ficam em
+ * modo somente leitura no Free (via assertMemberCanWrite).
  */
 @Controller('categories')
 export class CategoryController {
@@ -40,42 +42,47 @@ export class CategoryController {
   }
 
   /**
-   * Cria uma categoria. Requer ADMIN (RN-03).
+   * Cria uma categoria.
    */
-  @Roles(Role.ADMIN)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(
     @FamilyScopeParam() scope: FamilyScope,
+    @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateCategoryDto,
   ): Promise<Category> {
-    return this.categoryService.create(scope.familyAccountId, dto);
+    return this.categoryService.create(scope.familyAccountId, dto, user.role);
   }
 
   /**
-   * Atualiza parcialmente uma categoria. Requer ADMIN (RN-03).
+   * Atualiza parcialmente uma categoria.
    */
-  @Roles(Role.ADMIN)
   @Patch(':id')
   update(
     @FamilyScopeParam() scope: FamilyScope,
+    @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
     @Body() dto: UpdateCategoryDto,
   ): Promise<Category> {
-    return this.categoryService.update(scope.familyAccountId, id, dto);
+    return this.categoryService.update(
+      scope.familyAccountId,
+      id,
+      dto,
+      user.role,
+    );
   }
 
   /**
-   * Remove uma categoria. Requer ADMIN (RN-03).
+   * Remove uma categoria.
    * Bloqueia (409) se houver despesas vinculadas.
    */
-  @Roles(Role.ADMIN)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(
     @FamilyScopeParam() scope: FamilyScope,
+    @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
   ): Promise<void> {
-    return this.categoryService.remove(scope.familyAccountId, id);
+    return this.categoryService.remove(scope.familyAccountId, id, user.role);
   }
 }

@@ -173,7 +173,8 @@ export function RegisterPage(): JSX.Element {
           <div>
             <CardTitle className="text-2xl">Criar conta</CardTitle>
             <CardDescription className="mt-1">
-              Crie o workspace familiar e comece a organizar os compromissos financeiros compartilhados.
+              Crie seu espaço financeiro e organize suas contas individualmente
+              ou em conjunto com sua família, amigos ou grupo.
             </CardDescription>
           </div>
         </CardHeader>
@@ -283,12 +284,12 @@ export function RegisterPage(): JSX.Element {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="familyName">Nome da família</Label>
+              <Label htmlFor="familyName">Nome da família ou grupo</Label>
               <Input
                 id="familyName"
                 name="familyName"
                 type="text"
-                placeholder="Família Silva"
+                placeholder="Ex.: Família Silva, Apê 302, República..."
                 value={form.familyName}
                 aria-invalid={Boolean(errors.familyName)}
                 aria-describedby={

@@ -1,6 +1,8 @@
 import { RefreshCw, CheckCircle2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
+import { useAuth } from '@/hooks/useAuth';
+import { usePlan } from '@/contexts/PlanContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ApiError, paymentItemsApi } from '@/lib/api';
@@ -14,6 +16,8 @@ interface PaymentHistoryProps {
 }
 
 export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Element {
+  const { user } = useAuth();
+  const { hasPremiumAccess, openPremiumModal } = usePlan();
   const [items, setItems] = useState<PaymentItemWithPayer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +52,12 @@ export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Elemen
   }, [fetchHistory]);
 
   const handleUndoPay = useCallback(async (item: PaymentItemWithPayer) => {
+    if (user?.role === 'MEMBER' && !hasPremiumAccess) {
+      setIsDetailsOpen(false);
+      openPremiumModal('FAMILY_PLAN_EXPIRED');
+      return;
+    }
+
     try {
       setIsUndoing(true);
       await paymentItemsApi.undoPay(item.id);
@@ -59,11 +69,16 @@ export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Elemen
       // Forçar refresh da Queue - podemos disparar um custom event
       window.dispatchEvent(new CustomEvent('payment-undone'));
     } catch (err) {
+      if (err instanceof ApiError && err.code === 'PLAN_REQUIRED') {
+        setIsDetailsOpen(false);
+        openPremiumModal(err.feature ?? 'FAMILY_PLAN_EXPIRED');
+        return;
+      }
       alert('Não foi possível desfazer a quitação.');
     } finally {
       setIsUndoing(false);
     }
-  }, [fetchHistory]);
+  }, [fetchHistory, hasPremiumAccess, openPremiumModal, user?.role]);
 
   // TAREFA 14: abre o drawer de detalhes ao clicar em um card verde (pago).
   const handleSelectItem = useCallback((item: PaymentItemWithPayer): void => {

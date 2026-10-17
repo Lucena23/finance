@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { App } from './App';
 import { ErrorBoundary } from './components/error/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
+import { PlanProvider } from './contexts/PlanContext';
 import { registerServiceWorker } from './lib/pwa';
 import './index.css';
 
@@ -17,7 +18,9 @@ ReactDOM.createRoot(rootElement).render(
     {/* Barreira de erro global (TAREFA 11) — evita crash silencioso da UI */}
     <ErrorBoundary>
       <AuthProvider>
-        <App />
+        <PlanProvider>
+          <App />
+        </PlanProvider>
       </AuthProvider>
     </ErrorBoundary>
   </React.StrictMode>,

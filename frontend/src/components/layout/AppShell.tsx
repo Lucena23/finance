@@ -14,6 +14,8 @@
 
 import { Outlet } from 'react-router-dom';
 
+import { PremiumModal } from '@/components/plan/PremiumModal';
+
 import { BottomNav } from './BottomNav';
 import { Header } from './Header';
 
@@ -23,7 +25,7 @@ import { Header } from './Header';
  */
 export function AppShell(): JSX.Element {
   return (
-    <div className="bg-background flex min-h-screen flex-col">
+    <div className="bg-background flex min-h-screen flex-col overflow-x-hidden">
       <Header />
 
       {/* Conteúdo principal — pb-24 reserva espaço para o BottomNav mobile */}
@@ -32,6 +34,7 @@ export function AppShell(): JSX.Element {
       </main>
 
       <BottomNav />
+      <PremiumModal />
     </div>
   );
 }

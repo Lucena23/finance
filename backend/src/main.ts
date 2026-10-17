@@ -14,8 +14,11 @@ async function bootstrap(): Promise<void> {
   app.use(helmet());
 
   // Segurança: Controle estrito de Cross-Origin (CORS)
+  const corsOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean)
+    : '*';
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: corsOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });

@@ -1,4 +1,24 @@
-export const getWelcomeEmailHtml = (name: string, verifyLink: string, frontendUrl: string): string => `
+import { LOGO_FULL_BASE64 } from './logo-data';
+
+export interface EmailCidAttachment {
+  filename: string;
+  content: string;
+  encoding: 'base64';
+  cid: string;
+}
+
+export const getLogoCidAttachment = (): EmailCidAttachment => ({
+  filename: 'logo-full.png',
+  content: LOGO_FULL_BASE64,
+  encoding: 'base64',
+  cid: 'aksurim-logo',
+});
+
+export const getWelcomeEmailHtml = (
+  name: string,
+  verifyLink: string,
+  _frontendUrl?: string,
+): string => `
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -8,7 +28,7 @@ export const getWelcomeEmailHtml = (name: string, verifyLink: string, frontendUr
     body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #131517; margin: 0; padding: 0; color: #FFFFFF; }
     .container { max-width: 600px; margin: 0 auto; background-color: #1C1F22; padding: 40px; border-radius: 8px; margin-top: 40px; margin-bottom: 40px; }
     .header { text-align: center; margin-bottom: 40px; }
-    .logo { height: 40px; }
+    .logo { height: 42px; }
     .content { font-size: 16px; line-height: 1.6; color: #D1D5DB; }
     .title { color: #FFFFFF; font-size: 24px; font-weight: bold; margin-bottom: 20px; }
     .button-container { text-align: center; margin: 40px 0; }
@@ -20,7 +40,7 @@ export const getWelcomeEmailHtml = (name: string, verifyLink: string, frontendUr
 <body>
   <div class="container">
     <div class="header">
-      <img src="${frontendUrl}/logo-full.png" alt="Aksurim Logo" class="logo" />
+      <img src="cid:aksurim-logo" alt="Aksurim Logo" class="logo" style="height: 42px; display: inline-block;" />
     </div>
     <div class="content">
       <div class="title">Olá, ${name}!</div>
@@ -55,7 +75,7 @@ export const getVerificationSuccessHtml = (frontendUrl: string): string => `
   <style>
     body { font-family: 'Inter', 'Helvetica Neue', sans-serif; background-color: #0B0E14; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; color: #FFFFFF; }
     .card { background-color: #171A21; padding: 50px 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; max-width: 480px; width: 100%; border-top: 4px solid #DAF043; }
-    .logo { height: 40px; margin-bottom: 30px; }
+    .logo { height: 42px; margin-bottom: 30px; display: inline-block; }
     .icon { width: 64px; height: 64px; background-color: rgba(6, 119, 127, 0.15); color: #06777F; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 24px auto; }
     .icon svg { width: 32px; height: 32px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
     h1 { margin: 0 0 16px 0; font-size: 24px; color: #FFFFFF; font-weight: 600; }
@@ -66,7 +86,7 @@ export const getVerificationSuccessHtml = (frontendUrl: string): string => `
 </head>
 <body>
   <div class="card">
-    <img src="${frontendUrl}/logo-full.png" alt="Aksurim Logo" class="logo" />
+    <img src="data:image/png;base64,${LOGO_FULL_BASE64}" alt="Aksurim Logo" class="logo" />
     
     <div class="icon">
       <svg viewBox="0 0 24 24">
