@@ -19,15 +19,15 @@
  */
 
 import { AlertCircle, Crown, Lock, Plus, RefreshCw, X } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useContext, useMemo, useState } from 'react';
 
 import { ExpenseCard } from '@/components/expense/ExpenseCard';
 import { ExpenseForm } from '@/components/expense/ExpenseForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
+import { AuthContext } from '@/contexts/AuthContext';
 import { usePlan } from '@/contexts/PlanContext';
-import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
 import { useExpenses } from '@/hooks/useExpenses';
 import { ApiError, type Category, type Expense } from '@/lib/api';
@@ -38,7 +38,8 @@ import { Role } from '@/lib/constants';
  * Página de Despesas (rota "/expenses").
  */
 export function ExpensesPage(): JSX.Element {
-  const { user } = useAuth();
+  const auth = useContext(AuthContext);
+  const user = auth?.user ?? null;
   const { hasPremiumAccess, openPremiumModal } = usePlan();
   const {
     expenses,

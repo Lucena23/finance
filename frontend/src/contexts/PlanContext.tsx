@@ -177,10 +177,24 @@ export function PlanProvider({ children }: { children: ReactNode }): JSX.Element
   return <PlanContext.Provider value={value}>{children}</PlanContext.Provider>;
 }
 
+const FALLBACK_PLAN_CONTEXT: PlanContextValue = {
+  plan: null,
+  isLoading: false,
+  hasPremiumAccess: true,
+  isPaidPremium: true,
+  showGoldCue: false,
+  isFreeAllowedPeriod: () => true,
+  canViewPeriod: () => true,
+  openPremiumModal: () => undefined,
+  closePremiumModal: () => undefined,
+  modalState: { open: false },
+  openMaintenanceModal: () => undefined,
+  closeMaintenanceModal: () => undefined,
+  isMaintenanceOpen: false,
+  refetchPlan: async () => undefined,
+};
+
 export function usePlan(): PlanContextValue {
   const ctx = useContext(PlanContext);
-  if (!ctx) {
-    throw new Error('usePlan deve ser usado dentro de um <PlanProvider>.');
-  }
-  return ctx;
+  return ctx ?? FALLBACK_PLAN_CONTEXT;
 }
