@@ -20,7 +20,7 @@ import {
  * Estado e operações expostos pelo hook usePwaInstall.
  */
 export interface UsePwaInstallResult {
-  /** Indica se o prompt nativo de instalação está disponível. */
+  /** Indica se o prompt nativo de instalação (1 clique) está disponível. */
   canInstall: boolean;
   /** Indica se a aplicação já está instalada (modo standalone). */
   isInstalled: boolean;
@@ -28,39 +28,58 @@ export interface UsePwaInstallResult {
   promptInstall: () => Promise<'accepted' | 'dismissed' | 'unavailable'>;
 }
 
+// Captura global do evento `beforeinstallprompt` desde o boot da aplicação
+// para não perder o disparo caso o usuário navegue da LandingPage para /login ou /register.
+let globalDeferredPrompt: BeforeInstallPromptEvent | null = null;
+const promptListeners = new Set<() => void>();
+
+function notifyPromptListeners(): void {
+  for (const listener of promptListeners) {
+    listener();
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (event: Event) => {
+    event.preventDefault();
+    globalDeferredPrompt = event as BeforeInstallPromptEvent;
+    notifyPromptListeners();
+  });
+
+  window.addEventListener('appinstalled', () => {
+    globalDeferredPrompt = null;
+    notifyPromptListeners();
+  });
+}
+
 /**
  * Gerencia o fluxo de instalação da PWA na tela inicial.
- *
- * @returns Disponibilidade do prompt, estado de instalação e ação de instalar.
- *
- * @example
- * const { canInstall, isInstalled, promptInstall } = usePwaInstall();
  */
 export function usePwaInstall(): UsePwaInstallResult {
   const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
+    useState<BeforeInstallPromptEvent | null>(() => globalDeferredPrompt);
   const [isInstalled, setIsInstalled] = useState<boolean>(() => isStandalone());
 
   useEffect(() => {
-    const handleBeforeInstallPrompt = (event: Event): void => {
-      // Impede o mini-infobar automático e guarda o evento para uso sob demanda.
-      event.preventDefault();
-      setDeferredPrompt(event as BeforeInstallPromptEvent);
+    const syncState = (): void => {
+      setDeferredPrompt(globalDeferredPrompt);
+      if (isStandalone() || globalDeferredPrompt === null) {
+        setIsInstalled(isStandalone());
+      }
     };
 
     const handleAppInstalled = (): void => {
+      globalDeferredPrompt = null;
       setDeferredPrompt(null);
       setIsInstalled(true);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    promptListeners.add(syncState);
     window.addEventListener('appinstalled', handleAppInstalled);
+    syncState();
 
     return () => {
-      window.removeEventListener(
-        'beforeinstallprompt',
-        handleBeforeInstallPrompt,
-      );
+      promptListeners.delete(syncState);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
@@ -68,21 +87,25 @@ export function usePwaInstall(): UsePwaInstallResult {
   const promptInstall = useCallback(async (): Promise<
     'accepted' | 'dismissed' | 'unavailable'
   > => {
-    if (!deferredPrompt) {
+    const activePrompt = deferredPrompt ?? globalDeferredPrompt;
+    if (!activePrompt) {
       return 'unavailable';
     }
 
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
+    await activePrompt.prompt();
+    const { outcome } = await activePrompt.userChoice;
 
-    // O evento só pode ser usado uma vez — descarta após o prompt.
+    globalDeferredPrompt = null;
     setDeferredPrompt(null);
+    if (outcome === 'accepted') {
+      setIsInstalled(true);
+    }
 
     return outcome;
   }, [deferredPrompt]);
 
   return {
-    canInstall: deferredPrompt !== null && !isInstalled,
+    canInstall: (deferredPrompt ?? globalDeferredPrompt) !== null && !isInstalled,
     isInstalled,
     promptInstall,
   };

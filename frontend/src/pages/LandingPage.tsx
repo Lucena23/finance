@@ -1,6 +1,7 @@
 import { ArrowRight, CheckCircle2, Link2, PieChart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { InstallAppButton } from '@/components/pwa/InstallAppButton';
 import { Button } from '@/components/ui/button';
 
 export function LandingPage(): JSX.Element {
@@ -52,7 +53,7 @@ export function LandingPage(): JSX.Element {
               repúblicas ou projetos em grupo.
             </p>
 
-            <div className="mb-20 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <div className="mb-6 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link to="/register" className="w-full sm:w-auto">
                 <Button
                   size="lg"
@@ -71,6 +72,10 @@ export function LandingPage(): JSX.Element {
                   Já tenho uma conta
                 </Button>
               </Link>
+            </div>
+
+            <div className="mx-auto mb-16 max-w-xs">
+              <InstallAppButton label="Baixar Aplicativo no Celular" />
             </div>
 
             {/* HERO IMAGES - CAROUSEL (Simulated with grid for now) */}
