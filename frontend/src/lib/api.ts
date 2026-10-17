@@ -417,6 +417,18 @@ httpClient.interceptors.response.use(
         error.message ??
         'Erro inesperado na comunicação com a API.');
 
+    if (status === 401 && typeof window !== 'undefined') {
+      const requestUrl = error.config?.url ?? '';
+      const isPublicAuthRoute =
+        requestUrl.includes('/auth/login') ||
+        requestUrl.includes('/auth/register') ||
+        requestUrl.includes('/auth/resend-verification');
+
+      if (!isPublicAuthRoute) {
+        window.dispatchEvent(new CustomEvent('auth-expired'));
+      }
+    }
+
     if (status === 402 && typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('plan-updated'));
     }

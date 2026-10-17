@@ -1,14 +1,38 @@
+import { useState, useEffect } from 'react';
+import {
+  AlertTriangle,
+  Crown,
+  Loader2,
+  Lock,
+  ShieldAlert,
+  Trash2,
+  Users,
+  UserPlus,
+} from 'lucide-react';
+
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { PushNotificationToggle } from '@/components/pwa/PushNotificationToggle';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { usePlan } from '@/contexts/PlanContext';
 import { useAuth } from '@/hooks/useAuth';
 import { ApiError, usersApi, type SafeUser } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { Role } from '@/lib/constants';
-import { AlertTriangle, Crown, Lock, ShieldAlert, Trash2, Users, UserPlus } from 'lucide-react';
-import { useState, useEffect } from 'react';
 
 export function SettingsPage(): JSX.Element {
   const { user: currentUser } = useAuth();
@@ -20,7 +44,9 @@ export function SettingsPage(): JSX.Element {
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
   const [inviting, setInviting] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<SafeUser | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
   const isAdmin = currentUser?.role === Role.ADMIN;
   const secondaryMembersCount = users.filter((u) => u.role === Role.MEMBER).length;
@@ -45,11 +71,13 @@ export function SettingsPage(): JSX.Element {
       openPremiumModal('MEMBERS');
       return;
     }
+    setFeedbackError(null);
     setShowInviteForm(!showInviteForm);
   };
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFeedbackError(null);
     try {
       setInviting(true);
       await usersApi.create({
@@ -74,27 +102,26 @@ export function SettingsPage(): JSX.Element {
         openPremiumModal('MEMBERS');
         return;
       }
-      const msg = err instanceof Error ? err.message : 'Erro ao adicionar membro';
-      alert(msg);
+      const msg = err instanceof Error ? err.message : 'Erro ao adicionar membro.';
+      setFeedbackError(msg);
     } finally {
       setInviting(false);
     }
   };
 
-  const handleRemoveMember = async (member: SafeUser): Promise<void> => {
-    const confirmed = window.confirm(
-      `Tem certeza que deseja remover o membro "${member.name}" (${member.email}) desta conta?`,
-    );
-    if (!confirmed) return;
-
+  const handleConfirmRemoveMember = async (): Promise<void> => {
+    if (!memberToRemove) return;
+    setFeedbackError(null);
     try {
-      setRemovingId(member.id);
-      await usersApi.remove(member.id);
-      setUsers((prev) => prev.filter((u) => u.id !== member.id));
+      setRemovingId(memberToRemove.id);
+      await usersApi.remove(memberToRemove.id);
+      setUsers((prev) => prev.filter((u) => u.id !== memberToRemove.id));
+      setMemberToRemove(null);
     } catch (err) {
       const msg =
         err instanceof Error ? err.message : 'Não foi possível remover o membro.';
-      alert(msg);
+      setFeedbackError(msg);
+      setMemberToRemove(null);
     } finally {
       setRemovingId(null);
     }
@@ -154,21 +181,30 @@ export function SettingsPage(): JSX.Element {
           )}
         </CardHeader>
         <CardContent>
+          {feedbackError && (
+            <div
+              role="alert"
+              className="mb-4 rounded-lg border border-rose-500/40 bg-rose-500/15 px-3 py-2.5 text-xs font-medium text-rose-300"
+            >
+              {feedbackError}
+            </div>
+          )}
+
           {/* Aviso de membros em modo somente leitura quando plano Free */}
           {!hasPremiumAccess && secondaryMembersCount > 0 && (
-            <div className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-amber-400/50 bg-amber-500/15 p-3 text-xs text-amber-100">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between rounded-lg border border-amber-400/50 bg-amber-500/15 p-3 text-xs text-amber-100">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
                 <div>
                   <p className="font-bold text-amber-300">
-                    { isAdmin
+                    {isAdmin
                       ? 'Seus membros estão em modo somente leitura'
-                      : 'Sua conta está em modo somente leitura' }
+                      : 'Sua conta está em modo somente leitura'}
                   </p>
                   <p className="mt-0.5 text-amber-100/90">
-                    { isAdmin
+                    {isAdmin
                       ? 'No plano Free, os membros convidados continuam visualizando os dados, mas não podem dar baixa em contas. Assine o 👑 Premium para liberar o acesso completo.'
-                      : 'O plano Premium desta conta expirou. Peça ao titular para assinar o 👑 Premium e liberar suas ações.' }
+                      : 'O plano Premium desta conta expirou. Peça ao titular para assinar o 👑 Premium e liberar suas ações.'}
                   </p>
                 </div>
               </div>
@@ -176,7 +212,7 @@ export function SettingsPage(): JSX.Element {
                 type="button"
                 size="sm"
                 onClick={() => openPremiumModal('MEMBERS')}
-                className="shrink-0 bg-gradient-to-r from-amber-400 to-yellow-500 text-xs font-bold text-slate-950 hover:brightness-110"
+                className="w-full sm:w-auto shrink-0 bg-gradient-to-r from-amber-400 to-yellow-500 text-xs font-bold text-slate-950 hover:brightness-110"
               >
                 <Crown className="mr-1 h-3.5 w-3.5" />
                 Assinar
@@ -185,7 +221,10 @@ export function SettingsPage(): JSX.Element {
           )}
 
           {showInviteForm && (
-            <form onSubmit={handleInvite} className="mb-6 p-4 bg-muted/50 rounded-lg border border-border flex flex-col gap-3">
+            <form
+              onSubmit={(e) => void handleInvite(e)}
+              className="mb-6 p-4 bg-muted/50 rounded-lg border border-border flex flex-col gap-3"
+            >
               <div className="text-sm font-semibold mb-1">Novo Membro</div>
               <input
                 required
@@ -226,7 +265,7 @@ export function SettingsPage(): JSX.Element {
               {users.map((user) => (
                 <li
                   key={user.id}
-                  className="group flex items-center justify-between p-3 rounded-lg border bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                  className="group flex items-center justify-between gap-2 p-3 rounded-lg border border-border bg-card text-card-foreground hover:border-primary/40 hover:bg-muted/40 transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     <div
@@ -236,25 +275,25 @@ export function SettingsPage(): JSX.Element {
                       {user.initials}
                     </div>
                     <div className="flex flex-col min-w-0 flex-1">
-                      <span className="text-sm font-semibold text-foreground group-hover:text-accent-foreground transition-colors truncate">
+                      <span className="text-sm font-semibold text-foreground truncate">
                         {user.name}
                       </span>
-                      <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/80 transition-colors truncate">
+                      <span className="text-xs text-muted-foreground truncate">
                         {user.email}
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
                     {!hasPremiumAccess && user.role === Role.MEMBER && (
-                      <span className="rounded-full border border-amber-400/50 bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                      <span className="hidden xs:inline-flex sm:inline-flex rounded-full border border-amber-400/50 bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-300">
                         Somente leitura
                       </span>
                     )}
                     <span
                       className={`text-[10px] uppercase shrink-0 font-bold px-2 py-1 rounded-full transition-colors ${
                         user.role === 'ADMIN'
-                          ? 'bg-primary/10 text-primary group-hover:bg-primary/20 group-hover:text-primary'
-                          : 'bg-muted text-muted-foreground group-hover:bg-black/10 group-hover:text-accent-foreground/80'
+                          ? 'bg-primary/15 text-primary border border-primary/30'
+                          : 'bg-muted text-muted-foreground'
                       }`}
                     >
                       {user.role}
@@ -265,10 +304,13 @@ export function SettingsPage(): JSX.Element {
                         variant="ghost"
                         size="icon"
                         disabled={removingId === user.id}
-                        onClick={() => void handleRemoveMember(user)}
+                        onClick={() => {
+                          setFeedbackError(null);
+                          setMemberToRemove(user);
+                        }}
                         aria-label={`Remover membro ${user.name}`}
                         title={`Remover ${user.name}`}
-                        className="h-8 w-8 text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
+                        className="h-8 w-8 text-muted-foreground hover:bg-rose-500/15 hover:text-rose-400"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -292,6 +334,66 @@ export function SettingsPage(): JSX.Element {
           <PushNotificationToggle />
         </CardContent>
       </Card>
+
+      {/* Modal nativo Aksurim de confirmação de remoção de membro */}
+      <Dialog
+        open={Boolean(memberToRemove)}
+        onOpenChange={(open) => {
+          if (!open && !removingId) setMemberToRemove(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full border border-rose-500/40 bg-rose-500/15 text-rose-400">
+              <Trash2 className="h-6 w-6" />
+            </div>
+            <DialogTitle className="text-center text-lg font-bold">
+              Remover Membro da Conta
+            </DialogTitle>
+            <DialogDescription className="text-center text-sm">
+              Tem certeza que deseja remover o acesso de{' '}
+              <strong className="text-foreground">{memberToRemove?.name}</strong>{' '}
+              <span className="text-muted-foreground">({memberToRemove?.email})</span>?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="my-2 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+            O membro perderá o acesso imediatamente, mas todas as despesas e baixas
+            registradas anteriormente permanecerão salvas no histórico da sua conta.
+          </div>
+
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={Boolean(removingId)}
+              onClick={() => setMemberToRemove(null)}
+              className="w-full sm:w-auto"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={Boolean(removingId)}
+              onClick={() => void handleConfirmRemoveMember()}
+              className="w-full sm:flex-1 font-semibold"
+            >
+              {removingId ? (
+                <>
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  Removendo...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-1.5 h-4 w-4" />
+                  Confirmar remoção
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

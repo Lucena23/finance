@@ -138,7 +138,10 @@ function MetricsSection(): JSX.Element {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3" data-testid="admin-metrics">
+    <div
+      className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+      data-testid="admin-metrics"
+    >
       <MetricCard
         label="Famílias (clientes)"
         value={String(metrics.totalFamilies)}
@@ -192,7 +195,82 @@ function MetricsSection(): JSX.Element {
 }
 
 /**
+ * Paleta de cores de identificação visual por conta/família no Painel Aksurim.
+ * Garante que o Titular (ADMIN) e seus Membros (MEMBER) compartilhem a mesma
+ * identidade cromática e hierarquia visual para suporte rápido.
+ */
+interface FamilyColorTheme {
+  borderLeft: string;
+  badgeBg: string;
+  badgeText: string;
+  badgeBorder: string;
+  dotBg: string;
+  subRowBg: string;
+}
+
+const FAMILY_COLOR_PALETTE: readonly FamilyColorTheme[] = [
+  {
+    borderLeft: 'border-l-emerald-500',
+    badgeBg: 'bg-emerald-500/15',
+    badgeText: 'text-emerald-300',
+    badgeBorder: 'border-emerald-500/35',
+    dotBg: 'bg-emerald-400',
+    subRowBg: 'bg-emerald-950/15',
+  },
+  {
+    borderLeft: 'border-l-cyan-500',
+    badgeBg: 'bg-cyan-500/15',
+    badgeText: 'text-cyan-300',
+    badgeBorder: 'border-cyan-500/35',
+    dotBg: 'bg-cyan-400',
+    subRowBg: 'bg-cyan-950/15',
+  },
+  {
+    borderLeft: 'border-l-violet-500',
+    badgeBg: 'bg-violet-500/15',
+    badgeText: 'text-violet-300',
+    badgeBorder: 'border-violet-500/35',
+    dotBg: 'bg-violet-400',
+    subRowBg: 'bg-violet-950/15',
+  },
+  {
+    borderLeft: 'border-l-amber-500',
+    badgeBg: 'bg-amber-500/15',
+    badgeText: 'text-amber-300',
+    badgeBorder: 'border-amber-500/35',
+    dotBg: 'bg-amber-400',
+    subRowBg: 'bg-amber-950/15',
+  },
+  {
+    borderLeft: 'border-l-rose-500',
+    badgeBg: 'bg-rose-500/15',
+    badgeText: 'text-rose-300',
+    badgeBorder: 'border-rose-500/35',
+    dotBg: 'bg-rose-400',
+    subRowBg: 'bg-rose-950/15',
+  },
+  {
+    borderLeft: 'border-l-sky-500',
+    badgeBg: 'bg-sky-500/15',
+    badgeText: 'text-sky-300',
+    badgeBorder: 'border-sky-500/35',
+    dotBg: 'bg-sky-400',
+    subRowBg: 'bg-sky-950/15',
+  },
+];
+
+interface GroupedFamilyLeads {
+  familyAccountId: string;
+  familyName: string;
+  colorIndex: number;
+  theme: FamilyColorTheme;
+  leads: AdminLead[];
+}
+
+/**
  * Bloco de leads comerciais + exportação (PDF/CSV) + gestão manual de planos.
+ * Agrupa usuários por Conta/Família com o ADMIN como linha principal e os
+ * MEMBERs recuados em modo sub-hierarquia com a mesma cor da família.
  */
 function LeadsSection(): JSX.Element {
   const {
@@ -218,7 +296,48 @@ function LeadsSection(): JSX.Element {
     }
   };
 
-  const rows = useMemo<AdminLead[]>(() => leads, [leads]);
+  const familyGroups = useMemo<GroupedFamilyLeads[]>(() => {
+    const map = new Map<string, AdminLead[]>();
+
+    for (const lead of leads) {
+      const group = map.get(lead.familyAccountId);
+      if (group) {
+        group.push(lead);
+      } else {
+        map.set(lead.familyAccountId, [lead]);
+      }
+    }
+
+    const result: GroupedFamilyLeads[] = [];
+    let groupIdx = 0;
+
+    for (const [familyAccountId, groupLeads] of map.entries()) {
+      // Ordena dentro da família: ADMIN (Titular) sempre no topo, seguido pelos MEMBERs
+      const sorted = [...groupLeads].sort((a, b) => {
+        if (a.userRole === 'ADMIN' && b.userRole !== 'ADMIN') return -1;
+        if (a.userRole !== 'ADMIN' && b.userRole === 'ADMIN') return 1;
+        return a.userName.localeCompare(b.userName, 'pt-BR');
+      });
+
+      const colorIndex = groupIdx % FAMILY_COLOR_PALETTE.length;
+      const theme = FAMILY_COLOR_PALETTE[colorIndex]!;
+
+      result.push({
+        familyAccountId,
+        familyName: sorted[0]?.familyName ?? 'Conta',
+        colorIndex,
+        theme,
+        leads: sorted,
+      });
+
+      groupIdx += 1;
+    }
+
+    return result;
+  }, [leads]);
+
+  const totalLeadsCount = leads.length;
+  const totalFamiliesCount = familyGroups.length;
 
   return (
     <Card data-testid="admin-leads">
@@ -228,7 +347,9 @@ function LeadsSection(): JSX.Element {
             Leads comerciais e Gestão de Assinaturas
           </CardTitle>
           <p className="text-muted-foreground text-xs">
-            {rows.length} lead(s) · CPF sempre mascarado (LGPD)
+            {totalFamiliesCount} conta(s)/família(s) · {totalLeadsCount}{' '}
+            usuário(s) · Agrupados por titular e sub-membros com cor da família
+            · CPF mascarado (LGPD)
           </p>
         </div>
 
@@ -237,7 +358,7 @@ function LeadsSection(): JSX.Element {
             type="button"
             variant="outline"
             size="sm"
-            disabled={isExporting || rows.length === 0}
+            disabled={isExporting || totalLeadsCount === 0}
             onClick={() => void handleExport('csv')}
             data-testid="admin-export-csv"
           >
@@ -251,7 +372,7 @@ function LeadsSection(): JSX.Element {
           <Button
             type="button"
             size="sm"
-            disabled={isExporting || rows.length === 0}
+            disabled={isExporting || totalLeadsCount === 0}
             onClick={() => void handleExport('pdf')}
             data-testid="admin-export-pdf"
           >
@@ -286,7 +407,7 @@ function LeadsSection(): JSX.Element {
             <Spinner label="Carregando leads…" />
             <span className="text-muted-foreground">Carregando leads…</span>
           </div>
-        ) : rows.length === 0 ? (
+        ) : totalLeadsCount === 0 ? (
           <div
             className="text-muted-foreground flex flex-col items-center gap-2 p-8 text-center text-sm"
             data-testid="admin-leads-empty"
@@ -296,177 +417,291 @@ function LeadsSection(): JSX.Element {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full min-w-[820px] text-left text-sm">
               <thead className="bg-muted/50 text-muted-foreground text-xs uppercase">
                 <tr>
-                  <th scope="col" className="px-4 py-2 font-medium">
-                    Família
+                  <th scope="col" className="px-4 py-2.5 font-medium">
+                    Conta / Família
                   </th>
-                  <th scope="col" className="px-4 py-2 font-medium">
-                    Usuário / Papel
+                  <th scope="col" className="px-4 py-2.5 font-medium">
+                    Usuário / Hierarquia
                   </th>
-                  <th scope="col" className="px-4 py-2 font-medium">
+                  <th scope="col" className="px-4 py-2.5 font-medium">
                     E-mail
                   </th>
-                  <th scope="col" className="px-4 py-2 font-medium">
+                  <th scope="col" className="px-4 py-2.5 font-medium">
                     WhatsApp
                   </th>
-                  <th scope="col" className="px-4 py-2 font-medium">
-                    CPF
+                  <th scope="col" className="px-4 py-2.5 font-medium">
+                    CPF (Titular)
                   </th>
-                  <th scope="col" className="px-4 py-2 font-medium">
-                    Plano
+                  <th scope="col" className="px-4 py-2.5 font-medium">
+                    Plano da Conta
                   </th>
-                  <th scope="col" className="px-4 py-2 font-medium">
+                  <th scope="col" className="px-4 py-2.5 font-medium">
                     Status
                   </th>
-                  <th scope="col" className="px-4 py-2 font-medium">
+                  <th scope="col" className="px-4 py-2.5 font-medium">
                     Ações de Plano
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((lead, index) => {
-                  const isUpdating = updatingFamilyId === lead.familyAccountId;
-                  const planStatus = lead.planStatus ?? 'FREE';
-                  const planDaysLeft = lead.planDaysLeft ?? 0;
+                {familyGroups.map((group) => {
+                  const isUpdating = updatingFamilyId === group.familyAccountId;
+                  const memberCount = group.leads.length;
+                  const adminUser = group.leads.find(
+                    (l) => l.userRole === 'ADMIN',
+                  );
 
-                  return (
-                    <tr
-                      key={`${lead.familyAccountId}-${lead.userEmail}-${index}`}
-                      className="border-border border-t"
-                    >
-                      <td className="px-4 py-2 font-medium">
-                        {lead.familyName}
-                        <span className="text-muted-foreground block text-[11px] font-normal">
-                          {formatDate(lead.createdAt)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="font-medium">{lead.userName}</span>
-                          {lead.userRole === 'ADMIN' ? (
-                            <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-400">
-                              ADMIN · Titular
+                  return group.leads.map((lead, idxInGroup) => {
+                    const isSubMember = lead.userRole !== 'ADMIN' && idxInGroup > 0;
+                    const isFirstInFamily = idxInGroup === 0;
+                    const planStatus = lead.planStatus ?? 'FREE';
+                    const planDaysLeft = lead.planDaysLeft ?? 0;
+
+                    return (
+                      <tr
+                        key={`${lead.familyAccountId}-${lead.userEmail}-${idxInGroup}`}
+                        className={cn(
+                          'border-l-4 transition-colors',
+                          group.theme.borderLeft,
+                          isFirstInFamily
+                            ? 'border-border border-t-2 bg-card/80'
+                            : cn(
+                                'border-border/50 border-t',
+                                group.theme.subRowBg,
+                              ),
+                        )}
+                      >
+                        {/* Coluna 1: Família / Agrupamento */}
+                        <td className="px-4 py-2.5 font-medium">
+                          {isFirstInFamily ? (
+                            <div className="flex flex-col gap-1">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span
+                                  className={cn(
+                                    'inline-block h-2.5 w-2.5 shrink-0 rounded-full',
+                                    group.theme.dotBg,
+                                  )}
+                                  aria-hidden="true"
+                                />
+                                <span className="font-semibold text-foreground">
+                                  {lead.familyName}
+                                </span>
+                                <span
+                                  className={cn(
+                                    'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold',
+                                    group.theme.badgeBg,
+                                    group.theme.badgeText,
+                                    group.theme.badgeBorder,
+                                  )}
+                                >
+                                  👥 {memberCount}{' '}
+                                  {memberCount === 1 ? 'usuário' : 'usuários'}
+                                </span>
+                              </div>
+                              <span className="text-muted-foreground text-[11px] font-normal">
+                                Criada em {formatDate(lead.createdAt)}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 pl-3 text-xs">
+                              <span
+                                className={cn(
+                                  'font-mono text-sm font-bold',
+                                  group.theme.badgeText,
+                                )}
+                                aria-hidden="true"
+                              >
+                                └─
+                              </span>
+                              <div className="flex flex-col">
+                                <span
+                                  className={cn(
+                                    'text-[11px] font-semibold',
+                                    group.theme.badgeText,
+                                  )}
+                                >
+                                  Sub-membro · {lead.familyName}
+                                </span>
+                                <span className="text-muted-foreground text-[10px]">
+                                  Titular: {adminUser?.userName ?? 'Admin'}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Coluna 2: Usuário / Hierarquia */}
+                        <td className="px-4 py-2.5">
+                          <div
+                            className={cn(
+                              'flex flex-wrap items-center gap-1.5',
+                              isSubMember &&
+                                'border-border/70 ml-2 border-l-2 pl-2.5',
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                isSubMember
+                                  ? 'text-foreground/90 font-normal'
+                                  : 'font-semibold text-foreground',
+                              )}
+                            >
+                              {lead.userName}
+                            </span>
+                            {lead.userRole === 'ADMIN' ? (
+                              <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-400">
+                                👑 ADMIN · Titular
+                              </span>
+                            ) : (
+                              <span
+                                className={cn(
+                                  'rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase',
+                                  group.theme.badgeBg,
+                                  group.theme.badgeText,
+                                  group.theme.badgeBorder,
+                                )}
+                              >
+                                ↳ Membro
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Coluna 3: E-mail */}
+                        <td className="text-muted-foreground px-4 py-2.5">
+                          {lead.userEmail}
+                        </td>
+
+                        {/* Coluna 4: WhatsApp */}
+                        <td className="px-4 py-2.5 tabular-nums">
+                          {lead.userWhatsapp || '-'}
+                        </td>
+
+                        {/* Coluna 5: CPF */}
+                        <td className="px-4 py-2.5 tabular-nums">
+                          {lead.ownerCpfMasked}
+                        </td>
+
+                        {/* Coluna 6: Plano */}
+                        <td className="px-4 py-2.5">
+                          {planStatus === 'PREMIUM' ? (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold text-amber-300">
+                              👑 Premium ({planDaysLeft}d)
+                            </span>
+                          ) : planStatus === 'TRIAL' ? (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
+                              👑 Teste ({planDaysLeft}d)
+                            </span>
+                          ) : planStatus === 'GRACE' ? (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-orange-400/40 bg-orange-500/15 px-2 py-0.5 text-[11px] font-semibold text-orange-300">
+                              ⚠️ Carência ({planDaysLeft}d)
                             </span>
                           ) : (
-                            <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase">
-                              Membro
+                            <span className="bg-muted text-muted-foreground inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium">
+                              Gratuito
                             </span>
                           )}
-                        </div>
-                      </td>
-                      <td className="text-muted-foreground px-4 py-2">
-                        {lead.userEmail}
-                      </td>
-                      <td className="px-4 py-2 tabular-nums">
-                        {lead.userWhatsapp || '-'}
-                      </td>
-                      <td className="px-4 py-2 tabular-nums">
-                        {lead.ownerCpfMasked}
-                      </td>
-                      <td className="px-4 py-2">
-                        {planStatus === 'PREMIUM' ? (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold text-amber-300">
-                            👑 Premium ({planDaysLeft}d)
+                        </td>
+
+                        {/* Coluna 7: Status E-mail */}
+                        <td className="px-4 py-2.5">
+                          <span
+                            className={cn(
+                              'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold',
+                              lead.isEmailVerified
+                                ? 'bg-emerald-500/15 text-emerald-500'
+                                : 'bg-aksurim-warning/15 text-aksurim-warning',
+                            )}
+                          >
+                            {lead.isEmailVerified ? 'Ativo' : 'Pendente'}
                           </span>
-                        ) : planStatus === 'TRIAL' ? (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
-                            👑 Teste ({planDaysLeft}d)
-                          </span>
-                        ) : planStatus === 'GRACE' ? (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-orange-400/40 bg-orange-500/15 px-2 py-0.5 text-[11px] font-semibold text-orange-300">
-                            ⚠️ Carência ({planDaysLeft}d)
-                          </span>
-                        ) : (
-                          <span className="bg-muted text-muted-foreground inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium">
-                            Gratuito
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2">
-                        <span
-                          className={cn(
-                            'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold',
-                            lead.isEmailVerified
-                              ? 'bg-emerald-500/15 text-emerald-500'
-                              : 'bg-aksurim-warning/15 text-aksurim-warning',
+                        </td>
+
+                        {/* Coluna 8: Ações de Plano (exibidas no Titular da Conta) */}
+                        <td className="px-4 py-2.5">
+                          {isFirstInFamily ? (
+                            <div className="flex flex-wrap items-center gap-1">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={isUpdating}
+                                className="h-7 border-amber-400/40 bg-amber-500/10 px-2 text-[11px] font-semibold text-amber-300 hover:bg-amber-500/20"
+                                onClick={() =>
+                                  void updateFamilyPlan(lead.familyAccountId, {
+                                    action: 'GRANT_PREMIUM',
+                                    billingCycle: 'MONTHLY',
+                                  })
+                                }
+                                title="Ativar 30 dias de Premium Mensal para toda a conta"
+                              >
+                                👑 +30d
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={isUpdating}
+                                className="h-7 border-amber-400/40 bg-amber-500/10 px-2 text-[11px] font-semibold text-amber-300 hover:bg-amber-500/20"
+                                onClick={() =>
+                                  void updateFamilyPlan(lead.familyAccountId, {
+                                    action: 'GRANT_PREMIUM',
+                                    billingCycle: 'ANNUAL',
+                                  })
+                                }
+                                title="Ativar 365 dias de Premium Anual para toda a conta"
+                              >
+                                👑 +1 ano
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                disabled={isUpdating}
+                                className="h-7 px-2 text-[11px]"
+                                onClick={() =>
+                                  void updateFamilyPlan(lead.familyAccountId, {
+                                    action: 'EXTEND_TRIAL',
+                                    trialDays: 15,
+                                  })
+                                }
+                                title="Renovar 15 dias de teste gratuito"
+                              >
+                                +15d Teste
+                              </Button>
+                              {planStatus !== 'FREE' ? (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={isUpdating}
+                                  className="text-destructive hover:text-destructive h-7 px-2 text-[11px]"
+                                  onClick={() =>
+                                    void updateFamilyPlan(
+                                      lead.familyAccountId,
+                                      {
+                                        action: 'REVOKE',
+                                      },
+                                    )
+                                  }
+                                  title="Revogar assinatura da conta (voltar para Free)"
+                                >
+                                  Revogar
+                                </Button>
+                              ) : null}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground inline-flex items-center gap-1 text-[11px] italic">
+                              ↳ Segue plano do Titular
+                            </span>
                           )}
-                        >
-                          {lead.isEmailVerified ? 'Ativo' : 'Pendente'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2">
-                        <div className="flex flex-wrap items-center gap-1">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            disabled={isUpdating}
-                            className="h-7 border-amber-400/40 bg-amber-500/10 px-2 text-[11px] font-semibold text-amber-300 hover:bg-amber-500/20"
-                            onClick={() =>
-                              void updateFamilyPlan(lead.familyAccountId, {
-                                action: 'GRANT_PREMIUM',
-                                billingCycle: 'MONTHLY',
-                              })
-                            }
-                            title="Ativar 30 dias de Premium Mensal"
-                          >
-                            👑 +30d
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            disabled={isUpdating}
-                            className="h-7 border-amber-400/40 bg-amber-500/10 px-2 text-[11px] font-semibold text-amber-300 hover:bg-amber-500/20"
-                            onClick={() =>
-                              void updateFamilyPlan(lead.familyAccountId, {
-                                action: 'GRANT_PREMIUM',
-                                billingCycle: 'ANNUAL',
-                              })
-                            }
-                            title="Ativar 365 dias de Premium Anual"
-                          >
-                            👑 +1 ano
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            disabled={isUpdating}
-                            className="h-7 px-2 text-[11px]"
-                            onClick={() =>
-                              void updateFamilyPlan(lead.familyAccountId, {
-                                action: 'EXTEND_TRIAL',
-                                trialDays: 15,
-                              })
-                            }
-                            title="Renovar 15 dias de teste gratuito"
-                          >
-                            +15d Teste
-                          </Button>
-                          {planStatus !== 'FREE' ? (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              disabled={isUpdating}
-                              className="text-destructive hover:text-destructive h-7 px-2 text-[11px]"
-                              onClick={() =>
-                                void updateFamilyPlan(lead.familyAccountId, {
-                                  action: 'REVOKE',
-                                })
-                              }
-                              title="Revogar assinatura (voltar para Free)"
-                            >
-                              Revogar
-                            </Button>
-                          ) : null}
-                        </div>
-                      </td>
-                    </tr>
-                  );
+                        </td>
+                      </tr>
+                    );
+                  });
                 })}
               </tbody>
             </table>
