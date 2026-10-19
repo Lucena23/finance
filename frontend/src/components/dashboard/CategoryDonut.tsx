@@ -15,7 +15,6 @@ import { AlertCircle, PieChart, RefreshCw } from 'lucide-react';
 import { useMemo } from 'react';
 import {
   Cell,
-  Legend,
   Pie,
   PieChart as RechartsPieChart,
   ResponsiveContainer,
@@ -97,26 +96,36 @@ function DonutTooltip({
 }
 
 /**
- * Legenda customizada com cor, nome e percentual de cada categoria.
+ * Legenda customizada com cor, nome, valor e percentual de cada categoria.
+ * Renderizada em fluxo normal de documento abaixo do gráfico para nunca
+ * sobrepor o gráfico ou os cards superiores quando há muitas categorias.
  */
 function DonutLegend({ slices }: { slices: DonutSlice[] }): JSX.Element {
   return (
-    <ul className="mt-2 flex flex-col gap-2" data-testid="category-donut-legend">
+    <ul
+      className="mt-4 flex flex-col divide-y divide-border/40"
+      data-testid="category-donut-legend"
+    >
       {slices.map((slice) => (
         <li
           key={slice.categoryId}
-          className="flex items-center justify-between gap-3 text-sm"
+          className="flex items-center justify-between gap-3 py-2 text-sm first:pt-0 last:pb-0"
         >
-          <span className="flex min-w-0 items-center gap-2">
+          <span className="flex min-w-0 items-center gap-2.5">
             <span
               aria-hidden="true"
               className="inline-block h-3 w-3 shrink-0 rounded-full"
               style={{ backgroundColor: slice.color }}
             />
-            <span className="truncate">{slice.name}</span>
+            <span className="truncate font-medium">{slice.name}</span>
           </span>
-          <span className="text-muted-foreground shrink-0 tabular-nums">
-            {formatPercentage(slice.percentage)}
+          <span className="flex shrink-0 items-center gap-2.5 tabular-nums">
+            <span className="text-foreground/90 text-xs font-medium">
+              {formatCurrency(slice.totalAmount)}
+            </span>
+            <span className="text-muted-foreground w-12 text-right text-xs font-semibold">
+              {formatPercentage(slice.percentage)}
+            </span>
           </span>
         </li>
       ))}
@@ -217,16 +226,16 @@ export function CategoryDonut({ month, year }: CategoryDonutProps): JSX.Element 
     );
   }
 
-  // ── Gráfico de rosca ──────────────────────────────────────────────────
+  // ── Gráfico de rosca + lista de categorias em fluxo normal ────────────
   return (
-    <Card data-testid="category-donut">
+    <Card className="overflow-hidden" data-testid="category-donut">
       <CardHeader className="pb-2">
         <CardTitle className="text-muted-foreground text-sm font-medium">
           Distribuição por Categoria
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-64 w-full" data-testid="category-donut-chart">
+        <div className="h-56 w-full" data-testid="category-donut-chart">
           <ResponsiveContainer width="100%" height="100%">
             <RechartsPieChart>
               <Pie
@@ -236,7 +245,7 @@ export function CategoryDonut({ month, year }: CategoryDonutProps): JSX.Element 
                 cx="50%"
                 cy="50%"
                 innerRadius="55%"
-                outerRadius="80%"
+                outerRadius="85%"
                 paddingAngle={2}
                 stroke="none"
                 isAnimationActive={false}
@@ -246,18 +255,15 @@ export function CategoryDonut({ month, year }: CategoryDonutProps): JSX.Element 
                 ))}
               </Pie>
               <Tooltip content={<DonutTooltip />} />
-              <Legend
-                verticalAlign="bottom"
-                height={0}
-                content={() => <DonutLegend slices={slices} />}
-              />
             </RechartsPieChart>
           </ResponsiveContainer>
         </div>
 
+        <DonutLegend slices={slices} />
+
         <p
           className={cn(
-            'text-muted-foreground mt-3 text-center text-xs tabular-nums',
+            'text-muted-foreground border-border/50 mt-4 border-t pt-3 text-center text-xs font-medium tabular-nums',
           )}
           data-testid="category-donut-total"
         >
