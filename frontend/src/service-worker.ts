@@ -35,7 +35,7 @@ declare const self: ServiceWorkerGlobalScope;
  * Versão do cache. Incrementar este valor invalida todos os caches antigos
  * na ativação do novo Service Worker (cache busting de shell).
  */
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 
 /** Nome do cache do app shell (HTML, manifest, ícones). */
 const SHELL_CACHE = `aksurim-shell-${CACHE_VERSION}`;
@@ -57,13 +57,14 @@ const SHELL_ASSETS: readonly string[] = [
   '/favicon.ico',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
+  '/icons/badge-96x96.png',
 ];
 
 /** Ícone padrão das notificações push. */
 const NOTIFICATION_ICON = '/icons/icon-192x192.png';
 
-/** Ícone de badge das notificações push. */
-const NOTIFICATION_BADGE = '/icons/icon-192x192.png';
+/** Ícone de badge monocromático (barra de status do Android) das notificações push. */
+const NOTIFICATION_BADGE = '/icons/badge-96x96.png';
 
 // ═══════════════════════════════════════════
 // TIPOS AUXILIARES
