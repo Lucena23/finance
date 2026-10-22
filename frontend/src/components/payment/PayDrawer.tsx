@@ -61,7 +61,13 @@ function todayIsoDate(): string {
     day: '2-digit',
   });
 
-  return formatter.format(new Date());
+  // formatToParts evita depender do separador/ordem do locale (difere entre motores, ex.: WebKit/iOS).
+  const parts = formatter.formatToParts(new Date());
+  const year = parts.find((part) => part.type === 'year')?.value ?? '';
+  const month = parts.find((part) => part.type === 'month')?.value ?? '';
+  const day = parts.find((part) => part.type === 'day')?.value ?? '';
+
+  return `${year}-${month}-${day}`;
 }
 
 /**

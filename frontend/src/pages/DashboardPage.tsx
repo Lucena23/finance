@@ -31,7 +31,10 @@ function currentPeriod(): { month: number; year: number } {
     month: '2-digit',
   });
 
-  const [yearPart, monthPart] = formatter.format(new Date()).split('-');
+  // formatToParts evita depender do separador/ordem (WebKit/iOS formata en-CA como "MM/AAAA").
+  const parts = formatter.formatToParts(new Date());
+  const yearPart = parts.find((part) => part.type === 'year')?.value;
+  const monthPart = parts.find((part) => part.type === 'month')?.value;
 
   return {
     month: Number(monthPart),

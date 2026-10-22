@@ -55,7 +55,10 @@ function getCurrentPeriodInBr(): { month: number; year: number } {
     year: 'numeric',
     month: '2-digit',
   });
-  const [y, m] = formatter.format(new Date()).split('-');
+  // formatToParts evita depender do separador/ordem (WebKit/iOS formata en-CA como "MM/AAAA").
+  const parts = formatter.formatToParts(new Date());
+  const y = parts.find((part) => part.type === 'year')?.value;
+  const m = parts.find((part) => part.type === 'month')?.value;
   return { month: Number(m), year: Number(y) };
 }
 

@@ -152,12 +152,18 @@ function centsToInputValue(cents: unknown): string {
  * adequado ao atributo `date` de um <input type="date">.
  */
 function todayIsoDate(): string {
-  return new Intl.DateTimeFormat('en-CA', {
+  // formatToParts evita depender do separador/ordem do locale (difere entre motores, ex.: WebKit/iOS).
+  const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Sao_Paulo',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).format(new Date());
+  }).formatToParts(new Date());
+  const year = parts.find((part) => part.type === 'year')?.value ?? '';
+  const month = parts.find((part) => part.type === 'month')?.value ?? '';
+  const day = parts.find((part) => part.type === 'day')?.value ?? '';
+
+  return `${year}-${month}-${day}`;
 }
 
 /**
