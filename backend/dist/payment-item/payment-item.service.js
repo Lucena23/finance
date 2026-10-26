@@ -84,9 +84,40 @@ let PaymentItemService = class PaymentItemService {
         });
     }
     async undoPay(familyAccountId, id) {
-        const item = await this.findItemInScope(familyAccountId, id);
+        const item = await this.prisma.paymentItem.findFirst({
+            where: {
+                id,
+                expense: { familyAccountId },
+            },
+            include: {
+                expense: { select: { id: true, deletedAt: true } },
+            },
+        });
+        if (!item) {
+            throw new common_1.NotFoundException('Item de pagamento não encontrado.');
+        }
         if (item.status === 'PENDING') {
             throw new common_1.BadRequestException('Este item não está quitado.');
+        }
+        if (item.expense.deletedAt !== null) {
+            await this.prisma.$transaction(async (tx) => {
+                await tx.paymentItem.delete({ where: { id } });
+                const remainingPaid = await tx.paymentItem.count({
+                    where: { expenseId: item.expenseId, status: 'PAID' },
+                });
+                if (remainingPaid === 0) {
+                    await tx.paymentItem.deleteMany({ where: { expenseId: item.expenseId } });
+                    await tx.expense.delete({ where: { id: item.expenseId } });
+                }
+            });
+            return {
+                ...item,
+                status: 'PENDING',
+                paidAmount: null,
+                paidAt: null,
+                paidById: null,
+                notes: null,
+            };
         }
         return this.prisma.paymentItem.update({
             where: { id },
@@ -119,7 +150,6 @@ let PaymentItemService = class PaymentItemService {
             status: client_1.PaymentStatus.PAID,
             expense: {
                 familyAccountId,
-                deletedAt: null,
                 ...(query.categoryId !== undefined
                     ? { categoryId: query.categoryId }
                     : {}),

@@ -3,7 +3,7 @@
   <h1>Aksurim Controle</h1>
   <p><b>Plataforma SaaS & PWA de Gestão e Inteligência Financeira Individual e Compartilhada</b></p>
 
-  <img src="https://img.shields.io/badge/Release-v1.2.3%20Freemium-F59E0B?style=for-the-badge" alt="Version 1.2.3" />
+  <img src="https://img.shields.io/badge/Release-v1.2.4%20Freemium-F59E0B?style=for-the-badge" alt="Version 1.2.4" />
   <img src="https://img.shields.io/badge/Architecture-Mobile%20First%20PWA-06777F?style=for-the-badge" alt="Mobile First" />
   <img src="https://img.shields.io/badge/Security-OWASP%20Hardened-FB4629?style=for-the-badge" alt="Security" />
   <img src="https://img.shields.io/badge/LGPD-Compliant-10B981?style=for-the-badge" alt="LGPD Compliant" />
@@ -88,10 +88,10 @@ O sistema foi arquitetado sob princípios de **Security by Design** e **Defense 
 
 ## 🔖 GOVERNANÇA DE RELEASES E VERSIONAMENTO (SemVer)
 
-O **Aksurim Controle** adota o padrão internacional de **Versionamento Semântico (`MAJOR.MINOR.PATCH` — SemVer 2.0.0)**, com identificação da versão ativa diretamente na interface do aplicativo (`Configurações` → rodapé `v1.2.3`):
+O **Aksurim Controle** adota o padrão internacional de **Versionamento Semântico (`MAJOR.MINOR.PATCH` — SemVer 2.0.0)**, com identificação da versão ativa diretamente na interface do aplicativo (`Configurações` → rodapé `v1.2.4`):
 - **MAJOR (`1.x.x`):** Arquitetura base de produção e contratos principais da plataforma.
 - **MINOR (`x.2.x`):** Ciclos de evolução funcional e de modelo de negócio (ex.: `v1.1` Atualizações Operacionais, `v1.2` Ecossistema Freemium & AdTech).
-- **PATCH (`x.x.3`):** Correções cirúrgicas (*hotfixes*), refinamentos de compatibilidade multi-plataforma (iOS/WebKit, Android PWA) e melhorias de estabilidade sem quebra de compatibilidade.
+- **PATCH (`x.x.4`):** Correções cirúrgicas (*hotfixes*), refinamentos de compatibilidade multi-plataforma (iOS/WebKit, Android PWA) e melhorias de estabilidade sem quebra de compatibilidade.
 
 ---
 

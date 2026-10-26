@@ -31,7 +31,7 @@ let DashboardService = class DashboardService {
                 where: {
                     status: client_1.PaymentStatus.PAID,
                     paidAt: { gte: monthStart, lte: this.endOfDay(monthEnd) },
-                    expense: { familyAccountId, deletedAt: null },
+                    expense: { familyAccountId },
                 },
                 select: { paidAmount: true, paidById: true },
             }),
@@ -82,7 +82,11 @@ let DashboardService = class DashboardService {
         const items = await this.prisma.paymentItem.findMany({
             where: {
                 dueDate: { gte: monthStart, lte: monthEnd },
-                expense: { familyAccountId, deletedAt: null },
+                expense: { familyAccountId },
+                OR: [
+                    { expense: { deletedAt: null } },
+                    { status: client_1.PaymentStatus.PAID },
+                ],
             },
             select: {
                 expectedAmount: true,
@@ -134,7 +138,11 @@ let DashboardService = class DashboardService {
         const items = await this.prisma.paymentItem.findMany({
             where: {
                 dueDate: { gte: yearStart, lte: yearEnd },
-                expense: { familyAccountId, deletedAt: null },
+                expense: { familyAccountId },
+                OR: [
+                    { expense: { deletedAt: null } },
+                    { status: client_1.PaymentStatus.PAID },
+                ],
             },
             select: {
                 status: true,

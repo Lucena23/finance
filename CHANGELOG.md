@@ -5,12 +5,14 @@ Histórico Oficial do Projeto — Aksurim Software
 ## REGISTROS RECENTES
 
 Data: 2026-10-26
-Versão: 1.2.3
+Versão: 1.2.4
 Tipo: FIX / CHORE
-Origem: Exclusão Inteligente de Despesas, Relatórios PDF (UTC/Filtro) e Governança SemVer
-Descrição: Implementação da exclusão inteligente de despesas (hard delete automático quando a despesa não possui nenhuma parcela paga; preservação com soft delete e limpeza de parcelas pendentes quando já existem pagamentos quitados). Correção do gerador de Relatórios PDF (Sintético e Analítico) e CSV para ignorar despesas excluídas sem quitação e preservação de fuso horário UTC na exibição de datas de vencimento. Exibição da versão semântica oficial (`v1.2.3`) no rodapé da página de Configurações e documentação da governança SemVer no `README.md`.
+Origem: Exclusão Inteligente de Despesas, Histórico de Pagas, Relatórios PDF (UTC/Filtro) e Governança SemVer
+Descrição: Implementação da exclusão inteligente de despesas (hard delete automático quando a despesa não possui nenhuma parcela paga; preservação com soft delete e limpeza de parcelas pendentes quando já existem pagamentos quitados). Preservação de parcelas efetivamente quitadas (`PAID`) na listagem "Pagas neste Mês" da Fila (`PaymentItemService.getHistory`), nos indicadores do Painel (`DashboardService`) e nos Relatórios PDF/CSV mesmo após a exclusão da despesa mãe, além de correção de fuso horário UTC na exibição de datas de vencimento nos relatórios PDF. Exibição da versão semântica oficial (`v1.2.4`) no rodapé da página de Configurações e documentação da governança SemVer no `README.md`.
 Arquivos alterados:
   - backend/src/expense/expense.service.ts
+  - backend/src/payment-item/payment-item.service.ts
+  - backend/src/dashboard/dashboard.service.ts
   - backend/src/reports/reports.service.ts
   - frontend/src/lib/constants.ts
   - frontend/src/pages/SettingsPage.tsx

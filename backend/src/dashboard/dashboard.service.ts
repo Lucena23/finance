@@ -92,7 +92,7 @@ export class DashboardService {
         where: {
           status: PaymentStatus.PAID,
           paidAt: { gte: monthStart, lte: this.endOfDay(monthEnd) },
-          expense: { familyAccountId, deletedAt: null },
+          expense: { familyAccountId },
         },
         select: { paidAmount: true, paidById: true },
       }),
@@ -182,7 +182,11 @@ export class DashboardService {
     const items = await this.prisma.paymentItem.findMany({
       where: {
         dueDate: { gte: monthStart, lte: monthEnd },
-        expense: { familyAccountId, deletedAt: null },
+        expense: { familyAccountId },
+        OR: [
+          { expense: { deletedAt: null } },
+          { status: PaymentStatus.PAID },
+        ],
       },
       select: {
         expectedAmount: true,
@@ -259,7 +263,11 @@ export class DashboardService {
     const items = await this.prisma.paymentItem.findMany({
       where: {
         dueDate: { gte: yearStart, lte: yearEnd },
-        expense: { familyAccountId, deletedAt: null },
+        expense: { familyAccountId },
+        OR: [
+          { expense: { deletedAt: null } },
+          { status: PaymentStatus.PAID },
+        ],
       },
       select: {
         status: true,
