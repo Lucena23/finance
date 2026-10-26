@@ -18,7 +18,8 @@ export declare class NotificationPriorityService {
     private vapidConfigured;
     constructor(prisma: PrismaService);
     dispatchAll(referenceDate?: Date): Promise<WorkspaceDispatchResult[]>;
-    dispatchForWorkspace(familyAccountId: string, referenceDate?: Date): Promise<WorkspaceDispatchResult>;
+    dispatchForWorkspace(familyAccountId: string, referenceDate?: Date, ignoreCadence?: boolean): Promise<WorkspaceDispatchResult>;
+    private findOverdueItems;
     private countPending;
     private dispatch;
     private ensureVapidConfigured;

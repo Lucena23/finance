@@ -5,6 +5,18 @@ Histórico Oficial do Projeto — Aksurim Software
 ## REGISTROS RECENTES
 
 Data: 2026-10-26
+Versão: 1.2.5
+Tipo: FIX / FEATURE
+Origem: Motor de Notificações Inteligentes (Tom Consultivo, Mensagens Combinadas, Cadência de Atraso e Modo Teste Isolado)
+Descrição: Evolução do motor de Web Push Notifications (`NotificationPriorityService`) para adotar linguagem consultiva focada na proteção do orçamento familiar e prevenção de juros, com suporte a mensagens combinadas quando o workspace possui compromissos vencendo hoje e em atraso simultaneamente (singular/plural dinâmico). Implementada cadência inteligente para alertas exclusivamente em atraso (1º dia, 3º dia e a cada 7 dias subsequentes, evitando fadiga de alerta) e suporte a filtro de execução isolada por `ONLY_USER_EMAIL` no Cron Job para validação em produção sem impactar os demais clientes.
+Arquivos alterados:
+  - backend/src/notification/notification-priority.service.ts
+  - frontend/src/lib/constants.ts
+  - README.md
+  - CHANGELOG.md
+Responsável: Joannderson Lucena (Aksurim Software)
+
+Data: 2026-10-26
 Versão: 1.2.4
 Tipo: FIX / CHORE
 Origem: Exclusão Inteligente de Despesas, Histórico de Pagas, Relatórios PDF (UTC/Filtro) e Governança SemVer

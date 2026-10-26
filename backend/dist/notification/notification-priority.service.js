@@ -55,11 +55,52 @@ var NotificationPriority;
     NotificationPriority["P3"] = "P3";
     NotificationPriority["SILENT"] = "SILENT";
 })(NotificationPriority || (exports.NotificationPriority = NotificationPriority = {}));
-const PRIORITY_MESSAGES = {
-    [NotificationPriority.P1]: 'Você possui conta(s) pendente(s) já vencida(s). Acesse para regularizar e evitar juros.',
-    [NotificationPriority.P2]: 'Você tem conta(s) com vencimento marcado para hoje. Acesse para conferir e quitar.',
-    [NotificationPriority.P3]: 'Você tem conta(s) com vencimento nos próximos dias. Acesse para planejar seus pagamentos.',
-};
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+function buildAdvisorMessage(overdueCount, todayCount, upcomingCount) {
+    if (overdueCount > 0 && todayCount > 0) {
+        const todayLabel = todayCount === 1 ? '1 conta vencendo hoje' : `${todayCount} contas vencendo hoje`;
+        const overdueLabel = overdueCount === 1 ? '1 em atraso' : `${overdueCount} em atraso`;
+        return {
+            priority: NotificationPriority.P1,
+            pendingCount: overdueCount + todayCount,
+            message: `Atenção ao seu orçamento: você tem ${todayLabel} e ${overdueLabel}. Confira seu painel para evitar juros e multas desnecessárias.`,
+        };
+    }
+    if (todayCount > 0) {
+        const message = todayCount === 1
+            ? 'Lembrete do dia: 1 compromisso financeiro vence hoje. Lembre-se de realizar o pagamento em dia para não perder dinheiro com juros.'
+            : `Lembrete do dia: ${todayCount} compromissos financeiros vencem hoje. Lembre-se de realizar os pagamentos em dia para não perder dinheiro com juros.`;
+        return {
+            priority: NotificationPriority.P2,
+            pendingCount: todayCount,
+            message,
+        };
+    }
+    if (overdueCount > 0) {
+        const message = overdueCount === 1
+            ? 'Cuidado com os juros: você tem 1 conta com vencimento em aberto. Assim que possível, atualize seu controle para proteger seu orçamento.'
+            : `Cuidado com os juros: você tem ${overdueCount} contas com vencimento em aberto. Assim que possível, atualize seu controle para proteger seu orçamento.`;
+        return {
+            priority: NotificationPriority.P1,
+            pendingCount: overdueCount,
+            message,
+        };
+    }
+    const message = upcomingCount === 1
+        ? 'Planejamento financeiro: você tem 1 compromisso vencendo nos próximos dias. Organize-se com antecedência para manter suas contas em dia.'
+        : `Planejamento financeiro: você tem ${upcomingCount} compromissos vencendo nos próximos dias. Organize-se com antecedência para manter suas contas em dia.`;
+    return {
+        priority: NotificationPriority.P3,
+        pendingCount: upcomingCount,
+        message,
+    };
+}
+function matchesOverdueCadence(daysOverdue) {
+    if (daysOverdue <= 0) {
+        return false;
+    }
+    return daysOverdue === 1 || daysOverdue === 3 || daysOverdue % 7 === 0;
+}
 let NotificationPriorityService = NotificationPriorityService_1 = class NotificationPriorityService {
     constructor(prisma) {
         this.prisma = prisma;
@@ -68,37 +109,63 @@ let NotificationPriorityService = NotificationPriorityService_1 = class Notifica
     }
     async dispatchAll(referenceDate = new Date()) {
         this.ensureVapidConfigured();
+        const onlyUserEmail = process.env.ONLY_USER_EMAIL?.trim();
+        const isTestMode = Boolean(onlyUserEmail);
         const accounts = await this.prisma.familyAccount.findMany({
+            ...(onlyUserEmail
+                ? {
+                    where: {
+                        users: {
+                            some: { email: onlyUserEmail },
+                        },
+                    },
+                }
+                : {}),
             select: { id: true },
         });
+        if (onlyUserEmail) {
+            this.logger.log(`[MODO TESTE ISOLADO] ONLY_USER_EMAIL=${onlyUserEmail} -> ${accounts.length} workspace(s) filtrado(s).`);
+        }
         const results = [];
         for (const account of accounts) {
-            const result = await this.dispatchForWorkspace(account.id, referenceDate);
+            const result = await this.dispatchForWorkspace(account.id, referenceDate, isTestMode);
             results.push(result);
         }
         return results;
     }
-    async dispatchForWorkspace(familyAccountId, referenceDate = new Date()) {
+    async dispatchForWorkspace(familyAccountId, referenceDate = new Date(), ignoreCadence = false) {
         const today = this.startOfDay(referenceDate);
         const tomorrow = this.addDays(today, 1);
         const inFiveDays = this.addDays(today, 5);
-        const overdueCount = await this.countPending(familyAccountId, {
-            dueDate: { lt: today },
-        });
-        if (overdueCount > 0) {
-            return this.dispatch(familyAccountId, NotificationPriority.P1, overdueCount);
-        }
-        const todayCount = await this.countPending(familyAccountId, {
-            dueDate: { gte: today, lt: tomorrow },
-        });
+        const [overdueItems, todayCount, upcomingCount] = await Promise.all([
+            this.findOverdueItems(familyAccountId, today),
+            this.countPending(familyAccountId, {
+                dueDate: { gte: today, lt: tomorrow },
+            }),
+            this.countPending(familyAccountId, {
+                dueDate: { gte: tomorrow, lte: inFiveDays },
+            }),
+        ]);
+        const totalOverdue = overdueItems.length;
         if (todayCount > 0) {
-            return this.dispatch(familyAccountId, NotificationPriority.P2, todayCount);
+            const { priority, pendingCount, message } = buildAdvisorMessage(totalOverdue, todayCount, upcomingCount);
+            return this.dispatch(familyAccountId, priority, pendingCount, message);
         }
-        const upcomingCount = await this.countPending(familyAccountId, {
-            dueDate: { gte: tomorrow, lte: inFiveDays },
-        });
+        if (totalOverdue > 0) {
+            const shouldNotifyOverdue = ignoreCadence ||
+                overdueItems.some((item) => {
+                    const dueUtc = this.startOfDay(item.dueDate);
+                    const diffDays = Math.round((today.getTime() - dueUtc.getTime()) / MS_PER_DAY);
+                    return matchesOverdueCadence(diffDays);
+                });
+            if (shouldNotifyOverdue) {
+                const { priority, pendingCount, message } = buildAdvisorMessage(totalOverdue, 0, upcomingCount);
+                return this.dispatch(familyAccountId, priority, pendingCount, message);
+            }
+        }
         if (upcomingCount > 0) {
-            return this.dispatch(familyAccountId, NotificationPriority.P3, upcomingCount);
+            const { priority, pendingCount, message } = buildAdvisorMessage(0, 0, upcomingCount);
+            return this.dispatch(familyAccountId, priority, pendingCount, message);
         }
         return {
             familyAccountId,
@@ -107,6 +174,29 @@ let NotificationPriorityService = NotificationPriorityService_1 = class Notifica
             notifiedSubscriptions: 0,
             message: null,
         };
+    }
+    async findOverdueItems(familyAccountId, today) {
+        if (typeof this.prisma.paymentItem.findMany === 'function') {
+            const rows = await this.prisma.paymentItem.findMany({
+                where: {
+                    status: client_1.PaymentStatus.PENDING,
+                    dueDate: { lt: today },
+                    expense: {
+                        familyAccountId,
+                        deletedAt: null,
+                    },
+                },
+                select: { dueDate: true },
+            });
+            if (Array.isArray(rows)) {
+                return rows;
+            }
+        }
+        const fallbackCount = await this.countPending(familyAccountId, {
+            dueDate: { lt: today },
+        });
+        const yesterday = this.addDays(today, -1);
+        return Array.from({ length: fallbackCount }, () => ({ dueDate: yesterday }));
     }
     countPending(familyAccountId, dueDateFilter) {
         return this.prisma.paymentItem.count({
@@ -120,8 +210,7 @@ let NotificationPriorityService = NotificationPriorityService_1 = class Notifica
             },
         });
     }
-    async dispatch(familyAccountId, priority, pendingCount) {
-        const message = PRIORITY_MESSAGES[priority];
+    async dispatch(familyAccountId, priority, pendingCount, message) {
         const subscriptions = await this.prisma.pushSubscription.findMany({
             where: {
                 user: { familyAccountId },

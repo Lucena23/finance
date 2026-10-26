@@ -7,7 +7,7 @@
  */
 
 /** Versão semântica (SemVer) oficial da aplicação em produção. */
-export const APP_VERSION = '1.2.4';
+export const APP_VERSION = '1.2.5';
 
 /** Prefixo global da API REST (ARCHITECTURE §3.2). */
 export const API_BASE_URL: string =
