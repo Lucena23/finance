@@ -58,14 +58,18 @@ let ReportsService = class ReportsService {
             throw new common_1.BadRequestException('Datas inicial e final são obrigatórias.');
         }
         const [sy, sm, sd] = startDateStr.split('-').map(Number);
-        const startDate = new Date(sy, sm - 1, sd, 0, 0, 0);
+        const startDate = new Date(Date.UTC(sy, sm - 1, sd, 0, 0, 0, 0));
         const [ey, em, ed] = endDateStr.split('-').map(Number);
-        const endDate = new Date(ey, em - 1, ed, 23, 59, 59, 999);
+        const endDate = new Date(Date.UTC(ey, em - 1, ed, 23, 59, 59, 999));
         const familyId = user.familyAccountId;
         const paymentItems = await this.prisma.paymentItem.findMany({
             where: {
                 dueDate: { gte: startDate, lte: endDate },
                 expense: { familyAccountId: familyId },
+                OR: [
+                    { expense: { deletedAt: null } },
+                    { status: client_1.PaymentStatus.PAID },
+                ],
             },
             include: {
                 expense: { include: { category: true, createdBy: true } },
@@ -266,7 +270,7 @@ let ReportsService = class ReportsService {
                 if (i % 2 === 0) {
                     doc.rect(margin, currentY - 4, contentWidth, rowHeight).fill('#F8FAFC');
                 }
-                const dateStr = item.dueDate.toLocaleDateString('pt-BR');
+                const dateStr = item.dueDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
                 let title = item.expense.title;
                 if (title.length > 25)
                     title = title.substring(0, 25) + '...';
@@ -284,7 +288,7 @@ let ReportsService = class ReportsService {
                     statusColor = colors.success;
                     valStr = formatCurrency(item.paidAmount || item.expectedAmount);
                 }
-                else if (item.status === client_1.PaymentStatus.PENDING && item.dueDate < new Date()) {
+                else if (item.status === client_1.PaymentStatus.PENDING && item.dueDate.getTime() < new Date(Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())).getTime()) {
                     statusText = 'Atrasado';
                     statusColor = colors.danger;
                 }
@@ -329,7 +333,11 @@ let ReportsService = class ReportsService {
     async generateCsvExport(familyAccountId) {
         const items = await this.prisma.paymentItem.findMany({
             where: {
-                expense: { familyAccountId, deletedAt: null },
+                expense: { familyAccountId },
+                OR: [
+                    { expense: { deletedAt: null } },
+                    { status: client_1.PaymentStatus.PAID },
+                ],
             },
             include: {
                 expense: { select: { title: true, type: true, category: { select: { name: true } } } },

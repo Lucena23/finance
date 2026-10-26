@@ -4,6 +4,20 @@ Histórico Oficial do Projeto — Aksurim Software
 
 ## REGISTROS RECENTES
 
+Data: 2026-10-26
+Versão: 1.2.3
+Tipo: FIX / CHORE
+Origem: Exclusão Inteligente de Despesas, Relatórios PDF (UTC/Filtro) e Governança SemVer
+Descrição: Implementação da exclusão inteligente de despesas (hard delete automático quando a despesa não possui nenhuma parcela paga; preservação com soft delete e limpeza de parcelas pendentes quando já existem pagamentos quitados). Correção do gerador de Relatórios PDF (Sintético e Analítico) e CSV para ignorar despesas excluídas sem quitação e preservação de fuso horário UTC na exibição de datas de vencimento. Exibição da versão semântica oficial (`v1.2.3`) no rodapé da página de Configurações e documentação da governança SemVer no `README.md`.
+Arquivos alterados:
+  - backend/src/expense/expense.service.ts
+  - backend/src/reports/reports.service.ts
+  - frontend/src/lib/constants.ts
+  - frontend/src/pages/SettingsPage.tsx
+  - README.md
+  - CHANGELOG.md
+Responsável: Joannderson Lucena (Aksurim Software)
+
 Data: 2026-09-20
 Versão: 1.0.0
 Tipo: FEATURE / REFACTOR

@@ -28,6 +28,7 @@ describe('ExpenseService — geração de PaymentItems', () => {
       findMany: jest.Mock;
       findFirst: jest.Mock;
       update: jest.Mock;
+      delete: jest.Mock;
       count: jest.Mock;
     };
     paymentItem: {
@@ -35,6 +36,7 @@ describe('ExpenseService — geração de PaymentItems', () => {
       findMany: jest.Mock;
       updateMany: jest.Mock;
       deleteMany: jest.Mock;
+      count: jest.Mock;
     };
     category: { findFirst: jest.Mock };
   };
@@ -47,6 +49,7 @@ describe('ExpenseService — geração de PaymentItems', () => {
         findMany: jest.fn(),
         findFirst: jest.fn(),
         update: jest.fn(),
+        delete: jest.fn(),
         count: jest.fn(),
       },
       paymentItem: {
@@ -54,6 +57,7 @@ describe('ExpenseService — geração de PaymentItems', () => {
         findMany: jest.fn(),
         updateMany: jest.fn(),
         deleteMany: jest.fn(),
+        count: jest.fn(),
       },
       category: { findFirst: jest.fn() },
     };
@@ -523,6 +527,48 @@ describe('ExpenseService — geração de PaymentItems', () => {
           dueDate: 'data-invalida',
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('softDelete remove fisicamente despesa e itens quando não há nenhum item PAID', async () => {
+      mockTransaction();
+      prisma.expense.findFirst.mockResolvedValue({
+        id: 'exp-unpaid',
+        familyAccountId: 'fam-1',
+        deletedAt: null,
+      });
+      prisma.paymentItem.count.mockResolvedValue(0);
+      prisma.paymentItem.deleteMany.mockResolvedValue({ count: 1 });
+      prisma.expense.delete.mockResolvedValue({ id: 'exp-unpaid' });
+
+      await service.softDelete('fam-1', 'exp-unpaid');
+
+      expect(prisma.paymentItem.deleteMany).toHaveBeenCalledWith({
+        where: { expenseId: 'exp-unpaid' },
+      });
+      expect(prisma.expense.delete).toHaveBeenCalledWith({
+        where: { id: 'exp-unpaid' },
+      });
+      expect(prisma.expense.update).not.toHaveBeenCalled();
+    });
+
+    it('softDelete preserva despesa com deletedAt e limpa apenas PENDING quando há item PAID', async () => {
+      mockTransaction();
+      prisma.expense.findFirst.mockResolvedValue({
+        id: 'exp-paid',
+        familyAccountId: 'fam-1',
+        deletedAt: null,
+      });
+      prisma.paymentItem.count.mockResolvedValue(2);
+      prisma.paymentItem.deleteMany.mockResolvedValue({ count: 3 });
+      prisma.expense.update.mockResolvedValue({ id: 'exp-paid' });
+
+      await service.softDelete('fam-1', 'exp-paid');
+
+      expect(prisma.paymentItem.deleteMany).toHaveBeenCalledWith({
+        where: { expenseId: 'exp-paid', status: 'PENDING' },
+      });
+      expect(prisma.expense.update).toHaveBeenCalled();
+      expect(prisma.expense.delete).not.toHaveBeenCalled();
     });
 
     it('retorna 404 ao buscar despesa de outro workspace', async () => {

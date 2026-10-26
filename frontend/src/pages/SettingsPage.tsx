@@ -32,7 +32,7 @@ import { usePlan } from '@/contexts/PlanContext';
 import { useAuth } from '@/hooks/useAuth';
 import { ApiError, usersApi, type SafeUser } from '@/lib/api';
 import { cn } from '@/lib/cn';
-import { Role } from '@/lib/constants';
+import { APP_VERSION, Role } from '@/lib/constants';
 
 export function SettingsPage(): JSX.Element {
   const { user: currentUser } = useAuth();
@@ -336,6 +336,9 @@ export function SettingsPage(): JSX.Element {
       </Card>
 
       {/* Modal nativo Aksurim de confirmação de remoção de membro */}
+      <div className="pt-1 text-center text-xs text-muted-foreground/70">
+        Aksurim Controle <span className="font-mono font-semibold">v{APP_VERSION}</span>
+      </div>
       <Dialog
         open={Boolean(memberToRemove)}
         onOpenChange={(open) => {

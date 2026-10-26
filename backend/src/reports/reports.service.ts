@@ -22,10 +22,10 @@ export class ReportsService {
     // CORREÇÃO DO TIMEZONE: Construção manual a partir da string AAAA-MM-DD
     // Isso garante que a data local (ex: 20/09) não sofra offset de UTC virando 19/09
     const [sy, sm, sd] = startDateStr.split('-').map(Number);
-    const startDate = new Date(sy, sm - 1, sd, 0, 0, 0);
+    const startDate = new Date(Date.UTC(sy, sm - 1, sd, 0, 0, 0, 0));
     
     const [ey, em, ed] = endDateStr.split('-').map(Number);
-    const endDate = new Date(ey, em - 1, ed, 23, 59, 59, 999);
+    const endDate = new Date(Date.UTC(ey, em - 1, ed, 23, 59, 59, 999));
 
     const familyId = user.familyAccountId;
 
@@ -33,6 +33,10 @@ export class ReportsService {
       where: {
         dueDate: { gte: startDate, lte: endDate },
         expense: { familyAccountId: familyId },
+        OR: [
+          { expense: { deletedAt: null } },
+          { status: PaymentStatus.PAID },
+        ],
       },
       include: {
         expense: { include: { category: true, createdBy: true } },
@@ -296,7 +300,7 @@ export class ReportsService {
           doc.rect(margin, currentY - 4, contentWidth, rowHeight).fill('#F8FAFC');
         }
 
-        const dateStr = item.dueDate.toLocaleDateString('pt-BR');
+        const dateStr = item.dueDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
         let title = item.expense.title;
         if (title.length > 25) title = title.substring(0, 25) + '...';
         
@@ -315,7 +319,7 @@ export class ReportsService {
           statusText = 'Pago';
           statusColor = colors.success;
           valStr = formatCurrency(item.paidAmount || item.expectedAmount);
-        } else if (item.status === PaymentStatus.PENDING && item.dueDate < new Date()) {
+        } else if (item.status === PaymentStatus.PENDING && item.dueDate.getTime() < new Date(Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())).getTime()) {
           statusText = 'Atrasado';
           statusColor = colors.danger;
         }
@@ -388,7 +392,11 @@ export class ReportsService {
   async generateCsvExport(familyAccountId: string): Promise<string> {
     const items = await this.prisma.paymentItem.findMany({
       where: {
-        expense: { familyAccountId, deletedAt: null },
+        expense: { familyAccountId },
+        OR: [
+          { expense: { deletedAt: null } },
+          { status: PaymentStatus.PAID },
+        ],
       },
       include: {
         expense: { select: { title: true, type: true, category: { select: { name: true } } } },

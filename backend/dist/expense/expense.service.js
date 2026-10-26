@@ -148,9 +148,23 @@ let ExpenseService = ExpenseService_1 = class ExpenseService {
             await this.planService.assertMemberCanWrite(familyAccountId, userRole);
         }
         await this.findOneOrFail(familyAccountId, id);
-        await this.prisma.expense.update({
-            where: { id },
-            data: { deletedAt: new Date() },
+        await this.prisma.$transaction(async (tx) => {
+            const paidCount = await tx.paymentItem.count({
+                where: { expenseId: id, status: 'PAID' },
+            });
+            if (paidCount === 0) {
+                await tx.paymentItem.deleteMany({ where: { expenseId: id } });
+                await tx.expense.delete({ where: { id } });
+            }
+            else {
+                await tx.paymentItem.deleteMany({
+                    where: { expenseId: id, status: 'PENDING' },
+                });
+                await tx.expense.update({
+                    where: { id },
+                    data: { deletedAt: new Date() },
+                });
+            }
         });
     }
     async restore(familyAccountId, id, userRole) {
