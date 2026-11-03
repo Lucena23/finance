@@ -25,7 +25,7 @@ let ExpenseService = ExpenseService_1 = class ExpenseService {
     }
     async findAll(familyAccountId, query) {
         const page = query.page ?? 1;
-        const limit = query.limit ?? 20;
+        const limit = query.limit ?? 500;
         const where = {
             familyAccountId,
             deletedAt: null,
@@ -198,7 +198,6 @@ let ExpenseService = ExpenseService_1 = class ExpenseService {
                 where: {
                     expenseId: id,
                     status: 'PENDING',
-                    dueDate: { gt: this.today() },
                 },
             });
             return tx.expense.update({

@@ -100,6 +100,7 @@ let PlanService = class PlanService {
         const now = new Date();
         const computed = computePlanStatus(account, now, this.graceDays);
         return {
+            familyName: account.name,
             status: computed.status,
             hasPremiumAccess: computed.hasPremiumAccess,
             trialEndsAt: account.trialEndsAt?.toISOString() ?? null,
@@ -207,7 +208,7 @@ let PlanService = class PlanService {
     async findAccount(familyAccountId) {
         const account = await this.prisma.familyAccount.findUnique({
             where: { id: familyAccountId },
-            select: { trialEndsAt: true, premiumEndsAt: true, billingCycle: true },
+            select: { name: true, trialEndsAt: true, premiumEndsAt: true, billingCycle: true },
         });
         if (!account) {
             throw new common_1.NotFoundException('Conta familiar não encontrada.');

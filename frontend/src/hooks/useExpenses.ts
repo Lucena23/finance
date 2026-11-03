@@ -90,7 +90,7 @@ export function useExpenses(filters?: ExpenseFilters): UseExpensesResult {
     setError(null);
 
     try {
-      const response = await expensesApi.list({ type, categoryId });
+      const response = await expensesApi.list({ type, categoryId, limit: 500 });
       setExpenses(response.data);
       setTotal(response.total);
     } catch (err) {
@@ -168,12 +168,7 @@ export function useExpenses(filters?: ExpenseFilters): UseExpensesResult {
     async (id: string): Promise<void> => {
       await runOptimistic(
         id,
-        (current) =>
-          current.map((expense) =>
-            expense.id === id
-              ? { ...expense, deletedAt: new Date().toISOString() }
-              : expense,
-          ),
+        (current) => current.filter((expense) => expense.id !== id),
         () => expensesApi.remove(id),
       );
     },

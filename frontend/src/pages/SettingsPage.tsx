@@ -36,7 +36,8 @@ import { APP_VERSION, Role } from '@/lib/constants';
 
 export function SettingsPage(): JSX.Element {
   const { user: currentUser } = useAuth();
-  const { hasPremiumAccess, showGoldCue, openPremiumModal } = usePlan();
+  const { plan, hasPremiumAccess, showGoldCue, openPremiumModal } = usePlan();
+  const familyName = plan?.familyName || currentUser?.familyName;
   const [users, setUsers] = useState<SafeUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInviteForm, setShowInviteForm] = useState(false);
@@ -144,8 +145,14 @@ export function SettingsPage(): JSX.Element {
       <Card className="border-t-4 border-t-primary shadow-sm hover:shadow-md transition-all">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between pb-2">
           <div className="space-y-1">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Users className="h-5 w-5 text-primary" /> Membros
+            <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
+              <Users className="h-5 w-5 text-primary" />
+              <span>Membros</span>
+              {familyName && (
+                <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                  Família: {familyName}
+                </span>
+              )}
             </CardTitle>
             <CardDescription>
               Gerencie quem tem acesso compartilhado às despesas e pode realizar pagamentos.

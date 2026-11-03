@@ -65,7 +65,7 @@ export class ExpenseService {
     query: QueryExpensesDto,
   ): Promise<PaginatedExpenses> {
     const page = query.page ?? 1;
-    const limit = query.limit ?? 20;
+    const limit = query.limit ?? 500;
 
     const where: Prisma.ExpenseWhereInput = {
       familyAccountId,
@@ -327,7 +327,6 @@ export class ExpenseService {
         where: {
           expenseId: id,
           status: 'PENDING',
-          dueDate: { gt: this.today() },
         },
       });
 

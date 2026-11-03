@@ -46,6 +46,7 @@ export interface SafeUser {
   initials: string;
   avatarColor: string;
   familyAccountId: string;
+  familyName?: string;
   isEmailVerified: boolean;
   isGlobalAdmin?: boolean;
 }
@@ -159,7 +160,10 @@ export class AuthService {
       attachments: [getLogoCidAttachment()],
     }).catch((err) => console.error('Erro ao enviar e-mail de boas vindas:', err));
 
-    return this.buildAuthResponse(result);
+    return this.buildAuthResponse({
+      ...result,
+      familyName: dto.familyName.trim(),
+    });
   }
 
   private getFrontendUrl(): string {
@@ -288,7 +292,18 @@ export class AuthService {
       throw new UnauthorizedException('Credenciais inválidas.');
     }
 
-    return this.buildAuthResponse(user);
+    const family =
+      typeof this.prisma.familyAccount?.findUnique === 'function'
+        ? await this.prisma.familyAccount.findUnique({
+            where: { id: user.familyAccountId },
+            select: { name: true },
+          })
+        : null;
+
+    return this.buildAuthResponse({
+      ...user,
+      familyName: family?.name,
+    });
   }
 
   async forgotPassword(dto: ForgotPasswordDto): Promise<{ message: string }> {
@@ -380,6 +395,7 @@ export class AuthService {
     initials: string;
     avatarColor: string;
     familyAccountId: string;
+    familyName?: string;
     isEmailVerified: boolean;
     isGlobalAdmin?: boolean;
   }): AuthResponse {
@@ -401,6 +417,7 @@ export class AuthService {
       initials: user.initials,
       avatarColor: user.avatarColor,
       familyAccountId: user.familyAccountId,
+      familyName: user.familyName,
       isEmailVerified: user.isEmailVerified,
       isGlobalAdmin: user.isGlobalAdmin,
     };

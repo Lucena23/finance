@@ -21,6 +21,7 @@ export interface SafeUser {
     initials: string;
     avatarColor: string;
     familyAccountId: string;
+    familyName?: string;
     isEmailVerified: boolean;
     isGlobalAdmin?: boolean;
 }

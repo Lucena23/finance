@@ -40,6 +40,7 @@ export interface ComputedPlan {
 
 /** Informações de plano expostas ao frontend (GET /plan). */
 export interface PlanInfo {
+  familyName?: string;
   status: PlanStatus;
   hasPremiumAccess: boolean;
   trialEndsAt: string | null;
@@ -201,6 +202,7 @@ export class PlanService {
     const computed = computePlanStatus(account, now, this.graceDays);
 
     return {
+      familyName: account.name,
       status: computed.status,
       hasPremiumAccess: computed.hasPremiumAccess,
       trialEndsAt: account.trialEndsAt?.toISOString() ?? null,
@@ -379,10 +381,10 @@ export class PlanService {
 
   private async findAccount(
     familyAccountId: string,
-  ): Promise<PlanDates & { billingCycle: BillingCycle | null }> {
+  ): Promise<PlanDates & { billingCycle: BillingCycle | null; name?: string }> {
     const account = await this.prisma.familyAccount.findUnique({
       where: { id: familyAccountId },
-      select: { trialEndsAt: true, premiumEndsAt: true, billingCycle: true },
+      select: { name: true, trialEndsAt: true, premiumEndsAt: true, billingCycle: true },
     });
 
     if (!account) {

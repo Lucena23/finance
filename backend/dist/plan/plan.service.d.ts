@@ -17,6 +17,7 @@ export interface ComputedPlan {
     daysLeft: number | null;
 }
 export interface PlanInfo {
+    familyName?: string;
     status: PlanStatus;
     hasPremiumAccess: boolean;
     trialEndsAt: string | null;

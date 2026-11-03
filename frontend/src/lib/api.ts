@@ -51,6 +51,7 @@ export interface SafeUser {
   initials: string;
   avatarColor: string;
   familyAccountId: string;
+  familyName?: string;
   isEmailVerified: boolean;
   /**
    * Flag de Admin Global (RN-15 / TAREFA 28).
@@ -278,6 +279,7 @@ export interface MonthPeriod {
 }
 
 export interface PlanInfo {
+  familyName?: string;
   status: PlanStatus;
   hasPremiumAccess: boolean;
   trialEndsAt: string | null;

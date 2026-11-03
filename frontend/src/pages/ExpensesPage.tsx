@@ -88,6 +88,11 @@ export function ExpensesPage(): JSX.Element {
       setEditingExpense(expense);
       setIsFormOpen(true);
       setActionError(null);
+      try {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch {
+        /* ambiente de teste sem scrollTo */
+      }
     },
     [isReadOnlyMember, openPremiumModal],
   );

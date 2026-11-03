@@ -4,6 +4,27 @@ Histórico Oficial do Projeto — Aksurim Software
 
 ## REGISTROS RECENTES
 
+Data: 2026-11-03
+Versão: 1.2.6
+Tipo: FIX / UX
+Origem: Listagem Completa de Despesas, Edição/Encerramento de Recorrência, Contador em Pagas no Mês e Exibição do Nome da Família
+Descrição: Ampliação do limite padrão de listagem na tela de Despesas (`limit: 500`) para evitar que famílias com mais de 20 despesas deixem de visualizar suas despesas mais antigas na aba de gestão. Adicionada rolagem suave automática ao topo ao acionar a edição de uma despesa, remoção imediata do card na listagem após exclusão e limpeza integral de parcelas `PENDING` ao encerrar uma recorrência (`cancelRecurrence`). Inclusão do badge contador de registros no cabeçalho "🟢 Pagas neste Mês" na tela de Fila (`PaymentHistory`) e exibição do nome da Família/Grupo cadastrado (`familyName`) no menu do perfil (`Header`) e na seção de Membros em Configurações (`SettingsPage`).
+Arquivos alterados:
+  - backend/src/expense/expense.service.ts
+  - backend/src/plan/plan.service.ts
+  - backend/src/auth/auth.service.ts
+  - frontend/src/hooks/useExpenses.ts
+  - frontend/src/pages/ExpensesPage.tsx
+  - frontend/src/pages/QueuePage.tsx
+  - frontend/src/components/payment/PaymentHistory.tsx
+  - frontend/src/components/layout/Header.tsx
+  - frontend/src/pages/SettingsPage.tsx
+  - frontend/src/lib/api.ts
+  - frontend/src/lib/constants.ts
+  - README.md
+  - CHANGELOG.md
+Responsável: Joannderson Lucena (Aksurim Software)
+
 Data: 2026-10-26
 Versão: 1.2.5
 Tipo: FIX / FEATURE

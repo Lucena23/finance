@@ -93,9 +93,21 @@ export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Elemen
     }
   }, []);
 
+  const headerElement = (
+    <header className="flex items-center justify-between rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
+      <h2 className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
+        <span aria-hidden="true">🟢</span> Pagas neste Mês
+      </h2>
+      <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-300">
+        {items.length}
+      </span>
+    </header>
+  );
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-3">
+        {headerElement}
         {[0, 1, 2].map((i) => (
           <div key={i} className="bg-muted h-20 w-full animate-pulse rounded-lg" />
         ))}
@@ -105,30 +117,37 @@ export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Elemen
 
   if (error) {
     return (
-      <Card className="border-destructive/40">
-        <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
-          <p className="text-sm font-medium">{error}</p>
-          <Button onClick={() => void fetchHistory()} variant="outline" size="sm">
-            <RefreshCw className="mr-2 h-4 w-4" /> Tentar novamente
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-3">
+        {headerElement}
+        <Card className="border-destructive/40">
+          <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
+            <p className="text-sm font-medium">{error}</p>
+            <Button onClick={() => void fetchHistory()} variant="outline" size="sm">
+              <RefreshCw className="mr-2 h-4 w-4" /> Tentar novamente
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   if (items.length === 0) {
     return (
-      <Card>
-        <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
-          <CheckCircle2 className="h-10 w-10 text-muted-foreground" />
-          <p className="text-base font-semibold">Nenhuma conta paga ainda</p>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-3">
+        {headerElement}
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
+            <CheckCircle2 className="h-10 w-10 text-muted-foreground" />
+            <p className="text-base font-semibold">Nenhuma conta paga ainda</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="flex flex-col gap-3">
+      {headerElement}
       <ul className="flex flex-col gap-2">
         {items.map((item) => (
           <li key={item.id}>
@@ -151,6 +170,6 @@ export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Elemen
         onUndoPay={handleUndoPay}
         isUndoing={isUndoing}
       />
-    </>
+    </div>
   );
 }

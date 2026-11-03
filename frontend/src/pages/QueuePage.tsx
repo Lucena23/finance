@@ -101,9 +101,6 @@ export function QueuePage(): JSX.Element {
           </div>
 
           <div className="flex flex-col gap-3">
-            <h2 className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-300">
-              <span>🟢</span> Pagas neste Mês
-            </h2>
             <PaymentHistory
               key={`hist-${reloadKey}-${monthOffset}`}
               month={selectedMonth}

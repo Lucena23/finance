@@ -465,7 +465,7 @@ describe('ExpenseService — geração de PaymentItems', () => {
         expenseId: 'exp-7',
         status: PaymentStatus.PENDING,
       });
-      expect(arg.where.dueDate).toHaveProperty('gt');
+      expect(arg.where.dueDate).toBeUndefined();
       expect(prisma.expense.update).toHaveBeenCalledWith({
         where: { id: 'exp-7' },
         data: { statusRecurrence: ExpenseRecurrenceStatus.CANCELLED },

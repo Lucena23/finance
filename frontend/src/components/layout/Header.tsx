@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Crown, LogOut, ShieldCheck, Globe } from 'lucide-react';
 
 import { PremiumBadge } from '@/components/plan/PremiumBadge';
+import { usePlan } from '@/contexts/PlanContext';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/cn';
 
@@ -10,6 +11,8 @@ import { getNavItems } from './nav-items';
 
 export function Header(): JSX.Element {
   const { user, logout } = useAuth();
+  const { plan } = usePlan();
+  const familyName = plan?.familyName || user?.familyName;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -102,9 +105,16 @@ export function Header(): JSX.Element {
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 mt-2 w-48 rounded-md border border-border bg-card p-1 shadow-lg animate-in fade-in zoom-in-95 duration-200">
-                  <div className="px-2 py-1.5 text-sm font-medium border-b border-border mb-1 truncate text-foreground">
-                    {user.name}
+                <div className="absolute right-0 mt-2 w-52 rounded-md border border-border bg-card p-1 shadow-lg animate-in fade-in zoom-in-95 duration-200">
+                  <div className="px-2 py-1.5 border-b border-border mb-1">
+                    <div className="text-sm font-medium truncate text-foreground">
+                      {user.name}
+                    </div>
+                    {familyName && (
+                      <div className="text-xs text-muted-foreground truncate mt-0.5">
+                        Família: <span className="font-semibold text-primary">{familyName}</span>
+                      </div>
+                    )}
                   </div>
                   <NavLink
                     to="/plans"
