@@ -23,8 +23,8 @@
  * REGRA (§8.1): proibido o uso de `any`. Tipos explícitos em todo o módulo.
  */
 
-import { useEffect } from 'react';
-import { AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AlertCircle, CheckCircle2, ChevronDown, Plus, RefreshCw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -88,11 +88,23 @@ interface PaymentQueueProps {
   year?: number;
   hideUpcoming?: boolean;
   onSelectItem?: (item: PaymentItemWithPayer) => void;
+  onOpenCreateExpense?: () => void;
 }
 
-export function PaymentQueue({ month, year, hideUpcoming, onSelectItem }: PaymentQueueProps): JSX.Element {
+export function PaymentQueue({
+  month,
+  year,
+  hideUpcoming,
+  onSelectItem,
+  onOpenCreateExpense,
+}: PaymentQueueProps): JSX.Element {
   const { overdue, currentMonth, upcoming, isEmpty, isLoading, error, refetch } =
     usePaymentQueue({ month, year });
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
+  const toggleGroup = (key: string): void => {
+    setCollapsedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   useEffect(() => {
     const handleUndone = () => { void refetch(); };
@@ -166,6 +178,17 @@ export function PaymentQueue({ month, year, hideUpcoming, onSelectItem }: Paymen
               Você não possui contas pendentes no momento. Tudo em dia!
             </p>
           </div>
+          {onOpenCreateExpense ? (
+            <Button
+              type="button"
+              size="sm"
+              onClick={onOpenCreateExpense}
+              className="mt-1 gap-1.5 font-semibold"
+            >
+              <Plus aria-hidden="true" className="h-4 w-4" />
+              Nova Despesa
+            </Button>
+          ) : null}
         </CardContent>
       </Card>
     );
@@ -182,6 +205,8 @@ export function PaymentQueue({ month, year, hideUpcoming, onSelectItem }: Paymen
           return null;
         }
 
+        const isCollapsed = Boolean(collapsedGroups[meta.key]);
+
         return (
           <section
             key={meta.key}
@@ -189,9 +214,12 @@ export function PaymentQueue({ month, year, hideUpcoming, onSelectItem }: Paymen
             data-testid={`payment-queue-group-${meta.key}`}
             className="flex flex-col gap-3"
           >
-            <header
+            <button
+              type="button"
+              onClick={() => toggleGroup(meta.key)}
+              aria-expanded={!isCollapsed}
               className={cn(
-                'flex items-center justify-between rounded-md px-3 py-2',
+                'flex w-full items-center justify-between rounded-md px-3 py-2 text-left transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 meta.headerBgClass,
               )}
             >
@@ -204,28 +232,40 @@ export function PaymentQueue({ month, year, hideUpcoming, onSelectItem }: Paymen
                 <span aria-hidden="true">{meta.emoji}</span>
                 {meta.label}
               </h2>
-              <span
-                className={cn(
-                  'rounded-full bg-white/70 px-2 py-0.5 text-xs font-semibold',
-                  meta.textClass,
-                )}
-              >
-                {items.length}
-              </span>
-            </header>
+              <div className="flex items-center gap-2">
+                <span
+                  className={cn(
+                    'rounded-full bg-white/70 px-2 py-0.5 text-xs font-semibold',
+                    meta.textClass,
+                  )}
+                >
+                  {items.length}
+                </span>
+                <ChevronDown
+                  aria-hidden="true"
+                  className={cn(
+                    'h-4 w-4 transition-transform duration-200',
+                    meta.textClass,
+                    isCollapsed && '-rotate-90',
+                  )}
+                />
+              </div>
+            </button>
 
-            <ul className="flex flex-col gap-2">
-              {items.map((item) => (
-                <li key={item.id}>
-                  <PaymentCard
-                    item={item}
-                    urgency={meta.key}
-                    accentClass={meta.accentClass}
-                    onSelect={onSelectItem}
-                  />
-                </li>
-              ))}
-            </ul>
+            {!isCollapsed ? (
+              <ul className="flex flex-col gap-2">
+                {items.map((item) => (
+                  <li key={item.id}>
+                    <PaymentCard
+                      item={item}
+                      urgency={meta.key}
+                      accentClass={meta.accentClass}
+                      onSelect={onSelectItem}
+                    />
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </section>
         );
       })}

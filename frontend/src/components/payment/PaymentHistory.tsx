@@ -1,4 +1,4 @@
-import { RefreshCw, CheckCircle2 } from 'lucide-react';
+import { RefreshCw, CheckCircle2, ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ApiError, paymentItemsApi } from '@/lib/api';
 import type { PaymentItemWithPayer } from '@/lib/api';
+import { cn } from '@/lib/cn';
 import { PaymentCard } from './PaymentCard';
 import { PaidDetailsDrawer } from './PaidDetailsDrawer';
 
@@ -29,6 +30,7 @@ export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Elemen
   const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
 
   const [isUndoing, setIsUndoing] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const fetchHistory = useCallback(async (): Promise<void> => {
     try {
@@ -94,14 +96,28 @@ export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Elemen
   }, []);
 
   const headerElement = (
-    <header className="flex items-center justify-between rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
+    <button
+      type="button"
+      onClick={() => setIsCollapsed((prev) => !prev)}
+      aria-expanded={!isCollapsed}
+      className="flex w-full items-center justify-between rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-left transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
       <h2 className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
         <span aria-hidden="true">🟢</span> Pagas neste Mês
       </h2>
-      <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-300">
-        {items.length}
-      </span>
-    </header>
+      <div className="flex items-center gap-2">
+        <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-300">
+          {items.length}
+        </span>
+        <ChevronDown
+          aria-hidden="true"
+          className={cn(
+            'h-4 w-4 text-emerald-300 transition-transform duration-200',
+            isCollapsed && '-rotate-90',
+          )}
+        />
+      </div>
+    </button>
   );
 
   if (isLoading) {
@@ -113,6 +129,10 @@ export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Elemen
         ))}
       </div>
     );
+  }
+
+  if (isCollapsed) {
+    return <div className="flex flex-col gap-3">{headerElement}</div>;
   }
 
   if (error) {

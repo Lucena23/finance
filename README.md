@@ -3,7 +3,7 @@
   <h1>Aksurim Controle</h1>
   <p><b>Plataforma SaaS & PWA de Gestão e Inteligência Financeira Individual e Compartilhada</b></p>
 
-  <img src="https://img.shields.io/badge/Release-v1.2.6%20Freemium-F59E0B?style=for-the-badge" alt="Version 1.2.6" />
+  <img src="https://img.shields.io/badge/Release-v1.2.7%20Freemium-F59E0B?style=for-the-badge" alt="Version 1.2.7" />
   <img src="https://img.shields.io/badge/Architecture-Mobile%20First%20PWA-06777F?style=for-the-badge" alt="Mobile First" />
   <img src="https://img.shields.io/badge/Security-OWASP%20Hardened-FB4629?style=for-the-badge" alt="Security" />
   <img src="https://img.shields.io/badge/LGPD-Compliant-10B981?style=for-the-badge" alt="LGPD Compliant" />

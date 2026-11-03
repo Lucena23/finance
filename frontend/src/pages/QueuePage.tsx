@@ -1,14 +1,26 @@
 import { useCallback, useState } from 'react';
 import { addMonths } from 'date-fns';
+import { Crown, Lock, Plus } from 'lucide-react';
 
+import { ExpenseForm } from '@/components/expense/ExpenseForm';
 import { PayDrawer } from '@/components/payment/PayDrawer';
 import { PaymentQueue } from '@/components/payment/PaymentQueue';
 import { PaymentHistory } from '@/components/payment/PaymentHistory';
 import { MonthCarousel } from '@/components/payment/MonthCarousel';
 import { LockedMonthOverlay } from '@/components/plan/LockedMonthOverlay';
 import { AnimatedAdBanner } from '@/components/ads/AnimatedAdBanner';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { usePlan } from '@/contexts/PlanContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useCategories } from '@/hooks/useCategories';
+import { cn } from '@/lib/cn';
 import { Role } from '@/lib/constants';
 import type { PaymentItemWithPayer } from '@/lib/api';
 
@@ -26,9 +38,13 @@ import type { PaymentItemWithPayer } from '@/lib/api';
 export function QueuePage(): JSX.Element {
   const { user } = useAuth();
   const { canViewPeriod, hasPremiumAccess, openPremiumModal } = usePlan();
+  const { categories, refetch: refetchCategories } = useCategories();
   const [selectedItem, setSelectedItem] = useState<PaymentItemWithPayer | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [isCreateExpenseOpen, setIsCreateExpenseOpen] = useState<boolean>(false);
   const [reloadKey, setReloadKey] = useState<number>(0);
+
+  const isReadOnlyMember = user?.role === Role.MEMBER && !hasPremiumAccess;
 
   // Mês selecionado (0 = mês atual, 1 = próximo mês, etc).
   // O estado é preservado ao navegar entre páginas (filtro mantido).
@@ -66,10 +82,46 @@ export function QueuePage(): JSX.Element {
     setMonthOffset(offset);
   }, []);
 
+  const handleOpenCreateExpense = useCallback((): void => {
+    if (isReadOnlyMember) {
+      openPremiumModal('FAMILY_PLAN_EXPIRED');
+      return;
+    }
+    setIsCreateExpenseOpen(true);
+  }, [isReadOnlyMember, openPremiumModal]);
+
+  const handleExpenseCreated = useCallback((): void => {
+    setIsCreateExpenseOpen(false);
+    setReloadKey((current) => current + 1);
+  }, []);
+
   return (
     <section className="flex flex-col gap-5 pb-6">
       <header className="flex flex-col gap-2">
-        <h1 className="text-xl font-bold tracking-tight">Suas Despesas</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-xl font-bold tracking-tight">Suas Despesas</h1>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleOpenCreateExpense}
+            data-testid="queue-new-expense-button"
+            className={cn(
+              'gap-1.5 font-semibold shadow-sm',
+              isReadOnlyMember &&
+                'border border-amber-400 bg-gradient-to-r from-amber-500 to-yellow-500 font-bold text-slate-950 hover:brightness-105',
+            )}
+          >
+            {isReadOnlyMember ? (
+              <Lock aria-hidden="true" className="h-3.5 w-3.5" />
+            ) : (
+              <Plus aria-hidden="true" className="h-4 w-4" />
+            )}
+            <span>Nova Despesa</span>
+            {isReadOnlyMember ? (
+              <Crown aria-hidden="true" className="h-3.5 w-3.5" />
+            ) : null}
+          </Button>
+        </div>
 
         {/* Seletor de Meses (TAREFA 16) */}
         <MonthCarousel value={monthOffset} onSelect={handleMonthSelect} />
@@ -96,6 +148,7 @@ export function QueuePage(): JSX.Element {
               month={selectedMonth}
               year={selectedYear}
               onSelectItem={handleSelectItem}
+              onOpenCreateExpense={handleOpenCreateExpense}
               hideUpcoming={true}
             />
           </div>
@@ -116,6 +169,23 @@ export function QueuePage(): JSX.Element {
         onOpenChange={handleOpenChange}
         onPaid={handlePaid}
       />
+
+      <Dialog open={isCreateExpenseOpen} onOpenChange={setIsCreateExpenseOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Nova Despesa</DialogTitle>
+            <DialogDescription>
+              Cadastre uma despesa avulsa, parcelada ou recorrente diretamente na sua fila.
+            </DialogDescription>
+          </DialogHeader>
+          <ExpenseForm
+            categories={categories}
+            onSuccess={handleExpenseCreated}
+            onCancel={() => setIsCreateExpenseOpen(false)}
+            onCategoryCreated={() => void refetchCategories()}
+          />
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

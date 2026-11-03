@@ -35,15 +35,24 @@
  * REGRA (§8.1): proibido o uso de `any`. Tipos explícitos em todo o módulo.
  */
 
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Plus, Save } from 'lucide-react';
 import { useEffect, useId, useMemo, useState, type FormEvent } from 'react';
 
+import { CategoryForm } from '@/components/category/CategoryForm';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePlan } from '@/contexts/PlanContext';
 import {
   ApiError,
+  categoriesApi,
   expensesApi,
   type Category,
   type Expense,
@@ -76,6 +85,8 @@ interface ExpenseFormProps {
   onSuccess?: (expense: ExpenseWithItems | Expense) => void;
   /** Callback disparado ao cancelar o formulário. */
   onCancel?: () => void;
+  /** Callback opcional disparado quando uma nova categoria é criada inline. */
+  onCategoryCreated?: (category: Category) => void;
 }
 
 /**
@@ -188,8 +199,9 @@ export function ExpenseForm({
   expense,
   onSuccess,
   onCancel,
+  onCategoryCreated,
 }: ExpenseFormProps): JSX.Element {
-  const { openPremiumModal } = usePlan();
+  const { hasPremiumAccess, openPremiumModal } = usePlan();
   const titleFieldId = useId();
   const descriptionFieldId = useId();
   const amountFieldId = useId();
@@ -209,6 +221,20 @@ export function ExpenseForm({
   const [amountInputMode, setAmountInputMode] = useState<'total' | 'parcel'>('total');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [extraCategories, setExtraCategories] = useState<Category[]>([]);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState<boolean>(false);
+
+  const availableCategories = useMemo<Category[]>(() => {
+    const seen = new Set<string>();
+    const list: Category[] = [];
+    for (const cat of [...categories, ...extraCategories]) {
+      if (!seen.has(cat.id)) {
+        seen.add(cat.id);
+        list.push(cat);
+      }
+    }
+    return list;
+  }, [categories, extraCategories]);
 
   // Identificador estável da despesa em edição. Usado como dependência do
   // efeito de sincronização para garantir re-hidratação ao trocar de despesa
@@ -248,10 +274,39 @@ export function ExpenseForm({
 
   // Pré-seleciona a primeira categoria disponível ao criar.
   useEffect(() => {
-    if (!expense && categoryId === '' && categories.length > 0) {
-      setCategoryId(categories[0].id);
+    if (!expense && categoryId === '' && availableCategories.length > 0) {
+      setCategoryId(availableCategories[0].id);
     }
-  }, [expense, categoryId, categories]);
+  }, [expense, categoryId, availableCategories]);
+
+  const handleOpenNewCategoryModal = (): void => {
+    if (!hasPremiumAccess && availableCategories.length >= 5) {
+      openPremiumModal('CATEGORY_LIMIT');
+      return;
+    }
+    setIsCategoryModalOpen(true);
+  };
+
+  const handleCreateCategory = async (values: {
+    name: string;
+    color: string;
+    icon: string;
+  }): Promise<void> => {
+    try {
+      const created = await categoriesApi.create(values);
+      setExtraCategories((prev) => [...prev, created]);
+      setCategoryId(created.id);
+      onCategoryCreated?.(created);
+      setIsCategoryModalOpen(false);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 402) {
+        setIsCategoryModalOpen(false);
+        openPremiumModal(err.feature ?? 'CATEGORY_LIMIT');
+        return;
+      }
+      throw err;
+    }
+  };
 
   const totalInstallments = useMemo<number>(() => {
     const parsed = Number.parseInt(installmentsInput, 10);
@@ -339,11 +394,12 @@ export function ExpenseForm({
   };
 
   return (
-    <form
-      onSubmit={(event) => void handleSubmit(event)}
-      className="flex flex-col gap-4"
-      data-testid="expense-form"
-    >
+    <>
+      <form
+        onSubmit={(event) => void handleSubmit(event)}
+        className="flex flex-col gap-4"
+        data-testid="expense-form"
+      >
       {/* Título */}
       <div className="flex flex-col gap-2">
         <Label htmlFor={titleFieldId}>Título *</Label>
@@ -458,11 +514,28 @@ export function ExpenseForm({
 
       {/* Categoria */}
       <div className="flex flex-col gap-2">
-        <Label htmlFor={categoryFieldId}>Categoria *</Label>
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor={categoryFieldId}>Categoria *</Label>
+          <button
+            type="button"
+            onClick={handleOpenNewCategoryModal}
+            data-testid="expense-form-new-category-btn"
+            className="inline-flex items-center gap-1 rounded-sm text-xs font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Plus aria-hidden="true" className="h-3.5 w-3.5" />
+            Nova categoria
+          </button>
+        </div>
         <select
           id={categoryFieldId}
           value={categoryId}
-          onChange={(event) => setCategoryId(event.target.value)}
+          onChange={(event) => {
+            if (event.target.value === '__NEW_CATEGORY__') {
+              handleOpenNewCategoryModal();
+              return;
+            }
+            setCategoryId(event.target.value);
+          }}
           aria-invalid={!isCategoryValid}
           data-testid="expense-form-category"
           className={cn(
@@ -472,11 +545,14 @@ export function ExpenseForm({
           <option value="" disabled>
             Selecione uma categoria
           </option>
-          {categories.map((category) => (
+          {availableCategories.map((category) => (
             <option key={category.id} value={category.id}>
               {category.name}
             </option>
           ))}
+          <option value="__NEW_CATEGORY__" className="font-semibold text-primary">
+            + Criar nova categoria…
+          </option>
         </select>
       </div>
 
@@ -561,5 +637,21 @@ export function ExpenseForm({
         ) : null}
       </div>
     </form>
+
+    <Dialog open={isCategoryModalOpen} onOpenChange={setIsCategoryModalOpen}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[460px]">
+        <DialogHeader>
+          <DialogTitle>Nova Categoria</DialogTitle>
+          <DialogDescription>
+            Crie uma categoria sem sair do cadastro da sua despesa.
+          </DialogDescription>
+        </DialogHeader>
+        <CategoryForm
+          onSubmit={handleCreateCategory}
+          onCancel={() => setIsCategoryModalOpen(false)}
+        />
+      </DialogContent>
+    </Dialog>
+  </>
   );
 }

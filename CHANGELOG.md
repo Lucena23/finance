@@ -5,6 +5,22 @@ Histórico Oficial do Projeto — Aksurim Software
 ## REGISTROS RECENTES
 
 Data: 2026-11-03
+Versão: 1.2.7
+Tipo: FEATURE / UX
+Origem: Acordeões Recolhíveis na Fila e em Despesas, Busca Rápida, Criação de Despesa na Fila e Criação Inline de Categoria
+Descrição: Transformação dos cabeçalhos da Fila (`🔴 Em atraso`, `🔵 Mês atual` e `🟢 Pagas neste Mês`) em acordeões recolhíveis/expansíveis com indicador visual de seta (`ChevronDown`) e contagem permanente. Reestruturação da tela de Despesas (`ExpensesPage`) com campo de busca rápida por texto e agrupamento em 3 seções recolhíveis com contadores (`Recorrentes`, `Parceladas` e `Avulsas`). Inclusão do botão `+ Nova Despesa` diretamente na tela principal da Fila (`QueuePage`) abrindo o formulário em modal sem sair da tela, e adição de criação inline de categoria em modal sobreposto dentro do `<ExpenseForm />` com auto-seleção imediata da categoria recém-criada.
+Arquivos alterados:
+  - frontend/src/components/payment/PaymentQueue.tsx
+  - frontend/src/components/payment/PaymentHistory.tsx
+  - frontend/src/pages/QueuePage.tsx
+  - frontend/src/pages/ExpensesPage.tsx
+  - frontend/src/components/expense/ExpenseForm.tsx
+  - frontend/src/lib/constants.ts
+  - README.md
+  - CHANGELOG.md
+Responsável: Joannderson Lucena (Aksurim Software)
+
+Data: 2026-11-03
 Versão: 1.2.6
 Tipo: FIX / UX
 Origem: Listagem Completa de Despesas, Edição/Encerramento de Recorrência, Contador em Pagas no Mês e Exibição do Nome da Família

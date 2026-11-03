@@ -18,13 +18,26 @@
  * REGRA (§8.1): proibido o uso de `any`. Tipos explícitos em todo o módulo.
  */
 
-import { AlertCircle, Crown, Lock, Plus, RefreshCw, X } from 'lucide-react';
+import {
+  AlertCircle,
+  CalendarClock,
+  ChevronDown,
+  Crown,
+  Layers,
+  Lock,
+  Plus,
+  RefreshCw,
+  Repeat,
+  Search,
+  X,
+} from 'lucide-react';
 import { useCallback, useContext, useMemo, useState } from 'react';
 
 import { ExpenseCard } from '@/components/expense/ExpenseCard';
 import { ExpenseForm } from '@/components/expense/ExpenseForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { AuthContext } from '@/contexts/AuthContext';
 import { usePlan } from '@/contexts/PlanContext';
@@ -32,7 +45,41 @@ import { useCategories } from '@/hooks/useCategories';
 import { useExpenses } from '@/hooks/useExpenses';
 import { ApiError, type Category, type Expense } from '@/lib/api';
 import { cn } from '@/lib/cn';
-import { Role } from '@/lib/constants';
+import { ExpenseType, Role } from '@/lib/constants';
+
+const EXPENSE_TYPE_GROUPS: readonly {
+  type: ExpenseType;
+  label: string;
+  subtitle: string;
+  icon: typeof Repeat;
+  headerClass: string;
+  badgeClass: string;
+}[] = [
+  {
+    type: ExpenseType.RECURRENT,
+    label: 'Recorrentes',
+    subtitle: 'Contas fixas mensais',
+    icon: Repeat,
+    headerClass: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
+    badgeClass: 'bg-emerald-500/20 text-emerald-300',
+  },
+  {
+    type: ExpenseType.INSTALLMENT,
+    label: 'Parceladas',
+    subtitle: 'Compras divididas em parcelas',
+    icon: Layers,
+    headerClass: 'border-purple-500/30 bg-purple-500/10 text-purple-300',
+    badgeClass: 'bg-purple-500/20 text-purple-300',
+  },
+  {
+    type: ExpenseType.SINGLE,
+    label: 'Avulsas',
+    subtitle: 'Gastos únicos do mês',
+    icon: CalendarClock,
+    headerClass: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
+    badgeClass: 'bg-blue-500/20 text-blue-300',
+  },
+] as const;
 
 /**
  * Página de Despesas (rota "/expenses").
@@ -51,12 +98,28 @@ export function ExpensesPage(): JSX.Element {
     cancelRecurrence,
     pendingIds,
   } = useExpenses();
-  const { categories } = useCategories();
+  const { categories, refetch: refetchCategories } = useCategories();
 
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
+  const toggleGroup = useCallback((type: string): void => {
+    setCollapsedGroups((prev) => ({ ...prev, [type]: !prev[type] }));
+  }, []);
+
+  const filteredExpenses = useMemo<Expense[]>(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return expenses;
+    return expenses.filter(
+      (item) =>
+        item.title.toLowerCase().includes(q) ||
+        (item.description && item.description.toLowerCase().includes(q)),
+    );
+  }, [expenses, searchQuery]);
 
   const isReadOnlyMember = !hasPremiumAccess && user?.role === Role.MEMBER;
 
@@ -264,6 +327,7 @@ export function ExpensesPage(): JSX.Element {
               expense={editingExpense}
               onSuccess={handleFormSuccess}
               onCancel={handleCloseForm}
+              onCategoryCreated={() => void refetchCategories()}
             />
           </CardContent>
         </Card>
@@ -340,29 +404,115 @@ export function ExpensesPage(): JSX.Element {
         </Card>
       ) : null}
 
-      {/* Listagem de despesas */}
+      {/* Listagem de despesas agrupada por tipo e recolhível */}
       {!isLoading && !error && expenses.length > 0 ? (
-        <ul
-          className="flex flex-col gap-3"
-          data-testid="expenses-list"
-        >
-          {expenses.map((expense) => (
-            <li key={expense.id}>
-              <ExpenseCard
-                expense={expense}
-                category={categoryById.get(expense.categoryId)}
-                isDeleted={expense.deletedAt !== null}
-                isBusy={pendingIds.has(expense.id)}
-                onEdit={handleOpenEdit}
-                onDelete={(item) => void handleDelete(item)}
-                onRestore={(item) => void handleRestore(item)}
-                onCancelRecurrence={(item) =>
-                  void handleCancelRecurrence(item)
-                }
-              />
-            </li>
-          ))}
-        </ul>
+        <div className="flex flex-col gap-5" data-testid="expenses-list">
+          <div className="relative">
+            <Search
+              aria-hidden="true"
+              className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
+            />
+            <Input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Buscar despesa por nome…"
+              className="pl-9"
+              data-testid="expenses-search-input"
+            />
+          </div>
+
+          {filteredExpenses.length === 0 ? (
+            <Card>
+              <CardContent className="p-6 text-center text-sm text-muted-foreground">
+                Nenhuma despesa encontrada para &ldquo;{searchQuery}&rdquo;.
+              </CardContent>
+            </Card>
+          ) : (
+            EXPENSE_TYPE_GROUPS.map((group) => {
+              const groupItems = filteredExpenses.filter((exp) => {
+                const normalized =
+                  exp.type === ExpenseType.RECURRENT ||
+                  exp.type === ExpenseType.INSTALLMENT
+                    ? exp.type
+                    : ExpenseType.SINGLE;
+                return normalized === group.type;
+              });
+
+              if (groupItems.length === 0) {
+                return null;
+              }
+
+              const isCollapsed = Boolean(collapsedGroups[group.type]);
+              const GroupIcon = group.icon;
+
+              return (
+                <section
+                  key={group.type}
+                  aria-label={`${group.label} (${groupItems.length})`}
+                  data-testid={`expenses-group-${group.type}`}
+                  className="flex flex-col gap-3"
+                >
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(group.type)}
+                    aria-expanded={!isCollapsed}
+                    className={cn(
+                      'flex w-full items-center justify-between rounded-md border px-3 py-2 text-left transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      group.headerClass,
+                    )}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <GroupIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
+                      <span className="text-sm font-semibold">{group.label}</span>
+                      <span className="hidden text-xs opacity-75 sm:inline">
+                        — {group.subtitle}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span
+                        className={cn(
+                          'rounded-full px-2 py-0.5 text-xs font-semibold',
+                          group.badgeClass,
+                        )}
+                      >
+                        {groupItems.length}
+                      </span>
+                      <ChevronDown
+                        aria-hidden="true"
+                        className={cn(
+                          'h-4 w-4 transition-transform duration-200',
+                          isCollapsed && '-rotate-90',
+                        )}
+                      />
+                    </div>
+                  </button>
+
+                  {!isCollapsed ? (
+                    <ul className="flex flex-col gap-3">
+                      {groupItems.map((expense) => (
+                        <li key={expense.id}>
+                          <ExpenseCard
+                            expense={expense}
+                            category={categoryById.get(expense.categoryId)}
+                            isDeleted={expense.deletedAt !== null}
+                            isBusy={pendingIds.has(expense.id)}
+                            onEdit={handleOpenEdit}
+                            onDelete={(item) => void handleDelete(item)}
+                            onRestore={(item) => void handleRestore(item)}
+                            onCancelRecurrence={(item) =>
+                              void handleCancelRecurrence(item)
+                            }
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </section>
+              );
+            })
+          )}
+        </div>
       ) : null}
     </section>
   );
