@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  IsIn,
   IsInt,
   IsISO8601,
   IsOptional,
@@ -9,6 +10,23 @@ import {
 } from 'class-validator';
 
 /**
+ * Estratégia escolhida pelo usuário quando `paidAmount !== expectedAmount`:
+ * - PARTIAL:      Quita o valor pago agora e mantém a diferença aberta como novo PaymentItem PENDING.
+ * - DISCOUNT:     Quita integralmente o compromisso com desconto (não gera saldo restante).
+ * - INTEREST:     Quita o compromisso com acréscimo pontual (juros/multa) sem alterar parcelas futuras.
+ * - READJUSTMENT: Quita o compromisso e reajusta automaticamente o valor das próximas cobranças pendentes.
+ */
+export const PAYMENT_DIFFERENCE_HANDLINGS = [
+  'PARTIAL',
+  'DISCOUNT',
+  'INTEREST',
+  'READJUSTMENT',
+] as const;
+
+export type PaymentDifferenceHandling =
+  (typeof PAYMENT_DIFFERENCE_HANDLINGS)[number];
+
+/**
  * PayItemDto — payload de quitação de um PaymentItem.
  * ARCHITECTURE §3.2 — MÓDULO PAYMENT ITEMS — TAREFA 25.
  *
@@ -16,7 +34,7 @@ import {
  * É ESTRITAMENTE PROIBIDO o uso de ponto flutuante para valores monetários.
  *
  * RN-07: a quitação grava paidAmount, paidAt e paidById (derivado do JWT) e
- * transiciona o status PENDING → PAID de forma irreversível.
+ * transiciona o status PENDING → PAID.
  */
 export class PayItemDto {
   /** Valor efetivamente pago, em centavos (Int). Deve ser > 0 (RN-07). */
@@ -37,4 +55,12 @@ export class PayItemDto {
   @IsString()
   @MaxLength(2000)
   notes?: string;
+
+  /** Tratamento de diferença quando paidAmount !== expectedAmount. Opcional. */
+  @IsOptional()
+  @IsIn(PAYMENT_DIFFERENCE_HANDLINGS, {
+    message:
+      'differenceHandling deve ser PARTIAL, DISCOUNT, INTEREST ou READJUSTMENT.',
+  })
+  differenceHandling?: PaymentDifferenceHandling;
 }

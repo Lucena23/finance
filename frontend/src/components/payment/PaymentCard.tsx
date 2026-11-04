@@ -1,15 +1,10 @@
 /**
- * PaymentCard.tsx — Card individual de um PaymentItem na fila (TAREFA 38).
+ * PaymentCard.tsx — Card individual de um PaymentItem na fila (TAREFA 38 + v1.2.8).
  *
  * Apresenta os dados essenciais de uma obrigação pendente: título da despesa,
  * número da parcela, valor previsto formatado e data de vencimento, além de
- * um indicador colorido de urgência herdado do agrupamento (RN-06 / §8.5).
- *
- * TAREFA 13: quando o item já possui pagador (`paidBy`), o card exibe
- * IMEDIATAMENTE o badge com as iniciais de quem quitou — sem refetch. O dado
- * chega hidratado pelo backend em uma única query (sem N+1).
- *
- * REGRA (§8.1): proibido o uso de `any`. Tipos explícitos em todo o módulo.
+ * um indicador colorido de urgência herdado do agrupamento (RN-06 / §8.5) e
+ * selos de pagamento parcial, saldo restante, desconto, juros ou reajuste.
  */
 
 import { CalendarClock, Repeat } from 'lucide-react';
@@ -43,8 +38,51 @@ const URGENCY_LABEL: Record<string, string> = {
   PAID: 'Pago',
 };
 
+function getDifferenceBadge(item: PaymentItemWithPayer): {
+  label: string;
+  className: string;
+} | null {
+  const notes = item.notes ?? '';
+  if (notes.startsWith('[Saldo Restante')) {
+    return {
+      label: 'Saldo Restante',
+      className: 'border-amber-500/40 bg-amber-500/15 text-amber-300',
+    };
+  }
+  if (notes.startsWith('[Pagamento Parcial')) {
+    return {
+      label: 'Parcial',
+      className: 'border-amber-500/40 bg-amber-500/15 text-amber-300',
+    };
+  }
+  if (notes.startsWith('[Desconto:')) {
+    return {
+      label: 'c/ Desconto',
+      className: 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300',
+    };
+  }
+  if (notes.startsWith('[Reajuste:')) {
+    return {
+      label: 'Reajustado',
+      className: 'border-primary/40 bg-primary/15 text-primary',
+    };
+  }
+  if (
+    notes.startsWith('[Juros/Multa:') ||
+    (item.status === 'PAID' &&
+      item.paidAmount !== null &&
+      item.paidAmount > item.expectedAmount)
+  ) {
+    return {
+      label: 'c/ Juros',
+      className: 'border-rose-500/40 bg-rose-500/15 text-rose-300',
+    };
+  }
+  return null;
+}
+
 /**
- * Card de um compromisso pendente na fila de pagamentos.
+ * Card de um compromisso pendente ou quitado na fila de pagamentos.
  */
 export function PaymentCard({
   item,
@@ -60,6 +98,7 @@ export function PaymentCard({
 
   const isInteractive = typeof onSelect === 'function';
   const payer = item.paidBy;
+  const diffBadge = getDifferenceBadge(item);
 
   const handleSelect = (): void => {
     onSelect?.(item);
@@ -90,24 +129,38 @@ export function PaymentCard({
       )}
     >
       <div className="flex min-w-0 flex-col gap-1">
-        <span className="truncate text-sm font-semibold group-hover:text-accent-foreground">
-          {item.expense?.title || 'Despesa Sem Nome'}
-        </span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="truncate text-sm font-semibold group-hover:text-accent-foreground">
+            {item.expense?.title || 'Despesa Sem Nome'}
+          </span>
+          {diffBadge ? (
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none',
+                diffBadge.className,
+              )}
+            >
+              {diffBadge.label}
+            </span>
+          ) : null}
+        </div>
         <span className="text-muted-foreground group-hover:text-accent-foreground/80 truncate text-xs transition-colors">
           {installmentLabel}
         </span>
         <span className="text-muted-foreground group-hover:text-accent-foreground/80 flex items-center gap-1 text-[11px] transition-colors">
           {isHistory ? (
-             <span className="text-emerald-600 group-hover:text-emerald-800 font-medium transition-colors">Pago em {formatDate(item.paidAt || item.dueDate)}</span>
+            <span className="text-emerald-600 group-hover:text-emerald-800 font-medium transition-colors">
+              Pago em {formatDate(item.paidAt || item.dueDate)}
+            </span>
           ) : (
-             <>
-               {isRecurrent ? (
-                 <Repeat aria-hidden="true" className="h-3 w-3" />
-               ) : (
-                 <CalendarClock aria-hidden="true" className="h-3 w-3" />
-               )}
-               Vence em {formatDate(item.dueDate)}
-             </>
+            <>
+              {isRecurrent ? (
+                <Repeat aria-hidden="true" className="h-3 w-3" />
+              ) : (
+                <CalendarClock aria-hidden="true" className="h-3 w-3" />
+              )}
+              Vence em {formatDate(item.dueDate)}
+            </>
           )}
         </span>
         <span className="text-muted-foreground group-hover:text-accent-foreground/80 text-[10px] transition-colors">
@@ -116,8 +169,17 @@ export function PaymentCard({
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-1">
-        <span className={cn("text-sm font-bold tabular-nums transition-colors group-hover:text-accent-foreground", isHistory && "text-emerald-700 group-hover:text-emerald-900")}>
-          {formatCurrency(isHistory ? (item.paidAmount ?? item.expectedAmount) : item.expectedAmount)}
+        <span
+          className={cn(
+            'text-sm font-bold tabular-nums transition-colors group-hover:text-accent-foreground',
+            isHistory && 'text-emerald-700 group-hover:text-emerald-900',
+          )}
+        >
+          {formatCurrency(
+            isHistory
+              ? (item.paidAmount ?? item.expectedAmount)
+              : item.expectedAmount,
+          )}
         </span>
 
         {/* TAREFA 13: badge do pagador exibido imediatamente quando presente. */}

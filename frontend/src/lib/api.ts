@@ -160,15 +160,35 @@ export interface Paginated<T> {
   page: number;
 }
 
+export type PaymentDifferenceHandling =
+  | 'PARTIAL'
+  | 'DISCOUNT'
+  | 'INTEREST'
+  | 'READJUSTMENT';
+
 export interface PayItemPayload {
   paidAmount: number;
   paidAt: string;
   notes?: string;
+  differenceHandling?: PaymentDifferenceHandling;
+}
+
+export interface InterestItemSummary {
+  title: string;
+  interestAmount: number;
+  paidAmount: number;
 }
 
 export interface DashboardSummary {
   totalPaidMonth: number;
   totalPendingMonth: number;
+  totalInterestMonth?: number;
+  interestCount?: number;
+  interestItems?: InterestItemSummary[];
+  totalDiscountMonth?: number;
+  discountCount?: number;
+  overdueCount?: number;
+  totalOverdueMonth?: number;
   memberBreakdown: {
     userId: string;
     name: string;

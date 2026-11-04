@@ -8,9 +8,21 @@ export interface MemberBreakdown {
     avatarColor: string;
     totalPaid: number;
 }
+export interface InterestItemSummary {
+    title: string;
+    interestAmount: number;
+    paidAmount: number;
+}
 export interface DashboardSummary {
     totalPaidMonth: number;
     totalPendingMonth: number;
+    totalInterestMonth: number;
+    interestCount: number;
+    interestItems: InterestItemSummary[];
+    totalDiscountMonth: number;
+    discountCount: number;
+    overdueCount: number;
+    totalOverdueMonth: number;
     memberBreakdown: MemberBreakdown[];
 }
 export interface CategoryDistribution {

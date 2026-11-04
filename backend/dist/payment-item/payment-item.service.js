@@ -69,6 +69,147 @@ let PaymentItemService = class PaymentItemService {
             throw new common_1.BadRequestException('Este item já foi quitado.');
         }
         const paidAt = this.parsePaidAt(dto.paidAt);
+        const userNote = dto.notes?.trim() ?? '';
+        const formatBrl = (cents) => (cents / 100).toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+        });
+        if (dto.paidAmount < item.expectedAmount) {
+            const diff = item.expectedAmount - dto.paidAmount;
+            const handling = dto.differenceHandling === 'DISCOUNT' ? 'DISCOUNT' : 'PARTIAL';
+            if (handling === 'DISCOUNT') {
+                const tag = `[Desconto: -${formatBrl(diff)}]`;
+                const finalNote = userNote ? `${tag} ${userNote}` : tag;
+                return this.prisma.paymentItem.update({
+                    where: { id },
+                    data: {
+                        status: client_1.PaymentStatus.PAID,
+                        paidAmount: dto.paidAmount,
+                        paidAt,
+                        paidById,
+                        notes: finalNote,
+                    },
+                    include: {
+                        paidBy: { select: { initials: true, avatarColor: true } },
+                    },
+                });
+            }
+            const tag = `[Pagamento Parcial — Restante: ${formatBrl(diff)}]`;
+            const finalNote = userNote ? `${tag} ${userNote}` : tag;
+            const remainingNote = `[Saldo Restante — Original: ${formatBrl(item.expectedAmount)}]`;
+            return this.prisma.$transaction(async (tx) => {
+                const updatedPaid = await tx.paymentItem.update({
+                    where: { id },
+                    data: {
+                        status: client_1.PaymentStatus.PAID,
+                        expectedAmount: dto.paidAmount,
+                        paidAmount: dto.paidAmount,
+                        paidAt,
+                        paidById,
+                        notes: finalNote,
+                    },
+                    include: {
+                        paidBy: { select: { initials: true, avatarColor: true } },
+                    },
+                });
+                await tx.paymentItem.create({
+                    data: {
+                        expenseId: item.expenseId,
+                        dueDate: item.dueDate,
+                        installmentNumber: item.installmentNumber,
+                        totalInstallments: item.totalInstallments,
+                        expectedAmount: diff,
+                        status: client_1.PaymentStatus.PENDING,
+                        notes: remainingNote,
+                    },
+                });
+                return updatedPaid;
+            });
+        }
+        if (dto.paidAmount > item.expectedAmount) {
+            const diff = dto.paidAmount - item.expectedAmount;
+            const handling = dto.differenceHandling === 'READJUSTMENT' ? 'READJUSTMENT' : 'INTEREST';
+            if (handling === 'INTEREST') {
+                const tag = `[Juros/Multa: +${formatBrl(diff)}]`;
+                const finalNote = userNote ? `${tag} ${userNote}` : tag;
+                return this.prisma.paymentItem.update({
+                    where: { id },
+                    data: {
+                        status: client_1.PaymentStatus.PAID,
+                        paidAmount: dto.paidAmount,
+                        paidAt,
+                        paidById,
+                        notes: finalNote,
+                    },
+                    include: {
+                        paidBy: { select: { initials: true, avatarColor: true } },
+                    },
+                });
+            }
+            const tag = `[Reajuste: +${formatBrl(diff)}]`;
+            const finalNote = userNote ? `${tag} ${userNote}` : tag;
+            return this.prisma.$transaction(async (tx) => {
+                const updatedPaid = await tx.paymentItem.update({
+                    where: { id },
+                    data: {
+                        status: client_1.PaymentStatus.PAID,
+                        expectedAmount: dto.paidAmount,
+                        paidAmount: dto.paidAmount,
+                        paidAt,
+                        paidById,
+                        notes: finalNote,
+                    },
+                    include: {
+                        paidBy: { select: { initials: true, avatarColor: true } },
+                    },
+                });
+                await tx.paymentItem.updateMany({
+                    where: {
+                        expenseId: item.expenseId,
+                        status: client_1.PaymentStatus.PENDING,
+                        id: { not: id },
+                        dueDate: { gt: item.dueDate },
+                    },
+                    data: {
+                        expectedAmount: dto.paidAmount,
+                    },
+                });
+                const parentExpense = await tx.expense.findUnique({
+                    where: { id: item.expenseId },
+                    select: { type: true },
+                });
+                if (parentExpense?.type === 'RECURRENT' ||
+                    parentExpense?.type === 'SINGLE') {
+                    await tx.expense.update({
+                        where: { id: item.expenseId },
+                        data: { totalAmount: dto.paidAmount },
+                    });
+                }
+                else if (parentExpense?.type === 'INSTALLMENT') {
+                    const allItems = await tx.paymentItem.findMany({
+                        where: { expenseId: item.expenseId },
+                        select: { status: true, paidAmount: true, expectedAmount: true },
+                    });
+                    const newTotal = allItems.reduce((acc, cur) => acc +
+                        (cur.status === client_1.PaymentStatus.PAID
+                            ? (cur.paidAmount ?? cur.expectedAmount)
+                            : cur.expectedAmount), 0);
+                    await tx.expense.update({
+                        where: { id: item.expenseId },
+                        data: { totalAmount: newTotal },
+                    });
+                }
+                return updatedPaid;
+            });
+        }
+        const wasRemainingBalance = item.notes?.startsWith('[Saldo Restante');
+        const exactNote = userNote
+            ? wasRemainingBalance
+                ? `[Saldo Restante Quitado] ${userNote}`
+                : userNote
+            : wasRemainingBalance
+                ? '[Saldo Restante Quitado]'
+                : null;
         return this.prisma.paymentItem.update({
             where: { id },
             data: {
@@ -76,7 +217,7 @@ let PaymentItemService = class PaymentItemService {
                 paidAmount: dto.paidAmount,
                 paidAt,
                 paidById,
-                notes: dto.notes?.trim() ?? null,
+                notes: exactNote,
             },
             include: {
                 paidBy: { select: { initials: true, avatarColor: true } },
@@ -118,6 +259,39 @@ let PaymentItemService = class PaymentItemService {
                 paidById: null,
                 notes: null,
             };
+        }
+        if (item.notes?.startsWith('[Pagamento Parcial')) {
+            const pendingSibling = await this.prisma.paymentItem.findFirst({
+                where: {
+                    id: { not: item.id },
+                    expenseId: item.expenseId,
+                    installmentNumber: item.installmentNumber,
+                    dueDate: item.dueDate,
+                    status: client_1.PaymentStatus.PENDING,
+                },
+            });
+            if (pendingSibling) {
+                const mergedAmount = pendingSibling.expectedAmount + item.expectedAmount;
+                const otherPartialsCount = await this.prisma.paymentItem.count({
+                    where: {
+                        id: { not: item.id },
+                        expenseId: item.expenseId,
+                        installmentNumber: item.installmentNumber,
+                        dueDate: item.dueDate,
+                        status: client_1.PaymentStatus.PAID,
+                    },
+                });
+                return this.prisma.$transaction(async (tx) => {
+                    await tx.paymentItem.delete({ where: { id: item.id } });
+                    return tx.paymentItem.update({
+                        where: { id: pendingSibling.id },
+                        data: {
+                            expectedAmount: mergedAmount,
+                            notes: otherPartialsCount > 0 ? pendingSibling.notes : null,
+                        },
+                    });
+                });
+            }
         }
         return this.prisma.paymentItem.update({
             where: { id },

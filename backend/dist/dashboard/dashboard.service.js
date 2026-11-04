@@ -33,7 +33,13 @@ let DashboardService = class DashboardService {
                     paidAt: { gte: monthStart, lte: this.endOfDay(monthEnd) },
                     expense: { familyAccountId },
                 },
-                select: { paidAmount: true, paidById: true },
+                select: {
+                    expectedAmount: true,
+                    paidAmount: true,
+                    paidById: true,
+                    notes: true,
+                    expense: { select: { title: true } },
+                },
             }),
             this.prisma.paymentItem.findMany({
                 where: {
@@ -41,7 +47,7 @@ let DashboardService = class DashboardService {
                     dueDate: { gte: monthStart, lte: monthEnd },
                     expense: { familyAccountId, deletedAt: null },
                 },
-                select: { expectedAmount: true },
+                select: { expectedAmount: true, dueDate: true },
             }),
             this.prisma.user.findMany({
                 where: { familyAccountId },
@@ -56,12 +62,46 @@ let DashboardService = class DashboardService {
         ]);
         const totalPaidMonth = paidItems.reduce((sum, item) => sum + (item.paidAmount ?? 0), 0);
         const totalPendingMonth = pendingItems.reduce((sum, item) => sum + item.expectedAmount, 0);
+        let totalInterestMonth = 0;
+        let interestCount = 0;
+        const interestItems = [];
+        let totalDiscountMonth = 0;
+        let discountCount = 0;
         const paidByMember = new Map();
         for (const item of paidItems) {
+            const expected = item.expectedAmount ?? 0;
+            const paid = item.paidAmount ?? expected;
+            const isReadjustment = Boolean(item.notes?.startsWith('[Reajuste:'));
+            if (paid > expected && !isReadjustment) {
+                const interest = paid - expected;
+                totalInterestMonth += interest;
+                interestCount += 1;
+                if (interestItems.length < 5) {
+                    interestItems.push({
+                        title: item.expense?.title ?? 'Despesa',
+                        interestAmount: interest,
+                        paidAmount: paid,
+                    });
+                }
+            }
+            else if (paid < expected) {
+                totalDiscountMonth += expected - paid;
+                discountCount += 1;
+            }
             if (!item.paidById) {
                 continue;
             }
             paidByMember.set(item.paidById, (paidByMember.get(item.paidById) ?? 0) + (item.paidAmount ?? 0));
+        }
+        const now = new Date();
+        const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        let overdueCount = 0;
+        let totalOverdueMonth = 0;
+        for (const pending of pendingItems) {
+            if (pending.dueDate && pending.dueDate.getTime() < todayUtc.getTime()) {
+                overdueCount += 1;
+                totalOverdueMonth += pending.expectedAmount;
+            }
         }
         const memberBreakdown = members.map((member) => ({
             userId: member.id,
@@ -70,7 +110,18 @@ let DashboardService = class DashboardService {
             avatarColor: member.avatarColor,
             totalPaid: paidByMember.get(member.id) ?? 0,
         }));
-        return { totalPaidMonth, totalPendingMonth, memberBreakdown };
+        return {
+            totalPaidMonth,
+            totalPendingMonth,
+            totalInterestMonth,
+            interestCount,
+            interestItems,
+            totalDiscountMonth,
+            discountCount,
+            overdueCount,
+            totalOverdueMonth,
+            memberBreakdown,
+        };
     }
     async getCategoryDistribution(familyAccountId, query) {
         if (this.planService) {
@@ -89,7 +140,9 @@ let DashboardService = class DashboardService {
                 ],
             },
             select: {
+                status: true,
                 expectedAmount: true,
+                paidAmount: true,
                 expense: {
                     select: {
                         category: {
@@ -102,15 +155,18 @@ let DashboardService = class DashboardService {
         const totalsByCategory = new Map();
         for (const item of items) {
             const category = item.expense.category;
+            const itemAmount = item.status === client_1.PaymentStatus.PAID
+                ? (item.paidAmount ?? item.expectedAmount)
+                : item.expectedAmount;
             const current = totalsByCategory.get(category.id);
             if (current) {
-                current.totalAmount += item.expectedAmount;
+                current.totalAmount += itemAmount;
             }
             else {
                 totalsByCategory.set(category.id, {
                     name: category.name,
                     color: category.color,
-                    totalAmount: item.expectedAmount,
+                    totalAmount: itemAmount,
                 });
             }
         }

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { addMonths } from 'date-fns';
 import { Crown, Lock, Plus } from 'lucide-react';
 
@@ -76,6 +76,16 @@ export function QueuePage(): JSX.Element {
 
   const handlePaid = useCallback((): void => {
     setReloadKey((current) => current + 1);
+  }, []);
+
+  useEffect(() => {
+    const handlePaymentUndone = (): void => {
+      setReloadKey((current) => current + 1);
+    };
+    window.addEventListener('payment-undone', handlePaymentUndone);
+    return () => {
+      window.removeEventListener('payment-undone', handlePaymentUndone);
+    };
   }, []);
 
   const handleMonthSelect = useCallback((offset: number): void => {

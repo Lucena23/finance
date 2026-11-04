@@ -139,18 +139,12 @@ export class PaymentItemService {
   }
 
   /**
-   * Quita um PaymentItem (RN-07 — TAREFA 25).
-   *
-   * Grava paidAmount, paidAt e paidById (usuário logado) e transiciona o
-   * status PENDING → PAID de forma IRREVERSÍVEL. Valida paidAmount > 0 e que
-   * o item esteja PENDING. Item já pago retorna 400.
-   *
-   * Escopo obrigatório por familyAccountId (RN-01 / §8.3): item de outro
-   * workspace retorna 404.
-   *
-   * TAREFA 13: a resposta inclui o `paidBy` hidratado (join único), de modo
-   * que o frontend possa atualizar o card com as iniciais do pagador de forma
-   * otimista, sem refetch da fila.
+   * Quita um PaymentItem (RN-07 — TAREFA 25), com suporte a:
+   *  - Quitação exata (`paidAmount === expectedAmount`)
+   *  - Pagamento parcial (`PARTIAL`): quita o valor pago e mantém o saldo restante em um novo card PENDING
+   *  - Quitação com desconto (`DISCOUNT`): quita integralmente por valor menor, registrando a economia
+   *  - Pagamento com juros/multa (`INTEREST`): quita com acréscimo pontual sem alterar parcelas futuras
+   *  - Reajuste de valor (`READJUSTMENT`): quita com o novo valor e reajusta cobranças futuras pendentes
    */
   async pay(
     familyAccountId: string,
@@ -165,6 +159,177 @@ export class PaymentItemService {
     }
 
     const paidAt = this.parsePaidAt(dto.paidAt);
+    const userNote = dto.notes?.trim() ?? '';
+    const formatBrl = (cents: number): string =>
+      (cents / 100).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      });
+
+    // 1. Valor menor que o previsto: PARTIAL (default) ou DISCOUNT
+    if (dto.paidAmount < item.expectedAmount) {
+      const diff = item.expectedAmount - dto.paidAmount;
+      const handling =
+        dto.differenceHandling === 'DISCOUNT' ? 'DISCOUNT' : 'PARTIAL';
+
+      if (handling === 'DISCOUNT') {
+        const tag = `[Desconto: -${formatBrl(diff)}]`;
+        const finalNote = userNote ? `${tag} ${userNote}` : tag;
+
+        return this.prisma.paymentItem.update({
+          where: { id },
+          data: {
+            status: PaymentStatus.PAID,
+            paidAmount: dto.paidAmount,
+            paidAt,
+            paidById,
+            notes: finalNote,
+          },
+          include: {
+            paidBy: { select: { initials: true, avatarColor: true } },
+          },
+        });
+      }
+
+      // PARTIAL: quita a fração paga agora e cria um novo PaymentItem PENDING com o saldo restante
+      const tag = `[Pagamento Parcial — Restante: ${formatBrl(diff)}]`;
+      const finalNote = userNote ? `${tag} ${userNote}` : tag;
+      const remainingNote = `[Saldo Restante — Original: ${formatBrl(item.expectedAmount)}]`;
+
+      return this.prisma.$transaction(async (tx) => {
+        const updatedPaid = await tx.paymentItem.update({
+          where: { id },
+          data: {
+            status: PaymentStatus.PAID,
+            expectedAmount: dto.paidAmount,
+            paidAmount: dto.paidAmount,
+            paidAt,
+            paidById,
+            notes: finalNote,
+          },
+          include: {
+            paidBy: { select: { initials: true, avatarColor: true } },
+          },
+        });
+
+        await tx.paymentItem.create({
+          data: {
+            expenseId: item.expenseId,
+            dueDate: item.dueDate,
+            installmentNumber: item.installmentNumber,
+            totalInstallments: item.totalInstallments,
+            expectedAmount: diff,
+            status: PaymentStatus.PENDING,
+            notes: remainingNote,
+          },
+        });
+
+        return updatedPaid;
+      });
+    }
+
+    // 2. Valor maior que o previsto: INTEREST (default) ou READJUSTMENT
+    if (dto.paidAmount > item.expectedAmount) {
+      const diff = dto.paidAmount - item.expectedAmount;
+      const handling =
+        dto.differenceHandling === 'READJUSTMENT' ? 'READJUSTMENT' : 'INTEREST';
+
+      if (handling === 'INTEREST') {
+        const tag = `[Juros/Multa: +${formatBrl(diff)}]`;
+        const finalNote = userNote ? `${tag} ${userNote}` : tag;
+
+        return this.prisma.paymentItem.update({
+          where: { id },
+          data: {
+            status: PaymentStatus.PAID,
+            paidAmount: dto.paidAmount,
+            paidAt,
+            paidById,
+            notes: finalNote,
+          },
+          include: {
+            paidBy: { select: { initials: true, avatarColor: true } },
+          },
+        });
+      }
+
+      // READJUSTMENT: quita este item pelo novo valor base e atualiza cobranças futuras pendentes
+      const tag = `[Reajuste: +${formatBrl(diff)}]`;
+      const finalNote = userNote ? `${tag} ${userNote}` : tag;
+
+      return this.prisma.$transaction(async (tx) => {
+        const updatedPaid = await tx.paymentItem.update({
+          where: { id },
+          data: {
+            status: PaymentStatus.PAID,
+            expectedAmount: dto.paidAmount,
+            paidAmount: dto.paidAmount,
+            paidAt,
+            paidById,
+            notes: finalNote,
+          },
+          include: {
+            paidBy: { select: { initials: true, avatarColor: true } },
+          },
+        });
+
+        await tx.paymentItem.updateMany({
+          where: {
+            expenseId: item.expenseId,
+            status: PaymentStatus.PENDING,
+            id: { not: id },
+            dueDate: { gt: item.dueDate },
+          },
+          data: {
+            expectedAmount: dto.paidAmount,
+          },
+        });
+
+        const parentExpense = await tx.expense.findUnique({
+          where: { id: item.expenseId },
+          select: { type: true },
+        });
+
+        if (
+          parentExpense?.type === 'RECURRENT' ||
+          parentExpense?.type === 'SINGLE'
+        ) {
+          await tx.expense.update({
+            where: { id: item.expenseId },
+            data: { totalAmount: dto.paidAmount },
+          });
+        } else if (parentExpense?.type === 'INSTALLMENT') {
+          const allItems = await tx.paymentItem.findMany({
+            where: { expenseId: item.expenseId },
+            select: { status: true, paidAmount: true, expectedAmount: true },
+          });
+          const newTotal = allItems.reduce(
+            (acc, cur) =>
+              acc +
+              (cur.status === PaymentStatus.PAID
+                ? (cur.paidAmount ?? cur.expectedAmount)
+                : cur.expectedAmount),
+            0,
+          );
+          await tx.expense.update({
+            where: { id: item.expenseId },
+            data: { totalAmount: newTotal },
+          });
+        }
+
+        return updatedPaid;
+      });
+    }
+
+    // 3. Quitação pelo valor exato previsto
+    const wasRemainingBalance = item.notes?.startsWith('[Saldo Restante');
+    const exactNote = userNote
+      ? wasRemainingBalance
+        ? `[Saldo Restante Quitado] ${userNote}`
+        : userNote
+      : wasRemainingBalance
+        ? '[Saldo Restante Quitado]'
+        : null;
 
     return this.prisma.paymentItem.update({
       where: { id },
@@ -173,7 +338,7 @@ export class PaymentItemService {
         paidAmount: dto.paidAmount,
         paidAt,
         paidById,
-        notes: dto.notes?.trim() ?? null,
+        notes: exactNote,
       },
       include: {
         paidBy: { select: { initials: true, avatarColor: true } },
@@ -183,7 +348,8 @@ export class PaymentItemService {
 
   /**
    * Desfaz a quitação de um PaymentItem (TAREFA 46).
-   * Retorna o item ao estado PENDING.
+   * Retorna o item ao estado PENDING. Se for um pagamento parcial cujo saldo
+   * restante ainda está aberto, recompõe automaticamente o card único original.
    */
   async undoPay(
     familyAccountId: string,
@@ -227,6 +393,42 @@ export class PaymentItemService {
         paidById: null,
         notes: null,
       };
+    }
+
+    if (item.notes?.startsWith('[Pagamento Parcial')) {
+      const pendingSibling = await this.prisma.paymentItem.findFirst({
+        where: {
+          id: { not: item.id },
+          expenseId: item.expenseId,
+          installmentNumber: item.installmentNumber,
+          dueDate: item.dueDate,
+          status: PaymentStatus.PENDING,
+        },
+      });
+
+      if (pendingSibling) {
+        const mergedAmount = pendingSibling.expectedAmount + item.expectedAmount;
+        const otherPartialsCount = await this.prisma.paymentItem.count({
+          where: {
+            id: { not: item.id },
+            expenseId: item.expenseId,
+            installmentNumber: item.installmentNumber,
+            dueDate: item.dueDate,
+            status: PaymentStatus.PAID,
+          },
+        });
+
+        return this.prisma.$transaction(async (tx) => {
+          await tx.paymentItem.delete({ where: { id: item.id } });
+          return tx.paymentItem.update({
+            where: { id: pendingSibling.id },
+            data: {
+              expectedAmount: mergedAmount,
+              notes: otherPartialsCount > 0 ? pendingSibling.notes : null,
+            },
+          });
+        });
+      }
     }
 
     return this.prisma.paymentItem.update({

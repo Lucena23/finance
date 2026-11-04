@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const payment_item_service_1 = require("./payment-item.service");
-describe('PaymentItemService — fila com badge do pagador (TAREFA 13)', () => {
+describe('PaymentItemService — fila e quitação inteligente', () => {
     let service;
     let prisma;
     beforeEach(() => {
@@ -12,9 +12,21 @@ describe('PaymentItemService — fila com badge do pagador (TAREFA 13)', () => {
                 findMany: jest.fn(),
                 findFirst: jest.fn(),
                 update: jest.fn(),
+                updateMany: jest.fn(),
+                create: jest.fn(),
+                delete: jest.fn(),
                 count: jest.fn(),
             },
-            $transaction: jest.fn(),
+            expense: {
+                findUnique: jest.fn(),
+                update: jest.fn(),
+            },
+            $transaction: jest.fn((arg) => {
+                if (typeof arg === 'function') {
+                    return arg(prisma);
+                }
+                return Promise.all(arg);
+            }),
         };
         service = new payment_item_service_1.PaymentItemService(prisma);
     });
@@ -25,15 +37,15 @@ describe('PaymentItemService — fila com badge do pagador (TAREFA 13)', () => {
             dueDate: overrides.dueDate ?? new Date(Date.UTC(2026, 8, 20)),
             installmentNumber: 1,
             totalInstallments: 1,
-            expectedAmount: 15075,
-            paidAmount: null,
+            expectedAmount: overrides.expectedAmount ?? 15075,
+            paidAmount: overrides.paidAmount ?? null,
             paidAt: null,
             paidById: null,
             status: overrides.status ?? client_1.PaymentStatus.PENDING,
-            notes: null,
+            notes: overrides.notes ?? null,
             createdAt: new Date(),
             updatedAt: new Date(),
-            expense: { title: 'Conta de luz', categoryId: 'cat-1' },
+            expense: { id: 'exp-1', title: 'Conta de luz', categoryId: 'cat-1', deletedAt: null },
             paidBy: overrides.paidBy ?? null,
         };
     }
@@ -97,7 +109,7 @@ describe('PaymentItemService — fila com badge do pagador (TAREFA 13)', () => {
             expect(queue.upcoming.map((i) => i.id)).toEqual(['upcoming']);
         });
     });
-    describe('pay — resposta com badge do pagador', () => {
+    describe('pay — quitação exata, parcial, desconto, juros e reajuste', () => {
         it('retorna o item quitado com paidBy hidratado (join único)', async () => {
             prisma.paymentItem.findFirst.mockResolvedValue(makeItem({ status: client_1.PaymentStatus.PENDING }));
             const payer = { initials: 'JL', avatarColor: '#FB4629' };
@@ -110,6 +122,81 @@ describe('PaymentItemService — fila com badge do pagador (TAREFA 13)', () => {
             const arg = prisma.paymentItem.update.mock.calls[0][0];
             expect(arg.include).toMatchObject({
                 paidBy: { select: { initials: true, avatarColor: true } },
+            });
+        });
+        it('cria novo item PENDING com o saldo restante quando pagamento é PARTIAL', async () => {
+            prisma.paymentItem.findFirst.mockResolvedValue(makeItem({ expectedAmount: 100000, status: client_1.PaymentStatus.PENDING }));
+            prisma.paymentItem.update.mockResolvedValue(makeItem({
+                expectedAmount: 50000,
+                paidAmount: 50000,
+                status: client_1.PaymentStatus.PAID,
+            }));
+            prisma.paymentItem.create.mockResolvedValue(makeItem({
+                id: 'item-remaining',
+                expectedAmount: 50000,
+                status: client_1.PaymentStatus.PENDING,
+            }));
+            await service.pay('fam-1', 'item-1', 'user-1', {
+                paidAmount: 50000,
+                paidAt: '2026-09-20T12:00:00.000Z',
+                differenceHandling: 'PARTIAL',
+            });
+            expect(prisma.paymentItem.update).toHaveBeenCalledWith(expect.objectContaining({
+                where: { id: 'item-1' },
+                data: expect.objectContaining({
+                    status: client_1.PaymentStatus.PAID,
+                    expectedAmount: 50000,
+                    paidAmount: 50000,
+                }),
+            }));
+            expect(prisma.paymentItem.create).toHaveBeenCalledWith(expect.objectContaining({
+                data: expect.objectContaining({
+                    expenseId: 'exp-1',
+                    expectedAmount: 50000,
+                    status: client_1.PaymentStatus.PENDING,
+                }),
+            }));
+        });
+        it('quita integralmente sem gerar saldo restante quando differenceHandling é DISCOUNT', async () => {
+            prisma.paymentItem.findFirst.mockResolvedValue(makeItem({ expectedAmount: 100000, status: client_1.PaymentStatus.PENDING }));
+            prisma.paymentItem.update.mockResolvedValue(makeItem({
+                expectedAmount: 100000,
+                paidAmount: 80000,
+                status: client_1.PaymentStatus.PAID,
+            }));
+            await service.pay('fam-1', 'item-1', 'user-1', {
+                paidAmount: 80000,
+                paidAt: '2026-09-20T12:00:00.000Z',
+                differenceHandling: 'DISCOUNT',
+            });
+            expect(prisma.paymentItem.create).not.toHaveBeenCalled();
+            expect(prisma.paymentItem.update).toHaveBeenCalledWith(expect.objectContaining({
+                data: expect.objectContaining({
+                    status: client_1.PaymentStatus.PAID,
+                    paidAmount: 80000,
+                    notes: expect.stringContaining('[Desconto:'),
+                }),
+            }));
+        });
+        it('atualiza parcelas futuras quando differenceHandling é READJUSTMENT', async () => {
+            prisma.paymentItem.findFirst.mockResolvedValue(makeItem({ expectedAmount: 50000, status: client_1.PaymentStatus.PENDING }));
+            prisma.paymentItem.update.mockResolvedValue(makeItem({
+                expectedAmount: 55000,
+                paidAmount: 55000,
+                status: client_1.PaymentStatus.PAID,
+            }));
+            prisma.expense.findUnique.mockResolvedValue({ type: 'RECURRENT' });
+            await service.pay('fam-1', 'item-1', 'user-1', {
+                paidAmount: 55000,
+                paidAt: '2026-09-20T12:00:00.000Z',
+                differenceHandling: 'READJUSTMENT',
+            });
+            expect(prisma.paymentItem.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+                data: { expectedAmount: 55000 },
+            }));
+            expect(prisma.expense.update).toHaveBeenCalledWith({
+                where: { id: 'exp-1' },
+                data: { totalAmount: 55000 },
             });
         });
         it('rejeita quitação de item já pago (400)', async () => {

@@ -9,9 +9,15 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PayItemDto = void 0;
+exports.PayItemDto = exports.PAYMENT_DIFFERENCE_HANDLINGS = void 0;
 const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
+exports.PAYMENT_DIFFERENCE_HANDLINGS = [
+    'PARTIAL',
+    'DISCOUNT',
+    'INTEREST',
+    'READJUSTMENT',
+];
 class PayItemDto {
 }
 exports.PayItemDto = PayItemDto;
@@ -31,4 +37,11 @@ __decorate([
     (0, class_validator_1.MaxLength)(2000),
     __metadata("design:type", String)
 ], PayItemDto.prototype, "notes", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsIn)(exports.PAYMENT_DIFFERENCE_HANDLINGS, {
+        message: 'differenceHandling deve ser PARTIAL, DISCOUNT, INTEREST ou READJUSTMENT.',
+    }),
+    __metadata("design:type", String)
+], PayItemDto.prototype, "differenceHandling", void 0);
 //# sourceMappingURL=pay-item.dto.js.map

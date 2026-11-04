@@ -18,12 +18,29 @@ export interface MemberBreakdown {
 }
 
 /**
- * Resumo mensal do painel gerencial (cards + divisão por membro).
+ * Resumo de item que gerou pagamento de juros/multa no mês.
+ * Valores em CENTAVOS (Int) — RN-04 / §8.2.
+ */
+export interface InterestItemSummary {
+  title: string;
+  interestAmount: number;
+  paidAmount: number;
+}
+
+/**
+ * Resumo mensal do painel gerencial (cards + divisão por membro + radar de juros/descontos).
  * Valores em CENTAVOS (Int) — RN-04 / §8.2.
  */
 export interface DashboardSummary {
   totalPaidMonth: number;
   totalPendingMonth: number;
+  totalInterestMonth: number;
+  interestCount: number;
+  interestItems: InterestItemSummary[];
+  totalDiscountMonth: number;
+  discountCount: number;
+  overdueCount: number;
+  totalOverdueMonth: number;
   memberBreakdown: MemberBreakdown[];
 }
 
@@ -62,13 +79,8 @@ export class DashboardService {
   ) {}
 
   /**
-   * Resumo do mês: total pago, total a pagar e divisão proporcional por membro
+   * Resumo do mês: total pago, total a pagar, radar de juros/economia e divisão proporcional por membro
    * (RN-09 — TAREFA 28).
-   *
-   * - totalPaidMonth: soma de paidAmount dos itens PAID com paidAt no mês.
-   * - totalPendingMonth: soma de expectedAmount dos itens PENDING com dueDate
-   *   dentro do mês de referência.
-   * - memberBreakdown: total pago por membro (paidById) no mês de referência.
    */
   async getSummary(
     familyAccountId: string,
@@ -94,7 +106,13 @@ export class DashboardService {
           paidAt: { gte: monthStart, lte: this.endOfDay(monthEnd) },
           expense: { familyAccountId },
         },
-        select: { paidAmount: true, paidById: true },
+        select: {
+          expectedAmount: true,
+          paidAmount: true,
+          paidById: true,
+          notes: true,
+          expense: { select: { title: true } },
+        },
       }),
       // Itens pendentes com vencimento dentro do mês de referência.
       this.prisma.paymentItem.findMany({
@@ -103,7 +121,7 @@ export class DashboardService {
           dueDate: { gte: monthStart, lte: monthEnd },
           expense: { familyAccountId, deletedAt: null },
         },
-        select: { expectedAmount: true },
+        select: { expectedAmount: true, dueDate: true },
       }),
       // Membros do workspace para compor a divisão por membro.
       this.prisma.user.findMany({
@@ -128,8 +146,35 @@ export class DashboardService {
       0,
     );
 
+    let totalInterestMonth = 0;
+    let interestCount = 0;
+    const interestItems: InterestItemSummary[] = [];
+
+    let totalDiscountMonth = 0;
+    let discountCount = 0;
+
     const paidByMember = new Map<string, number>();
     for (const item of paidItems) {
+      const expected = item.expectedAmount ?? 0;
+      const paid = item.paidAmount ?? expected;
+      const isReadjustment = Boolean(item.notes?.startsWith('[Reajuste:'));
+
+      if (paid > expected && !isReadjustment) {
+        const interest = paid - expected;
+        totalInterestMonth += interest;
+        interestCount += 1;
+        if (interestItems.length < 5) {
+          interestItems.push({
+            title: item.expense?.title ?? 'Despesa',
+            interestAmount: interest,
+            paidAmount: paid,
+          });
+        }
+      } else if (paid < expected) {
+        totalDiscountMonth += expected - paid;
+        discountCount += 1;
+      }
+
       if (!item.paidById) {
         continue;
       }
@@ -137,6 +182,20 @@ export class DashboardService {
         item.paidById,
         (paidByMember.get(item.paidById) ?? 0) + (item.paidAmount ?? 0),
       );
+    }
+
+    const now = new Date();
+    const todayUtc = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
+    let overdueCount = 0;
+    let totalOverdueMonth = 0;
+
+    for (const pending of pendingItems) {
+      if (pending.dueDate && pending.dueDate.getTime() < todayUtc.getTime()) {
+        overdueCount += 1;
+        totalOverdueMonth += pending.expectedAmount;
+      }
     }
 
     const memberBreakdown: MemberBreakdown[] = members.map((member) => ({
@@ -147,21 +206,27 @@ export class DashboardService {
       totalPaid: paidByMember.get(member.id) ?? 0,
     }));
 
-    return { totalPaidMonth, totalPendingMonth, memberBreakdown };
+    return {
+      totalPaidMonth,
+      totalPendingMonth,
+      totalInterestMonth,
+      interestCount,
+      interestItems,
+      totalDiscountMonth,
+      discountCount,
+      overdueCount,
+      totalOverdueMonth,
+      memberBreakdown,
+    };
   }
 
   /**
    * Distribuição percentual de gastos por categoria no mês de referência
    * (gráfico de Rosca — RN-09 — TAREFA 29).
    *
-   * Considera EXCLUSIVAMENTE saídas: soma o `expectedAmount` de todos os
-   * PaymentItems (PENDING e PAID) cujo vencimento cai no mês de referência,
-   * agrupados pela categoria da despesa. Despesas soft-deleted são ignoradas
-   * (RN-11 / §8.7).
-   *
-   * O `percentage` é calculado sobre o total do mês. A soma dos percentuais
-   * pode divergir de 100% em até ±0,01 por categoria devido ao arredondamento
-   * para 2 casas decimais — tolerância documentada e aceita para exibição.
+   * Considera EXCLUSIVAMENTE saídas: soma o valor efetivo (paidAmount para PAID,
+   * expectedAmount para PENDING) de todos os PaymentItems cujo vencimento cai
+   * no mês de referência, agrupados pela categoria da despesa.
    */
   async getCategoryDistribution(
     familyAccountId: string,
@@ -189,7 +254,9 @@ export class DashboardService {
         ],
       },
       select: {
+        status: true,
         expectedAmount: true,
+        paidAmount: true,
         expense: {
           select: {
             category: {
@@ -208,14 +275,19 @@ export class DashboardService {
 
     for (const item of items) {
       const category = item.expense.category;
+      const itemAmount =
+        item.status === PaymentStatus.PAID
+          ? (item.paidAmount ?? item.expectedAmount)
+          : item.expectedAmount;
+
       const current = totalsByCategory.get(category.id);
       if (current) {
-        current.totalAmount += item.expectedAmount;
+        current.totalAmount += itemAmount;
       } else {
         totalsByCategory.set(category.id, {
           name: category.name,
           color: category.color,
-          totalAmount: item.expectedAmount,
+          totalAmount: itemAmount,
         });
       }
     }
