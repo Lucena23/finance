@@ -62,7 +62,7 @@ export class CreateCheckoutDto {
   @IsOptional()
   @IsInt()
   @Min(1)
-  @Max(12)
+  @Max(3)
   installments?: number;
 
   /** CPF do titular do cartão ou pagador (somente números ou formatado). */

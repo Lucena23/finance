@@ -59,7 +59,7 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsInt)(),
     (0, class_validator_1.Min)(1),
-    (0, class_validator_1.Max)(12),
+    (0, class_validator_1.Max)(3),
     __metadata("design:type", Number)
 ], CreateCheckoutDto.prototype, "installments", void 0);
 __decorate([

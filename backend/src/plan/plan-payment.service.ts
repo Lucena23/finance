@@ -408,9 +408,9 @@ export class PlanPaymentService implements OnModuleInit {
 
     const maxInstallments =
       dto.billingCycle === BillingCycle.ANNUAL
-        ? 12
+        ? 3
         : dto.billingCycle === BillingCycle.SEMIANNUAL
-          ? 6
+          ? 2
           : 1;
 
     await this.insertTransaction({

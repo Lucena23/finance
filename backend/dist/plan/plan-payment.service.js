@@ -212,9 +212,9 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
                 ? 'Semestral (6 meses)'
                 : 'Anual (12 meses)';
         const maxInstallments = dto.billingCycle === client_1.BillingCycle.ANNUAL
-            ? 12
+            ? 3
             : dto.billingCycle === client_1.BillingCycle.SEMIANNUAL
-                ? 6
+                ? 2
                 : 1;
         await this.insertTransaction({
             id: txId,
