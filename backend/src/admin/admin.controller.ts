@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -69,6 +70,16 @@ export class AdminController {
   async getTransactions(): Promise<AdminTransactionView[]> {
     if (!this.planPaymentService) return [];
     return this.planPaymentService.adminListTransactions();
+  }
+
+  /**
+   * DELETE /api/v1/admin/transactions/pending
+   * Remove transações PENDING abandonadas após reconciliação segura no Mercado Pago.
+   */
+  @Delete('transactions/pending')
+  async clearPendingTransactions(): Promise<{ deletedCount: number }> {
+    if (!this.planPaymentService) return { deletedCount: 0 };
+    return this.planPaymentService.adminClearPendingTransactions();
   }
 
   /**

@@ -41,6 +41,11 @@ let AdminController = class AdminController {
             return [];
         return this.planPaymentService.adminListTransactions();
     }
+    async clearPendingTransactions() {
+        if (!this.planPaymentService)
+            return { deletedCount: 0 };
+        return this.planPaymentService.adminClearPendingTransactions();
+    }
     async refundTransaction(id, dto) {
         if (!this.planPaymentService) {
             throw new Error('PlanPaymentService indisponível.');
@@ -84,6 +89,12 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getTransactions", null);
+__decorate([
+    (0, common_1.Delete)('transactions/pending'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "clearPendingTransactions", null);
 __decorate([
     (0, common_1.Post)('transactions/:id/refund'),
     __param(0, (0, common_1.Param)('id')),

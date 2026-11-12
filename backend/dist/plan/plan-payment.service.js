@@ -109,9 +109,22 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
             },
         ];
     }
+    async reconcileFamilyPending(familyAccountId) {
+        try {
+            await this.ensureTableExists();
+            const txs = await this.findTransactionsByFamily(familyAccountId);
+            await this.reconcilePendingTransactions(txs);
+        }
+        catch {
+        }
+    }
     async getFamilySubscriptionSummary(familyAccountId, userEmail) {
         await this.ensureTableExists();
-        const txs = await this.findTransactionsByFamily(familyAccountId);
+        let txs = await this.findTransactionsByFamily(familyAccountId);
+        const reconciled = await this.reconcilePendingTransactions(txs);
+        if (reconciled) {
+            txs = await this.findTransactionsByFamily(familyAccountId);
+        }
         const activeRecurringTx = txs.find((t) => t.paymentMode === 'CARD_RECURRING' &&
             Boolean(t.mpPreapprovalId) &&
             (t.status === 'APPROVED' || t.status === 'AUTHORIZED'));
@@ -232,6 +245,11 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
         const excludedPaymentTypes = dto.paymentMode === 'PIX_ONCE'
             ? [{ id: 'ticket' }, { id: 'credit_card' }, { id: 'debit_card' }]
             : [{ id: 'ticket' }];
+        const maxInstallments = dto.billingCycle === client_1.BillingCycle.ANNUAL
+            ? 12
+            : dto.billingCycle === client_1.BillingCycle.SEMIANNUAL
+                ? 6
+                : 1;
         const preference = await this.createMpPreference(accessToken, {
             items: [
                 {
@@ -258,7 +276,7 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
             auto_return: 'approved',
             payment_methods: {
                 excluded_payment_types: excludedPaymentTypes,
-                installments: dto.billingCycle === client_1.BillingCycle.ANNUAL ? 12 : 6,
+                installments: maxInstallments,
             },
         });
         await this.updateTransactionMpIds(txId, {
@@ -452,6 +470,14 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
     }
     async adminListTransactions() {
         await this.ensureTableExists();
+        const pendingRows = await this.prisma.$queryRaw `
+      SELECT id, status, mpPreapprovalId
+      FROM subscription_transactions
+      WHERE status = 'PENDING'
+      ORDER BY createdAt DESC
+      LIMIT 10
+    `;
+        await this.reconcilePendingTransactions(pendingRows);
         const rows = await this.prisma.$queryRaw `
       SELECT
         st.id,
@@ -489,6 +515,22 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
             refundedAt: r.refundedAt ? new Date(r.refundedAt) : null,
         }));
     }
+    async adminClearPendingTransactions() {
+        await this.ensureTableExists();
+        const pendingRows = await this.prisma.$queryRaw `
+      SELECT id, status, mpPreapprovalId
+      FROM subscription_transactions
+      WHERE status = 'PENDING'
+      ORDER BY createdAt DESC
+      LIMIT 20
+    `;
+        await this.reconcilePendingTransactions(pendingRows);
+        const deletedCount = await this.prisma.$executeRaw `
+      DELETE FROM subscription_transactions
+      WHERE status IN ('PENDING', 'REJECTED', 'CANCELLED')
+    `;
+        return { deletedCount: Number(deletedCount) };
+    }
     async adminRefundTransaction(txId, dto) {
         await this.ensureTableExists();
         const tx = await this.findTransactionById(txId);
@@ -524,6 +566,42 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
             refundedAmountCents: refundAmountCents,
             plan,
         };
+    }
+    async reconcilePendingTransactions(txs) {
+        const accessToken = (this.config.get('MP_ACCESS_TOKEN') ?? '').trim();
+        if (!accessToken)
+            return false;
+        const pending = txs.filter((t) => t.status === 'PENDING').slice(0, 10);
+        if (pending.length === 0)
+            return false;
+        let anyUpdated = false;
+        for (const tx of pending) {
+            try {
+                if (tx.mpPreapprovalId) {
+                    const res = await this.processPreapprovalNotification(accessToken, tx.mpPreapprovalId);
+                    if (res.processed)
+                        anyUpdated = true;
+                }
+                else {
+                    const payments = await this.searchMpPaymentsByExternalRef(accessToken, tx.id);
+                    const approved = payments.find((p) => p.status === 'approved');
+                    if (approved) {
+                        await this.processPaymentNotification(accessToken, String(approved.id));
+                        anyUpdated = true;
+                    }
+                    else {
+                        const rejected = payments.find((p) => p.status === 'rejected' || p.status === 'cancelled');
+                        if (rejected) {
+                            await this.updateTransactionStatus(tx.id, 'REJECTED', String(rejected.id));
+                            anyUpdated = true;
+                        }
+                    }
+                }
+            }
+            catch {
+            }
+        }
+        return anyUpdated;
     }
     async processPaymentNotification(accessToken, mpPaymentId) {
         const payment = await this.fetchMpPayment(accessToken, mpPaymentId);

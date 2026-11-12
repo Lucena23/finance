@@ -80,6 +80,7 @@ export declare class PlanPaymentService implements OnModuleInit {
     ensureTableExists(): Promise<void>;
     isPaymentsEnabledForEmail(email?: string): boolean;
     getPricingCatalog(): PlanPricingItem[];
+    reconcileFamilyPending(familyAccountId: string): Promise<void>;
     getFamilySubscriptionSummary(familyAccountId: string, userEmail?: string): Promise<FamilySubscriptionSummary>;
     createCheckout(familyAccountId: string, user: AuthenticatedUser, dto: CreateCheckoutDto): Promise<CheckoutSessionResult>;
     validateWebhookSignature(params: {
@@ -113,11 +114,15 @@ export declare class PlanPaymentService implements OnModuleInit {
         plan: PlanInfo;
     }>;
     adminListTransactions(): Promise<AdminTransactionView[]>;
+    adminClearPendingTransactions(): Promise<{
+        deletedCount: number;
+    }>;
     adminRefundTransaction(txId: string, dto: AdminRefundDto): Promise<{
         refunded: boolean;
         refundedAmountCents: number;
         plan: PlanInfo;
     }>;
+    private reconcilePendingTransactions;
     private processPaymentNotification;
     private processPreapprovalNotification;
     private createMpPreference;

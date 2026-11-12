@@ -26,7 +26,8 @@ let PlanController = class PlanController {
         this.planService = planService;
         this.planPaymentService = planPaymentService;
     }
-    getPlan(scope) {
+    async getPlan(scope) {
+        await this.planPaymentService.reconcileFamilyPending(scope.familyAccountId);
         return this.planService.getPlanInfo(scope.familyAccountId);
     }
     getLockedSummary(scope, query) {

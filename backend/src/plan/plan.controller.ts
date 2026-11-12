@@ -37,7 +37,8 @@ export class PlanController {
 
   /** GET /api/v1/plan — status, dias restantes e limites do plano. */
   @Get()
-  getPlan(@FamilyScopeParam() scope: FamilyScope): Promise<PlanInfo> {
+  async getPlan(@FamilyScopeParam() scope: FamilyScope): Promise<PlanInfo> {
+    await this.planPaymentService.reconcileFamilyPending(scope.familyAccountId);
     return this.planService.getPlanInfo(scope.familyAccountId);
   }
 

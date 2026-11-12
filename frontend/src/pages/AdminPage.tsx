@@ -730,20 +730,35 @@ function LeadsSection(): JSX.Element {
   );
 }
 
+type TxSortField =
+  | 'createdAt'
+  | 'familyName'
+  | 'billingCycle'
+  | 'amountCents'
+  | 'status';
+
 /**
  * Seção de Transações e Estornos (Mercado Pago) para o Admin Global.
  */
 function TransactionsSection(): JSX.Element {
   const [txs, setTxs] = useState<AdminTransactionView[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [clearing, setClearing] = useState<boolean>(false);
   const [refundingId, setRefundingId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [filterMode, setFilterMode] = useState<'PAID_OR_REFUNDED' | 'ALL'>('ALL');
+  const [sortField, setSortField] = useState<TxSortField>('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const loadTxs = async (): Promise<void> => {
     setLoading(true);
     try {
       const data = await adminApi.transactions();
       setTxs(data);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('plan-updated'));
+        window.dispatchEvent(new CustomEvent('admin-tx-updated'));
+      }
     } catch {
       // ignora silenciosamente se vazio
     } finally {
@@ -754,6 +769,84 @@ function TransactionsSection(): JSX.Element {
   useEffect(() => {
     void loadTxs();
   }, []);
+
+  const handleClearPending = async (): Promise<void> => {
+    setClearing(true);
+    setFeedback(null);
+    try {
+      const res = await adminApi.clearPendingTransactions();
+      setFeedback(
+        res.deletedCount > 0
+          ? `${res.deletedCount} tentativa(s) pendente(s)/abandonada(s) removida(s) com sucesso.`
+          : 'Nenhuma transação pendente para limpar.',
+      );
+      await loadTxs();
+    } catch (err) {
+      setFeedback(
+        err instanceof Error ? err.message : 'Não foi possível limpar as pendentes.',
+      );
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  const handleSort = (field: TxSortField): void => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder(field === 'createdAt' || field === 'amountCents' ? 'desc' : 'asc');
+    }
+  };
+
+  const paidOrRefundedCount = txs.filter(
+    (t) =>
+      t.status === 'APPROVED' ||
+      t.status === 'AUTHORIZED' ||
+      t.status === 'REFUNDED',
+  ).length;
+
+  const pendingCount = txs.filter(
+    (t) =>
+      t.status === 'PENDING' ||
+      t.status === 'REJECTED' ||
+      t.status === 'CANCELLED',
+  ).length;
+
+  const filteredTxs =
+    filterMode === 'PAID_OR_REFUNDED'
+      ? txs.filter(
+          (t) =>
+            t.status === 'APPROVED' ||
+            t.status === 'AUTHORIZED' ||
+            t.status === 'REFUNDED',
+        )
+      : txs;
+
+  const sortedTxs = [...filteredTxs].sort((a, b) => {
+    const dir = sortOrder === 'asc' ? 1 : -1;
+    switch (sortField) {
+      case 'createdAt':
+        return (
+          (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * dir
+        );
+      case 'familyName':
+        return a.familyName.localeCompare(b.familyName, 'pt-BR') * dir;
+      case 'billingCycle':
+        return a.billingCycle.localeCompare(b.billingCycle, 'pt-BR') * dir;
+      case 'amountCents':
+        return (a.amountCents - b.amountCents) * dir;
+      case 'status':
+        return a.status.localeCompare(b.status, 'pt-BR') * dir;
+      default:
+        return 0;
+    }
+  });
+
+  const renderSortIcon = (field: TxSortField): string => {
+    if (sortField !== field) return '↕';
+    return sortOrder === 'asc' ? '↑' : '↓';
+  };
 
   const handleRefund = async (tx: AdminTransactionView): Promise<void> => {
     const customReais = window.prompt(
@@ -794,7 +887,7 @@ function TransactionsSection(): JSX.Element {
 
   return (
     <Card data-testid="admin-transactions">
-      <CardHeader className="flex flex-row items-center justify-between pb-3">
+      <CardHeader className="flex flex-col gap-3 pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <CardTitle className="text-base">
             Transações e Estornos (Mercado Pago)
@@ -803,16 +896,62 @@ function TransactionsSection(): JSX.Element {
             Histórico de pagamentos de assinaturas com estorno total ou parcial em 1 clique.
           </p>
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => void loadTxs()}
-          disabled={loading}
-        >
-          <RefreshCw aria-hidden="true" className="h-4 w-4" />
-          Atualizar
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setFilterMode('PAID_OR_REFUNDED')}
+              className={cn(
+                'rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all',
+                filterMode === 'PAID_OR_REFUNDED'
+                  ? 'bg-card text-emerald-300 shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              Pagas / Estornadas ({paidOrRefundedCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterMode('ALL')}
+              className={cn(
+                'rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all',
+                filterMode === 'ALL'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              Todas ({txs.length})
+            </button>
+          </div>
+
+          {pendingCount > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void handleClearPending()}
+              disabled={clearing || loading}
+              className="h-8 text-xs"
+            >
+              {clearing ? 'Limpando...' : `Limpar Pendentes (${pendingCount})`}
+            </Button>
+          )}
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => void loadTxs()}
+            disabled={loading}
+            className="h-8"
+          >
+            <RefreshCw
+              aria-hidden="true"
+              className={cn('h-4 w-4', loading && 'animate-spin')}
+            />
+            Atualizar
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         {feedback && (
@@ -825,20 +964,60 @@ function TransactionsSection(): JSX.Element {
             Nenhuma transação registrada no Mercado Pago até o momento.
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="max-h-[340px] overflow-x-auto overflow-y-auto border-t border-border/60">
             <table className="w-full min-w-[680px] text-left text-xs">
-              <thead className="bg-muted/50 text-muted-foreground uppercase">
+              <thead className="sticky top-0 z-10 bg-muted/95 text-muted-foreground uppercase backdrop-blur">
                 <tr>
-                  <th className="px-4 py-2 font-medium">Data</th>
-                  <th className="px-4 py-2 font-medium">Família / Titular</th>
-                  <th className="px-4 py-2 font-medium">Plano / Modalidade</th>
-                  <th className="px-4 py-2 font-medium">Valor</th>
-                  <th className="px-4 py-2 font-medium">Status</th>
+                  <th className="px-4 py-2 font-medium">
+                    <button
+                      type="button"
+                      onClick={() => handleSort('createdAt')}
+                      className="inline-flex items-center gap-1 font-medium uppercase hover:text-foreground"
+                    >
+                      Data <span>{renderSortIcon('createdAt')}</span>
+                    </button>
+                  </th>
+                  <th className="px-4 py-2 font-medium">
+                    <button
+                      type="button"
+                      onClick={() => handleSort('familyName')}
+                      className="inline-flex items-center gap-1 font-medium uppercase hover:text-foreground"
+                    >
+                      Família / Titular <span>{renderSortIcon('familyName')}</span>
+                    </button>
+                  </th>
+                  <th className="px-4 py-2 font-medium">
+                    <button
+                      type="button"
+                      onClick={() => handleSort('billingCycle')}
+                      className="inline-flex items-center gap-1 font-medium uppercase hover:text-foreground"
+                    >
+                      Plano / Modalidade <span>{renderSortIcon('billingCycle')}</span>
+                    </button>
+                  </th>
+                  <th className="px-4 py-2 font-medium">
+                    <button
+                      type="button"
+                      onClick={() => handleSort('amountCents')}
+                      className="inline-flex items-center gap-1 font-medium uppercase hover:text-foreground"
+                    >
+                      Valor <span>{renderSortIcon('amountCents')}</span>
+                    </button>
+                  </th>
+                  <th className="px-4 py-2 font-medium">
+                    <button
+                      type="button"
+                      onClick={() => handleSort('status')}
+                      className="inline-flex items-center gap-1 font-medium uppercase hover:text-foreground"
+                    >
+                      Status <span>{renderSortIcon('status')}</span>
+                    </button>
+                  </th>
                   <th className="px-4 py-2 font-medium">Ação</th>
                 </tr>
               </thead>
               <tbody>
-                {txs.map((tx) => (
+                {sortedTxs.map((tx) => (
                   <tr key={tx.id} className="border-t border-border/60">
                     <td className="px-4 py-2.5 tabular-nums">
                       {formatDate(tx.createdAt)}
@@ -859,7 +1038,18 @@ function TransactionsSection(): JSX.Element {
                         : ''}
                     </td>
                     <td className="px-4 py-2.5">
-                      <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-bold">
+                      <span
+                        className={cn(
+                          'rounded-full border px-2 py-0.5 text-[10px] font-bold',
+                          tx.status === 'APPROVED'
+                            ? 'border-emerald-400/50 bg-emerald-500/15 text-emerald-300'
+                            : tx.status === 'REFUNDED'
+                              ? 'border-rose-400/50 bg-rose-500/15 text-rose-300'
+                              : tx.status === 'REJECTED' || tx.status === 'CANCELLED'
+                                ? 'border-rose-500/40 bg-rose-500/10 text-rose-300'
+                                : 'border-border text-muted-foreground',
+                        )}
+                      >
                         {tx.status}
                       </span>
                     </td>

@@ -98,8 +98,10 @@ export function PlanProvider({ children }: { children: ReactNode }): JSX.Element
       void fetchPlan();
     };
     window.addEventListener('plan-updated', handlePlanUpdated);
+    window.addEventListener('focus', handlePlanUpdated);
     return () => {
       window.removeEventListener('plan-updated', handlePlanUpdated);
+      window.removeEventListener('focus', handlePlanUpdated);
     };
   }, [fetchPlan]);
 

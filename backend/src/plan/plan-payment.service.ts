@@ -236,6 +236,19 @@ export class PlanPaymentService implements OnModuleInit {
   }
 
   /**
+   * Reconcilia silenciosamente transações PENDING de uma família antes de retornar o plano.
+   */
+  async reconcileFamilyPending(familyAccountId: string): Promise<void> {
+    try {
+      await this.ensureTableExists();
+      const txs = await this.findTransactionsByFamily(familyAccountId);
+      await this.reconcilePendingTransactions(txs);
+    } catch {
+      // ignora silenciosamente caso offline
+    }
+  }
+
+  /**
    * Retorna o resumo de assinatura, elegibilidade de reembolso CDC (7 dias)
    * e histórico da família autenticada.
    */
@@ -244,7 +257,12 @@ export class PlanPaymentService implements OnModuleInit {
     userEmail?: string,
   ): Promise<FamilySubscriptionSummary> {
     await this.ensureTableExists();
-    const txs = await this.findTransactionsByFamily(familyAccountId);
+    let txs = await this.findTransactionsByFamily(familyAccountId);
+
+    const reconciled = await this.reconcilePendingTransactions(txs);
+    if (reconciled) {
+      txs = await this.findTransactionsByFamily(familyAccountId);
+    }
 
     const activeRecurringTx = txs.find(
       (t) =>
@@ -358,7 +376,9 @@ export class PlanPaymentService implements OnModuleInit {
       status: 'PENDING',
     });
 
-    // 1. Mensal com Renovação Automática no Cartão -> API Preapproval (/preapproval)
+    // Checkout Pro unificado para Mensal (30 dias), Semestral (6 meses) e Anual (12 meses):
+    // Permite pagar via Pix (QR Code) ou Cartão de Crédito como convidado (sem exigir conta Mercado Pago).
+    // (Caso o cliente envie explicitamente CARD_RECURRING via API legada, mantém suporte ao Preapproval).
     if (
       dto.billingCycle === BillingCycle.MONTHLY &&
       dto.paymentMode === 'CARD_RECURRING'
@@ -400,7 +420,7 @@ export class PlanPaymentService implements OnModuleInit {
       }
     }
 
-    // 2. Checkout Pro (Pix 30 dias, Semestral, Anual ou fallback de Cartão)
+    // Checkout Pro (Mensal 30 dias, Semestral 6 meses e Anual 12 meses — Pix + Cartão sem exigir conta MP)
     const cycleLabel =
       dto.billingCycle === BillingCycle.MONTHLY
         ? 'Mensal (30 dias)'
@@ -412,6 +432,13 @@ export class PlanPaymentService implements OnModuleInit {
       dto.paymentMode === 'PIX_ONCE'
         ? [{ id: 'ticket' }, { id: 'credit_card' }, { id: 'debit_card' }]
         : [{ id: 'ticket' }];
+
+    const maxInstallments =
+      dto.billingCycle === BillingCycle.ANNUAL
+        ? 12
+        : dto.billingCycle === BillingCycle.SEMIANNUAL
+          ? 6
+          : 1;
 
     const preference = await this.createMpPreference(accessToken, {
       items: [
@@ -439,7 +466,7 @@ export class PlanPaymentService implements OnModuleInit {
       auto_return: 'approved',
       payment_methods: {
         excluded_payment_types: excludedPaymentTypes,
-        installments: dto.billingCycle === BillingCycle.ANNUAL ? 12 : 6,
+        installments: maxInstallments,
       },
     });
 
@@ -748,9 +775,25 @@ export class PlanPaymentService implements OnModuleInit {
 
   /**
    * Lista todas as transações de assinatura para o Painel Admin Global (`/admin`).
+   * Antes de retornar, reconcilia automaticamente transações PENDING recentes no Mercado Pago.
    */
   async adminListTransactions(): Promise<AdminTransactionView[]> {
     await this.ensureTableExists();
+    const pendingRows = await this.prisma.$queryRaw<
+      Array<{
+        id: string;
+        status: SubscriptionTxStatus;
+        mpPreapprovalId: string | null;
+      }>
+    >`
+      SELECT id, status, mpPreapprovalId
+      FROM subscription_transactions
+      WHERE status = 'PENDING'
+      ORDER BY createdAt DESC
+      LIMIT 10
+    `;
+    await this.reconcilePendingTransactions(pendingRows);
+
     const rows = await this.prisma.$queryRaw<
       Array<{
         id: string;
@@ -811,6 +854,35 @@ export class PlanPaymentService implements OnModuleInit {
       approvedAt: r.approvedAt ? new Date(r.approvedAt) : null,
       refundedAt: r.refundedAt ? new Date(r.refundedAt) : null,
     }));
+  }
+
+  /**
+   * Remove transações PENDING abandonadas (após reconciliar com o Mercado Pago para garantir
+   * que nenhum pagamento aprovado seja removido).
+   */
+  async adminClearPendingTransactions(): Promise<{ deletedCount: number }> {
+    await this.ensureTableExists();
+    const pendingRows = await this.prisma.$queryRaw<
+      Array<{
+        id: string;
+        status: SubscriptionTxStatus;
+        mpPreapprovalId: string | null;
+      }>
+    >`
+      SELECT id, status, mpPreapprovalId
+      FROM subscription_transactions
+      WHERE status = 'PENDING'
+      ORDER BY createdAt DESC
+      LIMIT 20
+    `;
+    await this.reconcilePendingTransactions(pendingRows);
+
+    const deletedCount = await this.prisma.$executeRaw`
+      DELETE FROM subscription_transactions
+      WHERE status IN ('PENDING', 'REJECTED', 'CANCELLED')
+    `;
+
+    return { deletedCount: Number(deletedCount) };
   }
 
   /**
@@ -877,7 +949,67 @@ export class PlanPaymentService implements OnModuleInit {
     };
   }
 
-  // ─── Processadores internos de Webhook ───────────────────────────────
+  // ─── Processadores internos de Webhook e Reconciliação Ativa ────────
+
+  /**
+   * Consulta o Mercado Pago para transações recentes com status PENDING
+   * (útil quando o cliente fecha a aba antes do redirect ou em ambiente local sem webhook público).
+   */
+  private async reconcilePendingTransactions(
+    txs: Array<{
+      id: string;
+      status: SubscriptionTxStatus;
+      mpPreapprovalId: string | null;
+    }>,
+  ): Promise<boolean> {
+    const accessToken = (this.config.get<string>('MP_ACCESS_TOKEN') ?? '').trim();
+    if (!accessToken) return false;
+
+    const pending = txs.filter((t) => t.status === 'PENDING').slice(0, 10);
+    if (pending.length === 0) return false;
+
+    let anyUpdated = false;
+    for (const tx of pending) {
+      try {
+        if (tx.mpPreapprovalId) {
+          const res = await this.processPreapprovalNotification(
+            accessToken,
+            tx.mpPreapprovalId,
+          );
+          if (res.processed) anyUpdated = true;
+        } else {
+          const payments = await this.searchMpPaymentsByExternalRef(
+            accessToken,
+            tx.id,
+          );
+          const approved = payments.find((p) => p.status === 'approved');
+          if (approved) {
+            await this.processPaymentNotification(
+              accessToken,
+              String(approved.id),
+            );
+            anyUpdated = true;
+          } else {
+            const rejected = payments.find(
+              (p) => p.status === 'rejected' || p.status === 'cancelled',
+            );
+            if (rejected) {
+              await this.updateTransactionStatus(
+                tx.id,
+                'REJECTED',
+                String(rejected.id),
+              );
+              anyUpdated = true;
+            }
+          }
+        }
+      } catch {
+        // Ignora falhas de rede individuais na reconciliação silenciosa
+      }
+    }
+
+    return anyUpdated;
+  }
 
   private async processPaymentNotification(
     accessToken: string,

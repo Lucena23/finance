@@ -804,6 +804,10 @@ export const adminApi = {
   transactions: (): Promise<AdminTransactionView[]> =>
     get<AdminTransactionView[]>('/admin/transactions'),
 
+  /** Remove transações PENDING abandonadas (Admin Global). */
+  clearPendingTransactions: (): Promise<{ deletedCount: number }> =>
+    del<{ deletedCount: number }>('/admin/transactions/pending'),
+
   /** Executa estorno Total ou Parcial no Mercado Pago (Admin Global). */
   refundTransaction: (
     transactionId: string,

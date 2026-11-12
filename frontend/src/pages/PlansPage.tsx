@@ -3,10 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import {
   AlertTriangle,
   Check,
-  CreditCard,
   Crown,
   Loader2,
-  QrCode,
   RefreshCcw,
   ShieldCheck,
   Star,
@@ -58,7 +56,7 @@ const TIERS: readonly PlanTier[] = [
     id: 'MONTHLY',
     name: 'Mensal',
     monthlyPrice: 'R$ 12,95',
-    totalPrice: 'Cobrado mensalmente (Cartão ou Pix)',
+    totalPrice: 'Cobrado mensalmente',
     amountCents: 1295,
     subtitle: 'Flexibilidade total para seu controle',
   },
@@ -75,7 +73,7 @@ const TIERS: readonly PlanTier[] = [
     id: 'ANNUAL',
     name: 'Anual',
     monthlyPrice: 'R$ 7,49',
-    totalPrice: 'Total R$ 89,90 por ano (Pix ou Cartão)',
+    totalPrice: 'Total R$ 89,90 por ano',
     amountCents: 8990,
     discountBadge: 'Economize 42%',
     popular: true,
@@ -96,9 +94,6 @@ export function PlansPage(): JSX.Element {
   const { plan, openMaintenanceModal, refetchPlan } = usePlan();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [monthlyMode, setMonthlyMode] = useState<'CARD_RECURRING' | 'PIX_ONCE'>(
-    'CARD_RECURRING',
-  );
   const [summary, setSummary] = useState<FamilySubscriptionSummary | null>(null);
   const [selectedTier, setSelectedTier] = useState<PlanTier | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState<boolean>(false);
@@ -118,6 +113,7 @@ export function PlansPage(): JSX.Element {
     try {
       const data = await planApi.subscriptionSummary();
       setSummary(data);
+      await refetchPlan();
     } catch {
       // ignora silenciosamente caso offline
     }
@@ -194,8 +190,7 @@ export function PlansPage(): JSX.Element {
     setSubmitting(true);
     setBannerMessage(null);
 
-    const paymentMode: CheckoutPaymentMode =
-      selectedTier.id === 'MONTHLY' ? monthlyMode : 'CHECKOUT_PRO';
+    const paymentMode: CheckoutPaymentMode = 'CHECKOUT_PRO';
 
     try {
       const session = await planApi.createCheckout({
@@ -308,8 +303,6 @@ export function PlansPage(): JSX.Element {
       {/* Cards de Planos */}
       <div className="grid grid-cols-1 gap-5 pt-2 md:grid-cols-3">
         {TIERS.map((tier) => {
-          const isMonthly = tier.id === 'MONTHLY';
-
           return (
             <Card
               key={tier.id}
@@ -350,52 +343,6 @@ export function PlansPage(): JSX.Element {
                     </div>
                     <p className="text-xs text-muted-foreground">{tier.totalPrice}</p>
                   </div>
-
-                  {/* Seletor de modalidade no Plano Mensal (D4: Renovação automática selecionada por padrão com aviso claro) */}
-                  {isMonthly && (
-                    <div className="pt-2 space-y-2">
-                      <div className="grid grid-cols-2 gap-1.5 rounded-lg border border-border bg-muted/40 p-1">
-                        <button
-                          type="button"
-                          onClick={() => setMonthlyMode('CARD_RECURRING')}
-                          className={cn(
-                            'flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-semibold transition-all',
-                            monthlyMode === 'CARD_RECURRING'
-                              ? 'bg-card text-amber-300 shadow-sm border border-amber-400/40'
-                              : 'text-muted-foreground hover:text-foreground',
-                          )}
-                        >
-                          <CreditCard className="h-3 w-3 shrink-0" />
-                          Cartão (Auto)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setMonthlyMode('PIX_ONCE')}
-                          className={cn(
-                            'flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-semibold transition-all',
-                            monthlyMode === 'PIX_ONCE'
-                              ? 'bg-card text-emerald-300 shadow-sm border border-emerald-400/40'
-                              : 'text-muted-foreground hover:text-foreground',
-                          )}
-                        >
-                          <QrCode className="h-3 w-3 shrink-0" />
-                          Pix (30 dias)
-                        </button>
-                      </div>
-
-                      <p className="text-[11px] leading-snug text-muted-foreground">
-                        {monthlyMode === 'CARD_RECURRING' ? (
-                          <>
-                            🔄 <strong>Renovação automática mensal</strong> de R$ 12,95 no cartão. Aviso 3 dias antes e cancelamento em 1 clique sem multa.
-                          </>
-                        ) : (
-                          <>
-                            ⚡ <strong>Pagamento único via Pix</strong> por 30 dias de acesso, sem débito automático. Enviamos lembrete perto do vencimento.
-                          </>
-                        )}
-                      </p>
-                    </div>
-                  )}
                 </div>
 
                 <Button
@@ -526,13 +473,9 @@ export function PlansPage(): JSX.Element {
                   </strong>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Modalidade:</span>
+                  <span className="text-muted-foreground">Formas de pagamento:</span>
                   <strong className="text-foreground">
-                    {selectedTier.id === 'MONTHLY'
-                      ? monthlyMode === 'CARD_RECURRING'
-                        ? 'Cartão (Renovação automática mensal)'
-                        : 'Pix avulso (30 dias)'
-                      : 'Pagamento único (Pix ou Cartão)'}
+                    Pix ou Cartão de Crédito
                   </strong>
                 </div>
                 <div className="flex items-center justify-between border-t border-border/60 pt-1.5 text-sm">
@@ -542,12 +485,6 @@ export function PlansPage(): JSX.Element {
                   </strong>
                 </div>
               </div>
-
-              {selectedTier.id === 'MONTHLY' && monthlyMode === 'CARD_RECURRING' && (
-                <p className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-2.5 text-[11px] text-amber-100/90">
-                  🔄 O valor de <strong>R$ 12,95</strong> será renovado automaticamente a cada mês no cartão cadastrado. Você receberá um lembrete 3 dias antes e pode cancelar quando quiser em 1 clique, sem fidelidade.
-                </p>
-              )}
 
               <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border p-3 text-xs">
                 <input

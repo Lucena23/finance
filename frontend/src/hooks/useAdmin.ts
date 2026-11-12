@@ -147,6 +147,16 @@ export function useAdminLeads(): UseAdminLeadsResult {
     void fetchLeads();
   }, [fetchLeads]);
 
+  useEffect(() => {
+    const handleTxUpdated = (): void => {
+      void fetchLeads();
+    };
+    window.addEventListener('admin-tx-updated', handleTxUpdated);
+    return () => {
+      window.removeEventListener('admin-tx-updated', handleTxUpdated);
+    };
+  }, [fetchLeads]);
+
   const exportLeads = useCallback(
     async (format: LeadExportFormat): Promise<void> => {
       setIsExporting(true);

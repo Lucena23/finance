@@ -14,6 +14,9 @@ export declare class AdminController {
     getLeads(): Promise<AdminLead[]>;
     updateFamilyPlan(id: string, dto: UpdateFamilyPlanDto): Promise<PlanInfo>;
     getTransactions(): Promise<AdminTransactionView[]>;
+    clearPendingTransactions(): Promise<{
+        deletedCount: number;
+    }>;
     refundTransaction(id: string, dto: AdminRefundDto): Promise<{
         refunded: boolean;
         refundedAmountCents: number;
