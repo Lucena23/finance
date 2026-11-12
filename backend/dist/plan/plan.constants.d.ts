@@ -31,5 +31,5 @@ export declare const PLAN_EQUIVALENT_MONTHLY_CENTS: {
 };
 export declare const CDC_REFUND_WINDOW_DAYS = 7;
 export declare const TERMS_CURRENT_VERSION = "1.0";
-export type CheckoutPaymentMode = 'CARD_RECURRING' | 'PIX_ONCE' | 'CHECKOUT_PRO';
+export type CheckoutPaymentMode = 'PIX_DIRECT' | 'CARD_DIRECT' | 'CARD_RECURRING' | 'PIX_ONCE' | 'CHECKOUT_PRO';
 export type SubscriptionTxStatus = 'PENDING' | 'APPROVED' | 'AUTHORIZED' | 'CANCELLED' | 'REFUNDED' | 'REJECTED';

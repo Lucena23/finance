@@ -125,6 +125,10 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
         if (reconciled) {
             txs = await this.findTransactionsByFamily(familyAccountId);
         }
+        const family = await (this.prisma.familyAccount?.findUnique?.({
+            where: { id: familyAccountId },
+            select: { ownerCpf: true },
+        }) ?? Promise.resolve(null)).catch(() => null);
         const activeRecurringTx = txs.find((t) => t.paymentMode === 'CARD_RECURRING' &&
             Boolean(t.mpPreapprovalId) &&
             (t.status === 'APPROVED' || t.status === 'AUTHORIZED'));
@@ -150,6 +154,8 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
         }
         return {
             paymentsEnabled: this.isPaymentsEnabledForEmail(userEmail),
+            mpPublicKey: (this.config.get('MP_PUBLIC_KEY') ?? '').trim(),
+            ownerCpf: family?.ownerCpf ?? '',
             termsVersion: plan_constants_1.TERMS_CURRENT_VERSION,
             pricing: this.getPricingCatalog(),
             hasActiveRecurring: Boolean(activeRecurringTx),
@@ -183,6 +189,7 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
         }
         const accessToken = this.getAccessTokenOrThrow();
         await this.ensureTableExists();
+        await this.enforceCheckoutRateLimit(familyAccountId, dto.paymentMode);
         const dbUser = await this.prisma.user.findFirst({
             where: { id: user.userId, familyAccountId },
             select: { id: true, name: true, email: true },
@@ -190,11 +197,25 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
         if (!dbUser) {
             throw new common_1.NotFoundException('Usuário não encontrado na conta familiar.');
         }
+        const family = await (this.prisma.familyAccount?.findUnique?.({
+            where: { id: familyAccountId },
+            select: { ownerCpf: true },
+        }) ?? Promise.resolve(null)).catch(() => null);
         const amountCents = plan_constants_1.PLAN_PRICES_CENTS[dto.billingCycle];
         const amountReais = Number((amountCents / 100).toFixed(2));
         const txId = (0, node_crypto_1.randomUUID)();
         const frontendUrl = this.resolveFrontendUrl();
         const backendUrl = this.resolveBackendUrl();
+        const cycleLabel = dto.billingCycle === client_1.BillingCycle.MONTHLY
+            ? 'Mensal (30 dias)'
+            : dto.billingCycle === client_1.BillingCycle.SEMIANNUAL
+                ? 'Semestral (6 meses)'
+                : 'Anual (12 meses)';
+        const maxInstallments = dto.billingCycle === client_1.BillingCycle.ANNUAL
+            ? 12
+            : dto.billingCycle === client_1.BillingCycle.SEMIANNUAL
+                ? 6
+                : 1;
         await this.insertTransaction({
             id: txId,
             familyAccountId,
@@ -204,6 +225,105 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
             amountCents,
             status: 'PENDING',
         });
+        const cleanCpf = (dto.payerCpf || family?.ownerCpf || '').replace(/\D/g, '');
+        const nameParts = dbUser.name.trim().split(/\s+/);
+        const firstName = nameParts[0] || 'Cliente';
+        const lastName = nameParts.slice(1).join(' ') || 'Aksurim';
+        if (dto.paymentMode === 'PIX_DIRECT') {
+            const payment = await this.createMpDirectPayment(accessToken, {
+                transaction_amount: amountReais,
+                description: `Aksurim Controle Premium — Plano ${cycleLabel}`,
+                payment_method_id: 'pix',
+                external_reference: txId,
+                statement_descriptor: 'AKSURIM',
+                notification_url: `${backendUrl}/api/payments/webhook`,
+                payer: {
+                    email: dbUser.email,
+                    first_name: firstName,
+                    last_name: lastName,
+                    ...(cleanCpf.length === 11
+                        ? { identification: { type: 'CPF', number: cleanCpf } }
+                        : {}),
+                },
+            }, txId);
+            const qrCode = payment.point_of_interaction?.transaction_data?.qr_code ?? null;
+            const qrCodeBase64 = payment.point_of_interaction?.transaction_data?.qr_code_base64 ?? null;
+            await this.updateTransactionStatus(txId, 'PENDING', String(payment.id));
+            return {
+                transactionId: txId,
+                checkoutUrl: '',
+                billingCycle: dto.billingCycle,
+                paymentMode: dto.paymentMode,
+                amountCents,
+                status: 'PENDING',
+                pixQrCode: qrCode,
+                pixQrCodeBase64: qrCodeBase64,
+            };
+        }
+        if (dto.paymentMode === 'CARD_DIRECT') {
+            if (!dto.cardToken || !dto.cardToken.trim()) {
+                throw new common_1.BadRequestException('Token de segurança do cartão não informado. Verifique os dados do cartão e tente novamente.');
+            }
+            if (cleanCpf.length !== 11) {
+                throw new common_1.BadRequestException('Informe um CPF válido (11 dígitos) do titular do cartão.');
+            }
+            const installments = Math.min(Math.max(1, Number(dto.installments ?? 1)), maxInstallments);
+            const payment = await this.createMpDirectPayment(accessToken, {
+                transaction_amount: amountReais,
+                token: dto.cardToken.trim(),
+                description: `Aksurim Controle Premium — Plano ${cycleLabel}`,
+                installments,
+                ...(dto.paymentMethodId
+                    ? { payment_method_id: dto.paymentMethodId.trim() }
+                    : {}),
+                ...(dto.issuerId ? { issuer_id: dto.issuerId.trim() } : {}),
+                external_reference: txId,
+                statement_descriptor: 'AKSURIM',
+                binary_mode: true,
+                notification_url: `${backendUrl}/api/payments/webhook`,
+                payer: {
+                    email: dbUser.email,
+                    first_name: firstName,
+                    last_name: lastName,
+                    identification: {
+                        type: 'CPF',
+                        number: cleanCpf,
+                    },
+                },
+            }, txId);
+            const paidCents = Math.round(Number(payment.transaction_amount ?? amountReais) * 100);
+            if (payment.status === 'approved' && paidCents >= amountCents) {
+                await this.markTransactionApproved(txId, String(payment.id));
+                const plan = await this.planService.grantPremium(familyAccountId, dto.billingCycle);
+                void this.sendActivationEmail(dbUser.email, dbUser.name, plan.familyName ?? 'sua família', dto.billingCycle, amountCents);
+                void this.notifyTelegram(`👑 <b>Novo pagamento Premium aprovado (Cartão Transparente)!</b>\n` +
+                    `<b>Família:</b> ${plan.familyName ?? familyAccountId}\n` +
+                    `<b>Ciclo:</b> ${dto.billingCycle} (${installments}x)\n` +
+                    `<b>Valor:</b> R$ ${(amountCents / 100).toFixed(2).replace('.', ',')}`);
+                return {
+                    transactionId: txId,
+                    checkoutUrl: '',
+                    billingCycle: dto.billingCycle,
+                    paymentMode: dto.paymentMode,
+                    amountCents,
+                    status: 'APPROVED',
+                    plan,
+                };
+            }
+            if (payment.status === 'rejected' || payment.status === 'cancelled') {
+                await this.updateTransactionStatus(txId, 'REJECTED', String(payment.id));
+                throw new common_1.BadRequestException(this.mapCardRejectionMessage(payment.status_detail));
+            }
+            await this.updateTransactionStatus(txId, 'PENDING', String(payment.id));
+            return {
+                transactionId: txId,
+                checkoutUrl: '',
+                billingCycle: dto.billingCycle,
+                paymentMode: dto.paymentMode,
+                amountCents,
+                status: 'PENDING',
+            };
+        }
         if (dto.billingCycle === client_1.BillingCycle.MONTHLY &&
             dto.paymentMode === 'CARD_RECURRING') {
             try {
@@ -237,19 +357,9 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
                 this.logger.warn(`Preapproval direto indisponível (${err instanceof Error ? err.message : String(err)}); utilizando Checkout Pro com cartão habilitado.`);
             }
         }
-        const cycleLabel = dto.billingCycle === client_1.BillingCycle.MONTHLY
-            ? 'Mensal (30 dias)'
-            : dto.billingCycle === client_1.BillingCycle.SEMIANNUAL
-                ? 'Semestral (6 meses)'
-                : 'Anual (12 meses)';
         const excludedPaymentTypes = dto.paymentMode === 'PIX_ONCE'
             ? [{ id: 'ticket' }, { id: 'credit_card' }, { id: 'debit_card' }]
             : [{ id: 'ticket' }];
-        const maxInstallments = dto.billingCycle === client_1.BillingCycle.ANNUAL
-            ? 12
-            : dto.billingCycle === client_1.BillingCycle.SEMIANNUAL
-                ? 6
-                : 1;
         const preference = await this.createMpPreference(accessToken, {
             items: [
                 {
@@ -392,7 +502,10 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
         }
         const accessToken = (this.config.get('MP_ACCESS_TOKEN') ?? '').trim();
         if (accessToken) {
-            if (tx.mpPreapprovalId) {
+            if (tx.mpPaymentId) {
+                await this.processPaymentNotification(accessToken, tx.mpPaymentId);
+            }
+            else if (tx.mpPreapprovalId) {
                 await this.processPreapprovalNotification(accessToken, tx.mpPreapprovalId);
             }
             else {
@@ -471,7 +584,7 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
     async adminListTransactions() {
         await this.ensureTableExists();
         const pendingRows = await this.prisma.$queryRaw `
-      SELECT id, status, mpPreapprovalId
+      SELECT id, status, mpPaymentId, mpPreapprovalId
       FROM subscription_transactions
       WHERE status = 'PENDING'
       ORDER BY createdAt DESC
@@ -518,7 +631,7 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
     async adminClearPendingTransactions() {
         await this.ensureTableExists();
         const pendingRows = await this.prisma.$queryRaw `
-      SELECT id, status, mpPreapprovalId
+      SELECT id, status, mpPaymentId, mpPreapprovalId
       FROM subscription_transactions
       WHERE status = 'PENDING'
       ORDER BY createdAt DESC
@@ -577,7 +690,12 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
         let anyUpdated = false;
         for (const tx of pending) {
             try {
-                if (tx.mpPreapprovalId) {
+                if (tx.mpPaymentId) {
+                    const res = await this.processPaymentNotification(accessToken, tx.mpPaymentId);
+                    if (res.processed)
+                        anyUpdated = true;
+                }
+                else if (tx.mpPreapprovalId) {
                     const res = await this.processPreapprovalNotification(accessToken, tx.mpPreapprovalId);
                     if (res.processed)
                         anyUpdated = true;
@@ -616,6 +734,13 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
             return { received: true, processed: true, idempotent: true };
         }
         if (payment.status === 'approved') {
+            if (payment.transaction_amount !== undefined) {
+                const paidCents = Math.round(Number(payment.transaction_amount) * 100);
+                if (paidCents < tx.amountCents) {
+                    this.logger.error(`ALERTA DE SEGURANÇA: Pagamento ${payment.id} para tx ${tx.id} teve valor divergente (${paidCents} < ${tx.amountCents}). Bloqueado.`);
+                    return { received: true, processed: false };
+                }
+            }
             await this.markTransactionApproved(tx.id, String(payment.id));
             const plan = await this.planService.grantPremium(tx.familyAccountId, tx.billingCycle);
             const owner = await this.prisma.user.findFirst({
@@ -664,6 +789,57 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
             return { received: true, processed: true };
         }
         return { received: true, processed: false };
+    }
+    async enforceCheckoutRateLimit(familyAccountId, paymentMode) {
+        try {
+            const txs = await this.findTransactionsByFamily(familyAccountId);
+            const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
+            const recentAttempts = txs.filter((t) => t.createdAt.getTime() >= tenMinutesAgo);
+            const maxAllowed = paymentMode === 'CARD_DIRECT' ? 5 : 10;
+            if (recentAttempts.length >= maxAllowed) {
+                throw new common_1.BadRequestException('Muitas tentativas de pagamento em sequência. Por segurança, aguarde alguns minutos antes de tentar novamente.');
+            }
+        }
+        catch (err) {
+            if (err instanceof common_1.BadRequestException)
+                throw err;
+        }
+    }
+    mapCardRejectionMessage(statusDetail) {
+        switch (statusDetail) {
+            case 'cc_rejected_insufficient_amount':
+                return 'Pagamento recusado pelo banco emissor: limite insuficiente no cartão.';
+            case 'cc_rejected_bad_filled_security_code':
+                return 'Código de segurança (CVV) inválido. Verifique os 3 ou 4 dígitos no verso do cartão.';
+            case 'cc_rejected_bad_filled_date':
+                return 'Data de validade do cartão inválida ou cartão vencido.';
+            case 'cc_rejected_bad_filled_card_number':
+                return 'Número do cartão inválido. Revise os dígitos informados.';
+            case 'cc_rejected_call_for_authorize':
+                return 'O banco emissor solicitou autorização prévia para esta compra. Autorize no app do seu banco ou utilize o Pix.';
+            case 'cc_rejected_high_risk':
+            case 'cc_rejected_blacklist':
+                return 'Transação recusada por segurança pelo emissor. Tente outro cartão ou pague via Pix com liberação imediata.';
+            default:
+                return 'Pagamento não autorizado pela operadora do cartão. Verifique os dados ou utilize o Pix.';
+        }
+    }
+    async createMpDirectPayment(accessToken, payload, idempotencyKey) {
+        const res = await fetch('https://api.mercadopago.com/v1/payments', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+                'X-Idempotency-Key': idempotencyKey,
+            },
+            body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+            const detail = await res.text();
+            this.logger.error(`Erro ao processar pagamento transparente MP (${res.status}): ${detail}`);
+            throw new common_1.BadGatewayException('Não foi possível processar o pagamento junto ao Mercado Pago. Verifique os dados informados ou tente via Pix.');
+        }
+        return (await res.json());
     }
     async createMpPreference(accessToken, payload) {
         const res = await fetch('https://api.mercadopago.com/checkout/preferences', {

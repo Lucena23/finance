@@ -73,7 +73,12 @@ export const CDC_REFUND_WINDOW_DAYS = 7;
 export const TERMS_CURRENT_VERSION = '1.0';
 
 /** Modalidades de pagamento aceitas no checkout. */
-export type CheckoutPaymentMode = 'CARD_RECURRING' | 'PIX_ONCE' | 'CHECKOUT_PRO';
+export type CheckoutPaymentMode =
+  | 'PIX_DIRECT'
+  | 'CARD_DIRECT'
+  | 'CARD_RECURRING'
+  | 'PIX_ONCE'
+  | 'CHECKOUT_PRO';
 
 /** Status de uma transação/assinatura no banco de dados. */
 export type SubscriptionTxStatus =

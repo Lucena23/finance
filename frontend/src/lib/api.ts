@@ -329,7 +329,12 @@ export interface UpdateFamilyPlanPayload {
   trialDays?: number;
 }
 
-export type CheckoutPaymentMode = 'CARD_RECURRING' | 'PIX_ONCE' | 'CHECKOUT_PRO';
+export type CheckoutPaymentMode =
+  | 'CARD_RECURRING'
+  | 'PIX_ONCE'
+  | 'CHECKOUT_PRO'
+  | 'PIX_DIRECT'
+  | 'CARD_DIRECT';
 
 export type SubscriptionTxStatus =
   | 'PENDING'
@@ -350,6 +355,8 @@ export interface PlanPricingItem {
 
 export interface FamilySubscriptionSummary {
   paymentsEnabled: boolean;
+  mpPublicKey: string;
+  ownerCpf: string;
   termsVersion: string;
   pricing: PlanPricingItem[];
   hasActiveRecurring: boolean;
@@ -377,6 +384,10 @@ export interface CheckoutSessionResult {
   billingCycle: BillingCycle;
   paymentMode: CheckoutPaymentMode;
   amountCents: number;
+  status?: SubscriptionTxStatus;
+  pixQrCode?: string | null;
+  pixQrCodeBase64?: string | null;
+  plan?: PlanInfo;
 }
 
 export interface AdminTransactionView {
@@ -746,6 +757,11 @@ export const planApi = {
     billingCycle: BillingCycle;
     paymentMode: CheckoutPaymentMode;
     acceptedTerms: boolean;
+    cardToken?: string;
+    paymentMethodId?: string;
+    issuerId?: string;
+    installments?: number;
+    payerCpf?: string;
   }): Promise<CheckoutSessionResult> =>
     post<CheckoutSessionResult>('/plan/checkout', payload),
   syncTransaction: (

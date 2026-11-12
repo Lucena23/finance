@@ -41,6 +41,8 @@ export interface AdminTransactionView extends SubscriptionTransactionRecord {
 }
 export interface FamilySubscriptionSummary {
     paymentsEnabled: boolean;
+    mpPublicKey: string;
+    ownerCpf: string;
     termsVersion: string;
     pricing: PlanPricingItem[];
     hasActiveRecurring: boolean;
@@ -67,6 +69,10 @@ export interface CheckoutSessionResult {
     billingCycle: BillingCycle;
     paymentMode: CheckoutPaymentMode;
     amountCents: number;
+    status?: SubscriptionTxStatus;
+    pixQrCode?: string | null;
+    pixQrCodeBase64?: string | null;
+    plan?: PlanInfo;
 }
 export declare class PlanPaymentService implements OnModuleInit {
     private readonly prisma;
@@ -125,6 +131,9 @@ export declare class PlanPaymentService implements OnModuleInit {
     private reconcilePendingTransactions;
     private processPaymentNotification;
     private processPreapprovalNotification;
+    private enforceCheckoutRateLimit;
+    private mapCardRejectionMessage;
+    private createMpDirectPayment;
     private createMpPreference;
     private createMpPreapproval;
     private fetchMpPayment;

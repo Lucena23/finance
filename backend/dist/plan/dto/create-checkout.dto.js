@@ -20,13 +20,54 @@ __decorate([
     __metadata("design:type", String)
 ], CreateCheckoutDto.prototype, "billingCycle", void 0);
 __decorate([
-    (0, class_validator_1.IsIn)(['CARD_RECURRING', 'PIX_ONCE', 'CHECKOUT_PRO'], {
+    (0, class_validator_1.IsIn)(['PIX_DIRECT', 'CARD_DIRECT', 'CARD_RECURRING', 'PIX_ONCE', 'CHECKOUT_PRO'], {
         message: 'Modalidade de pagamento inválida.',
     }),
     __metadata("design:type", String)
 ], CreateCheckoutDto.prototype, "paymentMode", void 0);
 __decorate([
-    (0, class_validator_1.IsBoolean)({ message: 'É obrigatório aceitar os Termos de Uso e a Política de Reembolso.' }),
+    (0, class_validator_1.IsBoolean)({
+        message: 'É obrigatório aceitar os Termos de Uso e a Política de Reembolso.',
+    }),
     __metadata("design:type", Boolean)
 ], CreateCheckoutDto.prototype, "acceptedTerms", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Matches)(/^[a-zA-Z0-9_-]{16,128}$/, {
+        message: 'Token criptográfico do cartão inválido.',
+    }),
+    __metadata("design:type", String)
+], CreateCheckoutDto.prototype, "cardToken", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Matches)(/^[a-z0-9_]{2,32}$/i, {
+        message: 'Bandeira do cartão inválida.',
+    }),
+    __metadata("design:type", String)
+], CreateCheckoutDto.prototype, "paymentMethodId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Matches)(/^[0-9]{1,20}$/, {
+        message: 'Identificador do emissor inválido.',
+    }),
+    __metadata("design:type", String)
+], CreateCheckoutDto.prototype, "issuerId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    (0, class_validator_1.Max)(12),
+    __metadata("design:type", Number)
+], CreateCheckoutDto.prototype, "installments", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Matches)(/^[0-9.\-]{11,14}$/, {
+        message: 'CPF informado em formato inválido.',
+    }),
+    __metadata("design:type", String)
+], CreateCheckoutDto.prototype, "payerCpf", void 0);
 //# sourceMappingURL=create-checkout.dto.js.map
