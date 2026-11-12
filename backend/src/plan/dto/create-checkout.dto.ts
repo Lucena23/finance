@@ -83,6 +83,6 @@ export class CreateCheckoutDto {
   /** Identificador de sessão antifraude do dispositivo (MP_DEVICE_SESSION_ID). */
   @IsOptional()
   @IsString()
-  @MaxLength(200)
+  @MaxLength(4096)
   deviceSessionId?: string;
 }

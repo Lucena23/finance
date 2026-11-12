@@ -79,7 +79,7 @@ __decorate([
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MaxLength)(200),
+    (0, class_validator_1.MaxLength)(4096),
     __metadata("design:type", String)
 ], CreateCheckoutDto.prototype, "deviceSessionId", void 0);
 //# sourceMappingURL=create-checkout.dto.js.map
