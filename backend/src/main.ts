@@ -1,11 +1,20 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 
 import { AppModule } from './app.module';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
+
+  // Alias compatível com a URL configurada no painel do Mercado Pago (/api/payments/webhook)
+  app.use('/api/payments/webhook', (req: Request, _res: Response, next: NextFunction) => {
+    const qIdx = req.originalUrl.indexOf('?');
+    const qs = qIdx >= 0 ? req.originalUrl.slice(qIdx) : '';
+    req.url = `/api/v1/plan/webhook${qs}`;
+    next();
+  });
 
   // Prefixo global da API (ARCHITECTURE §3.2).
   app.setGlobalPrefix('api/v1');

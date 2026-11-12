@@ -10,6 +10,7 @@ exports.PlanModule = void 0;
 const common_1 = require("@nestjs/common");
 const plan_controller_1 = require("./plan.controller");
 const plan_guard_1 = require("./plan.guard");
+const plan_payment_service_1 = require("./plan-payment.service");
 const plan_reminder_cron_1 = require("./plan-reminder.cron");
 const plan_service_1 = require("./plan.service");
 let PlanModule = class PlanModule {
@@ -19,8 +20,8 @@ exports.PlanModule = PlanModule = __decorate([
     (0, common_1.Global)(),
     (0, common_1.Module)({
         controllers: [plan_controller_1.PlanController],
-        providers: [plan_service_1.PlanService, plan_guard_1.PlanGuard, plan_reminder_cron_1.PlanReminderCron],
-        exports: [plan_service_1.PlanService, plan_guard_1.PlanGuard],
+        providers: [plan_service_1.PlanService, plan_payment_service_1.PlanPaymentService, plan_guard_1.PlanGuard, plan_reminder_cron_1.PlanReminderCron],
+        exports: [plan_service_1.PlanService, plan_payment_service_1.PlanPaymentService, plan_guard_1.PlanGuard],
     })
 ], PlanModule);
 //# sourceMappingURL=plan.module.js.map

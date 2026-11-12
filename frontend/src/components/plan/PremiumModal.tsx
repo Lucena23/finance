@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Check, Crown, Sparkles, Wrench } from 'lucide-react';
+import { Check, Crown, Wrench } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -48,7 +48,6 @@ const FEATURE_TITLES: Record<PremiumFeature, { title: string; subtitle: string }
 
 export function PremiumModal(): JSX.Element {
   const {
-    plan,
     modalState,
     closePremiumModal,
     isMaintenanceOpen,
@@ -65,7 +64,6 @@ export function PremiumModal(): JSX.Element {
       };
 
   const title = modalState.customTitle ?? meta.title;
-  const isTrialOffer = plan?.isTrialOfferEligible ?? false;
 
   const handleGoToPlans = (): void => {
     closePremiumModal();
@@ -94,16 +92,6 @@ export function PremiumModal(): JSX.Element {
           </DialogHeader>
 
           <div className="my-2 flex flex-col gap-3">
-            {isTrialOffer && (
-              <div className="flex items-center gap-2 rounded-lg border border-amber-400/50 bg-amber-500/15 px-3 py-2.5 text-xs font-medium text-amber-100">
-                <Sparkles className="h-4 w-4 shrink-0 text-amber-400" />
-                <span>
-                  Oferta exclusiva do período de teste:{' '}
-                  <strong className="font-bold text-amber-300">1º mês por R$ 9,99</strong> no plano mensal!
-                </span>
-              </div>
-            )}
-
             <ul className="space-y-2 rounded-lg border border-border bg-muted/40 p-3 text-xs text-foreground">
               <li className="flex items-center gap-2">
                 <Check className="h-4 w-4 shrink-0 text-emerald-400" />
@@ -121,10 +109,10 @@ export function PremiumModal(): JSX.Element {
 
             <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2.5 text-center text-foreground">
               <p className="text-xs font-semibold text-amber-300">
-                Plano Anual — menos de R$ 0,33 por dia
+                Plano Anual — menos de R$ 0,25 por dia
               </p>
               <p className="text-sm font-bold">
-                A partir de R$ 9,99/mês no plano anual
+                Equivalente a R$ 7,49/mês no plano anual (ou R$ 12,95 no mensal)
               </p>
             </div>
           </div>
@@ -166,7 +154,7 @@ export function PremiumModal(): JSX.Element {
               Pagamento online em manutenção
             </DialogTitle>
             <DialogDescription className="text-center text-sm">
-              Estamos finalizando a integração automática com PIX e Cartão (Mercado Pago) para sua total segurança. Em breve você poderá concluir sua assinatura diretamente por aqui!
+              Estamos finalizando a liberação do pagamento automático com PIX e Cartão (Mercado Pago) para sua total segurança. Em breve você poderá concluir sua assinatura diretamente por aqui!
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

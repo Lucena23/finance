@@ -1,0 +1,294 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const node_crypto_1 = require("node:crypto");
+const common_1 = require("@nestjs/common");
+const client_1 = require("@prisma/client");
+const plan_constants_1 = require("./plan.constants");
+const plan_payment_service_1 = require("./plan-payment.service");
+describe('PlanPaymentService (Mercado Pago v1.3)', () => {
+    let service;
+    let prismaMock;
+    let configValues;
+    let configMock;
+    let planServiceMock;
+    let mailerMock;
+    beforeEach(() => {
+        prismaMock = {
+            $executeRawUnsafe: jest.fn().mockResolvedValue(0),
+            $executeRaw: jest.fn().mockResolvedValue(1),
+            $queryRaw: jest.fn().mockResolvedValue([]),
+            user: {
+                findFirst: jest.fn().mockResolvedValue({
+                    id: 'user-1',
+                    name: 'João Titular',
+                    email: 'joao@aksurim.com',
+                }),
+            },
+        };
+        configValues = {
+            MP_ACCESS_TOKEN: 'APP_USR-test-token-123',
+            MP_PUBLIC_KEY: 'APP_USR-test-pub-123',
+            MP_WEBHOOK_SECRET: 'test-webhook-secret-xyz',
+            PAYMENTS_ENABLED: 'true',
+            PAYMENTS_ALLOWLIST_EMAILS: 'vip@aksurim.com',
+        };
+        configMock = {
+            get: jest.fn((key) => configValues[key]),
+        };
+        planServiceMock = {
+            grantPremium: jest.fn().mockResolvedValue({
+                familyName: 'Família Silva',
+                status: 'PREMIUM',
+                hasPremiumAccess: true,
+                premiumEndsAt: new Date(Date.now() + 30 * plan_constants_1.DAY_MS).toISOString(),
+            }),
+            revokePremium: jest.fn().mockResolvedValue({
+                familyName: 'Família Silva',
+                status: 'FREE',
+                hasPremiumAccess: false,
+                premiumEndsAt: null,
+            }),
+            getPlanInfo: jest.fn().mockResolvedValue({
+                familyName: 'Família Silva',
+                status: 'PREMIUM',
+                hasPremiumAccess: true,
+                premiumEndsAt: new Date(Date.now() + 20 * plan_constants_1.DAY_MS).toISOString(),
+            }),
+        };
+        mailerMock = {
+            sendMail: jest.fn().mockResolvedValue(undefined),
+        };
+        service = new plan_payment_service_1.PlanPaymentService(prismaMock, configMock, planServiceMock, mailerMock);
+    });
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+    describe('Catálogo de preços (centavos + numerologia 8)', () => {
+        it('retorna os valores aprovados 1295, 6290 e 8990 centavos (todos reduzindo a 8)', () => {
+            const catalog = service.getPricingCatalog();
+            expect(catalog).toEqual([
+                expect.objectContaining({ id: client_1.BillingCycle.MONTHLY, amountCents: 1295 }),
+                expect.objectContaining({ id: client_1.BillingCycle.SEMIANNUAL, amountCents: 6290 }),
+                expect.objectContaining({ id: client_1.BillingCycle.ANNUAL, amountCents: 8990 }),
+            ]);
+            const digitalRoot = (n) => {
+                let sum = n;
+                while (sum > 9) {
+                    sum = String(sum)
+                        .split('')
+                        .reduce((acc, d) => acc + Number(d), 0);
+                }
+                return sum;
+            };
+            expect(digitalRoot(1295)).toBe(8);
+            expect(digitalRoot(6290)).toBe(8);
+            expect(digitalRoot(8990)).toBe(8);
+        });
+    });
+    describe('Feature flag PAYMENTS_ENABLED + Allowlist', () => {
+        it('habilita para todos quando PAYMENTS_ENABLED=true', () => {
+            configValues.PAYMENTS_ENABLED = 'true';
+            expect(service.isPaymentsEnabledForEmail('qualquer@email.com')).toBe(true);
+        });
+        it('quando PAYMENTS_ENABLED=false, habilita apenas para e-mails na allowlist', () => {
+            configValues.PAYMENTS_ENABLED = 'false';
+            expect(service.isPaymentsEnabledForEmail('comum@email.com')).toBe(false);
+            expect(service.isPaymentsEnabledForEmail('vip@aksurim.com')).toBe(true);
+        });
+    });
+    describe('Validação HMAC-SHA256 do Webhook (x-signature)', () => {
+        it('aceita assinatura HMAC-SHA256 válida e rejeita assinatura adulterada', () => {
+            const secret = 'test-webhook-secret-xyz';
+            const dataId = '99887766';
+            const xRequestId = 'req-abc-123';
+            const ts = '1704908010';
+            const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
+            const v1 = (0, node_crypto_1.createHmac)('sha256', secret).update(manifest).digest('hex');
+            const valid = service.validateWebhookSignature({
+                xSignature: `ts=${ts},v1=${v1}`,
+                xRequestId,
+                dataId,
+                secret,
+            });
+            expect(valid).toBe(true);
+            const invalid = service.validateWebhookSignature({
+                xSignature: `ts=${ts},v1=${'0'.repeat(64)}`,
+                xRequestId,
+                dataId,
+                secret,
+            });
+            expect(invalid).toBe(false);
+        });
+        it('lança UnauthorizedException no handleWebhook quando x-signature é inválida', async () => {
+            await expect(service.handleWebhook({
+                xSignature: 'ts=12345,v1=invalidhash',
+                xRequestId: 'req-1',
+                query: { 'data.id': '555', type: 'payment' },
+                body: { type: 'payment', data: { id: '555' } },
+            })).rejects.toThrow(common_1.UnauthorizedException);
+        });
+    });
+    describe('Idempotência do Webhook de Pagamento', () => {
+        it('não concede meses em duplicidade quando o mesmo pagamento aprovado chega 2x', async () => {
+            const secret = configValues.MP_WEBHOOK_SECRET;
+            const dataId = 'pay-100';
+            const xRequestId = 'req-idemp';
+            const ts = '1700000000';
+            const v1 = (0, node_crypto_1.createHmac)('sha256', secret)
+                .update(`id:${dataId};request-id:${xRequestId};ts:${ts};`)
+                .digest('hex');
+            jest.spyOn(global, 'fetch').mockResolvedValue({
+                ok: true,
+                json: async () => ({
+                    id: dataId,
+                    status: 'approved',
+                    external_reference: 'tx-1',
+                }),
+            });
+            prismaMock.$queryRaw.mockResolvedValueOnce([
+                {
+                    id: 'tx-1',
+                    familyAccountId: 'fam-1',
+                    userId: 'user-1',
+                    billingCycle: client_1.BillingCycle.ANNUAL,
+                    paymentMode: 'CHECKOUT_PRO',
+                    amountCents: 8990,
+                    status: 'PENDING',
+                    mpPaymentId: null,
+                    mpPreapprovalId: null,
+                    mpPreferenceId: 'pref-1',
+                    checkoutUrl: null,
+                    refundedAmountCents: null,
+                    refundedAt: null,
+                    approvedAt: null,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                },
+            ]);
+            const first = await service.handleWebhook({
+                xSignature: `ts=${ts},v1=${v1}`,
+                xRequestId,
+                query: { 'data.id': dataId, type: 'payment' },
+                body: {},
+            });
+            expect(first.processed).toBe(true);
+            expect(planServiceMock.grantPremium).toHaveBeenCalledTimes(1);
+            prismaMock.$queryRaw.mockResolvedValueOnce([
+                {
+                    id: 'tx-1',
+                    familyAccountId: 'fam-1',
+                    userId: 'user-1',
+                    billingCycle: client_1.BillingCycle.ANNUAL,
+                    paymentMode: 'CHECKOUT_PRO',
+                    amountCents: 8990,
+                    status: 'APPROVED',
+                    mpPaymentId: dataId,
+                    mpPreapprovalId: null,
+                    mpPreferenceId: 'pref-1',
+                    checkoutUrl: null,
+                    refundedAmountCents: null,
+                    refundedAt: null,
+                    approvedAt: new Date(),
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                },
+            ]);
+            const second = await service.handleWebhook({
+                xSignature: `ts=${ts},v1=${v1}`,
+                xRequestId,
+                query: { 'data.id': dataId, type: 'payment' },
+                body: {},
+            });
+            expect(second).toEqual({
+                received: true,
+                processed: true,
+                idempotent: true,
+            });
+            expect(planServiceMock.grantPremium).toHaveBeenCalledTimes(1);
+        });
+    });
+    describe('Reembolso Automático CDC (7 dias) e Cancelamento de Renovação', () => {
+        it('executa reembolso integral automático dentro de 7 dias da 1ª compra', async () => {
+            const twoDaysAgo = new Date(Date.now() - 2 * plan_constants_1.DAY_MS);
+            const txRow = {
+                id: 'tx-cdc-1',
+                familyAccountId: 'fam-1',
+                userId: 'user-1',
+                billingCycle: client_1.BillingCycle.MONTHLY,
+                paymentMode: 'PIX_ONCE',
+                amountCents: 1295,
+                status: 'APPROVED',
+                mpPaymentId: 'mp-pay-999',
+                mpPreapprovalId: null,
+                mpPreferenceId: 'pref-1',
+                checkoutUrl: null,
+                refundedAmountCents: null,
+                refundedAt: null,
+                approvedAt: twoDaysAgo,
+                createdAt: twoDaysAgo,
+                updatedAt: twoDaysAgo,
+            };
+            prismaMock.$queryRaw
+                .mockResolvedValueOnce([txRow])
+                .mockResolvedValueOnce([txRow]);
+            const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue({
+                ok: true,
+                json: async () => ({ id: 'refund-1' }),
+            });
+            const res = await service.requestCdcRefund('fam-1', {
+                userId: 'user-1',
+                email: 'joao@aksurim.com',
+                role: client_1.Role.ADMIN,
+                familyAccountId: 'fam-1',
+                isGlobalAdmin: false,
+            });
+            expect(res.refunded).toBe(true);
+            expect(planServiceMock.revokePremium).toHaveBeenCalledWith('fam-1');
+            expect(fetchSpy).toHaveBeenCalledWith('https://api.mercadopago.com/v1/payments/mp-pay-999/refunds', expect.objectContaining({ method: 'POST' }));
+        });
+        it('bloqueia reembolso automático após 7 dias corridos', async () => {
+            const tenDaysAgo = new Date(Date.now() - 10 * plan_constants_1.DAY_MS);
+            prismaMock.$queryRaw.mockResolvedValueOnce([
+                {
+                    id: 'tx-old',
+                    familyAccountId: 'fam-1',
+                    userId: 'user-1',
+                    billingCycle: client_1.BillingCycle.MONTHLY,
+                    paymentMode: 'PIX_ONCE',
+                    amountCents: 1295,
+                    status: 'APPROVED',
+                    mpPaymentId: 'mp-pay-old',
+                    mpPreapprovalId: null,
+                    mpPreferenceId: 'pref-1',
+                    checkoutUrl: null,
+                    refundedAmountCents: null,
+                    refundedAt: null,
+                    approvedAt: tenDaysAgo,
+                    createdAt: tenDaysAgo,
+                    updatedAt: tenDaysAgo,
+                },
+            ]);
+            await expect(service.requestCdcRefund('fam-1', {
+                userId: 'user-1',
+                email: 'joao@aksurim.com',
+                role: client_1.Role.ADMIN,
+                familyAccountId: 'fam-1',
+                isGlobalAdmin: false,
+            })).rejects.toThrow(common_1.BadRequestException);
+        });
+        it('bloqueia tentativa de membro secundário (MEMBER) contratar ou cancelar plano', async () => {
+            await expect(service.createCheckout('fam-1', {
+                userId: 'user-2',
+                email: 'membro@aksurim.com',
+                role: client_1.Role.MEMBER,
+                familyAccountId: 'fam-1',
+                isGlobalAdmin: false,
+            }, {
+                billingCycle: client_1.BillingCycle.MONTHLY,
+                paymentMode: 'CARD_RECURRING',
+                acceptedTerms: true,
+            })).rejects.toThrow(common_1.ForbiddenException);
+        });
+    });
+});
+//# sourceMappingURL=plan-payment.service.spec.js.map

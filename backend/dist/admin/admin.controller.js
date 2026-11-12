@@ -19,10 +19,13 @@ const global_admin_guard_1 = require("../common/guards/global-admin.guard");
 const admin_service_1 = require("./admin.service");
 const lead_export_service_1 = require("./lead-export.service");
 const update_family_plan_dto_1 = require("./dto/update-family-plan.dto");
+const admin_refund_dto_1 = require("../plan/dto/admin-refund.dto");
+const plan_payment_service_1 = require("../plan/plan-payment.service");
 let AdminController = class AdminController {
-    constructor(adminService, leadExportService) {
+    constructor(adminService, leadExportService, planPaymentService) {
         this.adminService = adminService;
         this.leadExportService = leadExportService;
+        this.planPaymentService = planPaymentService;
     }
     getMetrics() {
         return this.adminService.getGlobalMetrics();
@@ -32,6 +35,17 @@ let AdminController = class AdminController {
     }
     updateFamilyPlan(id, dto) {
         return this.adminService.updateFamilyPlan(id, dto);
+    }
+    async getTransactions() {
+        if (!this.planPaymentService)
+            return [];
+        return this.planPaymentService.adminListTransactions();
+    }
+    async refundTransaction(id, dto) {
+        if (!this.planPaymentService) {
+            throw new Error('PlanPaymentService indisponível.');
+        }
+        return this.planPaymentService.adminRefundTransaction(id, dto);
     }
     async exportLeads(format, res) {
         const normalized = format === 'csv' ? 'csv' : 'pdf';
@@ -65,6 +79,20 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "updateFamilyPlan", null);
 __decorate([
+    (0, common_1.Get)('transactions'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getTransactions", null);
+__decorate([
+    (0, common_1.Post)('transactions/:id/refund'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, admin_refund_dto_1.AdminRefundDto]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "refundTransaction", null);
+__decorate([
     (0, common_1.Get)('leads/export'),
     __param(0, (0, common_1.Query)('format')),
     __param(1, (0, common_1.Res)()),
@@ -77,6 +105,7 @@ exports.AdminController = AdminController = __decorate([
     (0, global_admin_decorator_1.GlobalAdminOnly)(),
     (0, common_1.UseGuards)(global_admin_guard_1.GlobalAdminGuard),
     __metadata("design:paramtypes", [admin_service_1.AdminService,
-        lead_export_service_1.LeadExportService])
+        lead_export_service_1.LeadExportService,
+        plan_payment_service_1.PlanPaymentService])
 ], AdminController);
 //# sourceMappingURL=admin.controller.js.map

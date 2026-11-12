@@ -1,11 +1,8 @@
 /**
- * plan.constants.ts — Constantes e tipos do modelo Freemium (v1.2).
+ * plan.constants.ts — Constantes e tipos do modelo Freemium (v1.2) e Pagamentos (v1.3).
  *
- * Fonte única de verdade para nomes de recursos Premium, estados de plano e
- * valores padrão. Os valores numéricos podem ser sobrescritos via .env:
- *  - TRIAL_DAYS            (padrão 15)
- *  - PLAN_GRACE_DAYS       (padrão 3)
- *  - FREE_MAX_CATEGORIES   (padrão 5)
+ * Fonte única de verdade para nomes de recursos Premium, estados de plano,
+ * valores oficiais em centavos (§8.2) e regras de reembolso CDC.
  */
 
 /** Estado efetivo do plano — CALCULADO a partir das datas da FamilyAccount. */
@@ -48,3 +45,41 @@ export const BILLING_CYCLE_MONTHS = {
   SEMIANNUAL: 6,
   ANNUAL: 12,
 } as const;
+
+/**
+ * Tabela oficial de preços em CENTAVOS (Regra §8.2 — inteiros).
+ * Todos os valores possuem redução numerológica pitagórica = 8 (Prosperidade):
+ * - Mensal:    R$ 12,95 -> 1295 centavos (1+2+9+5 = 17 -> 8)
+ * - Semestral: R$ 62,90 -> 6290 centavos (6+2+9+0 = 17 -> 8)
+ * - Anual:     R$ 89,90 -> 8990 centavos (8+9+9+0 = 26 -> 8)
+ */
+export const PLAN_PRICES_CENTS = {
+  MONTHLY: 1295,
+  SEMIANNUAL: 6290,
+  ANNUAL: 8990,
+} as const;
+
+/** Valor mensal equivalente em centavos para exibição. */
+export const PLAN_EQUIVALENT_MONTHLY_CENTS = {
+  MONTHLY: 1295,
+  SEMIANNUAL: 1048,
+  ANNUAL: 749,
+} as const;
+
+/** Prazo legal de arrependimento (CDC Art. 49) em dias corridos. */
+export const CDC_REFUND_WINDOW_DAYS = 7;
+
+/** Versão vigente dos Termos de Uso, Política de Privacidade e Reembolso. */
+export const TERMS_CURRENT_VERSION = '1.0';
+
+/** Modalidades de pagamento aceitas no checkout. */
+export type CheckoutPaymentMode = 'CARD_RECURRING' | 'PIX_ONCE' | 'CHECKOUT_PRO';
+
+/** Status de uma transação/assinatura no banco de dados. */
+export type SubscriptionTxStatus =
+  | 'PENDING'
+  | 'APPROVED'
+  | 'AUTHORIZED'
+  | 'CANCELLED'
+  | 'REFUNDED'
+  | 'REJECTED';

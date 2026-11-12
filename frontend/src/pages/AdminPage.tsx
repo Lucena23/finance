@@ -31,14 +31,19 @@ import {
   Users,
   Wallet,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { useAdminLeads, useAdminMetrics } from '@/hooks/useAdmin';
 import { cn } from '@/lib/cn';
-import type { AdminLead, LeadExportFormat } from '@/lib/api';
+import {
+  adminApi,
+  type AdminLead,
+  type AdminTransactionView,
+  type LeadExportFormat,
+} from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 /**
@@ -726,6 +731,164 @@ function LeadsSection(): JSX.Element {
 }
 
 /**
+ * Seção de Transações e Estornos (Mercado Pago) para o Admin Global.
+ */
+function TransactionsSection(): JSX.Element {
+  const [txs, setTxs] = useState<AdminTransactionView[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [refundingId, setRefundingId] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  const loadTxs = async (): Promise<void> => {
+    setLoading(true);
+    try {
+      const data = await adminApi.transactions();
+      setTxs(data);
+    } catch {
+      // ignora silenciosamente se vazio
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadTxs();
+  }, []);
+
+  const handleRefund = async (tx: AdminTransactionView): Promise<void> => {
+    const customReais = window.prompt(
+      `Estornar pagamento da família "${tx.familyName}" (${formatCurrency(
+        tx.amountCents,
+      )}).\n\nDeixe em branco para ESTORNO TOTAL ou digite o valor parcial em reais (ex: 6,99):`,
+      '',
+    );
+    if (customReais === null) return;
+
+    let amountCents: number | undefined;
+    const trimmed = customReais.trim().replace(',', '.');
+    if (trimmed !== '') {
+      const parsed = Math.round(Number(trimmed) * 100);
+      if (!Number.isFinite(parsed) || parsed <= 0 || parsed > tx.amountCents) {
+        setFeedback('Valor parcial inválido.');
+        return;
+      }
+      amountCents = parsed;
+    }
+
+    setRefundingId(tx.id);
+    setFeedback(null);
+    try {
+      const res = await adminApi.refundTransaction(tx.id, { amountCents });
+      setFeedback(
+        `Estorno de ${formatCurrency(res.refundedAmountCents)} realizado com sucesso para ${tx.familyName}.`,
+      );
+      await loadTxs();
+    } catch (err) {
+      setFeedback(
+        err instanceof Error ? err.message : 'Falha ao estornar no Mercado Pago.',
+      );
+    } finally {
+      setRefundingId(null);
+    }
+  };
+
+  return (
+    <Card data-testid="admin-transactions">
+      <CardHeader className="flex flex-row items-center justify-between pb-3">
+        <div className="space-y-1">
+          <CardTitle className="text-base">
+            Transações e Estornos (Mercado Pago)
+          </CardTitle>
+          <p className="text-muted-foreground text-xs">
+            Histórico de pagamentos de assinaturas com estorno total ou parcial em 1 clique.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => void loadTxs()}
+          disabled={loading}
+        >
+          <RefreshCw aria-hidden="true" className="h-4 w-4" />
+          Atualizar
+        </Button>
+      </CardHeader>
+      <CardContent className="p-0">
+        {feedback && (
+          <div className="mx-6 mb-3 rounded-md border border-amber-400/40 bg-amber-500/15 px-3 py-2 text-xs text-amber-100">
+            {feedback}
+          </div>
+        )}
+        {txs.length === 0 ? (
+          <div className="text-muted-foreground p-6 text-center text-xs">
+            Nenhuma transação registrada no Mercado Pago até o momento.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[680px] text-left text-xs">
+              <thead className="bg-muted/50 text-muted-foreground uppercase">
+                <tr>
+                  <th className="px-4 py-2 font-medium">Data</th>
+                  <th className="px-4 py-2 font-medium">Família / Titular</th>
+                  <th className="px-4 py-2 font-medium">Plano / Modalidade</th>
+                  <th className="px-4 py-2 font-medium">Valor</th>
+                  <th className="px-4 py-2 font-medium">Status</th>
+                  <th className="px-4 py-2 font-medium">Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {txs.map((tx) => (
+                  <tr key={tx.id} className="border-t border-border/60">
+                    <td className="px-4 py-2.5 tabular-nums">
+                      {formatDate(tx.createdAt)}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <div className="font-semibold text-foreground">
+                        {tx.familyName}
+                      </div>
+                      <div className="text-muted-foreground">{tx.userEmail}</div>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      {tx.billingCycle} · {tx.paymentMode}
+                    </td>
+                    <td className="px-4 py-2.5 font-semibold tabular-nums">
+                      {formatCurrency(tx.amountCents)}
+                      {tx.refundedAmountCents
+                        ? ` (Estornado: ${formatCurrency(tx.refundedAmountCents)})`
+                        : ''}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-bold">
+                        {tx.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      {tx.status === 'APPROVED' && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={refundingId === tx.id}
+                          onClick={() => void handleRefund(tx)}
+                          className="h-7 border-rose-500/40 px-2.5 text-[11px] text-rose-300 hover:bg-rose-500/15"
+                        >
+                          {refundingId === tx.id ? 'Estornando...' : 'Estornar'}
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
  * Página do Painel Aksurim (rota "/admin"). Exclusiva do Admin Global (RN-15).
  */
 export function AdminPage(): JSX.Element {
@@ -746,6 +909,7 @@ export function AdminPage(): JSX.Element {
       </header>
 
       <MetricsSection />
+      <TransactionsSection />
       <LeadsSection />
     </section>
   );

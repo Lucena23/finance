@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Query,
   Res,
   UseGuards,
@@ -22,18 +23,15 @@ import {
   LeadExportService,
 } from './lead-export.service';
 import { UpdateFamilyPlanDto } from './dto/update-family-plan.dto';
+import { AdminRefundDto } from '../plan/dto/admin-refund.dto';
+import {
+  AdminTransactionView,
+  PlanPaymentService,
+} from '../plan/plan-payment.service';
 import { PlanInfo } from '../plan/plan.service';
 
 /**
  * AdminController — Painel Aksurim (Admin Global). RN-15 / TAREFA 25 / 27.
- *
- * Todas as rotas são marcadas com @GlobalAdminOnly(), o que:
- *  1. Habilita o bypass condicional do FamilyScopeInterceptor (TAREFA 24);
- *  2. Ativa o GlobalAdminGuard, que exige `isGlobalAdmin === true`.
- *
- * Prefixo global da API: /api/v1 → rotas finais em /api/v1/admin/*.
- *
- * IMPORTANTE (RN-15): Role.ADMIN (chefe de família) NÃO tem acesso aqui.
  */
 @Controller('admin')
 @GlobalAdminOnly()
@@ -42,30 +40,19 @@ export class AdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly leadExportService: LeadExportService,
+    private readonly planPaymentService?: PlanPaymentService,
   ) {}
 
-  /**
-   * GET /api/v1/admin/metrics
-   * Métricas globais: total de clientes, ativos por período e volumes.
-   */
   @Get('metrics')
   getMetrics(): Promise<AdminGlobalMetrics> {
     return this.adminService.getGlobalMetrics();
   }
 
-  /**
-   * GET /api/v1/admin/leads
-   * Lista de leads comerciais (CPF sempre mascarado) para exportação.
-   */
   @Get('leads')
   getLeads(): Promise<AdminLead[]> {
     return this.adminService.getLeads();
   }
 
-  /**
-   * PATCH /api/v1/admin/families/:id/plan
-   * Ativa, estende ou revoga o plano Premium de uma Conta Familiar.
-   */
   @Patch('families/:id/plan')
   updateFamilyPlan(
     @Param('id') id: string,
@@ -75,13 +62,30 @@ export class AdminController {
   }
 
   /**
-   * GET /api/v1/admin/leads/export?format=pdf|csv
-   * Exporta os leads comerciais em PDF (apresentação a parceiros de crédito)
-   * ou CSV (planilha). TAREFA 27 / RN-15.
-   *
-   * Campos obrigatórios: Nome, E-mail, CPF mascarado, Data e Status.
-   * O CPF é SEMPRE mascarado (***.***.XXX-XX) — LGPD / §5.5.
+   * GET /api/v1/admin/transactions
+   * Histórico global de transações/assinaturas do Mercado Pago.
    */
+  @Get('transactions')
+  async getTransactions(): Promise<AdminTransactionView[]> {
+    if (!this.planPaymentService) return [];
+    return this.planPaymentService.adminListTransactions();
+  }
+
+  /**
+   * POST /api/v1/admin/transactions/:id/refund
+   * Dispara estorno Total ou Parcial de uma transação no Mercado Pago.
+   */
+  @Post('transactions/:id/refund')
+  async refundTransaction(
+    @Param('id') id: string,
+    @Body() dto: AdminRefundDto,
+  ): Promise<{ refunded: boolean; refundedAmountCents: number; plan: PlanInfo }> {
+    if (!this.planPaymentService) {
+      throw new Error('PlanPaymentService indisponível.');
+    }
+    return this.planPaymentService.adminRefundTransaction(id, dto);
+  }
+
   @Get('leads/export')
   async exportLeads(
     @Query('format') format: string | undefined,

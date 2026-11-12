@@ -237,10 +237,19 @@ export function LandingPage(): JSX.Element {
             <img src="/logo-icon.png" alt="Aksurim Controle" className="h-6 w-6 object-contain grayscale" />
             <span className="font-semibold text-slate-300">Aksurim Controle</span>
           </div>
-          <div className="text-sm text-slate-500 text-center md:text-right">
-            &copy; 2024 - {new Date().getFullYear()} <a href="https://aksurim.com" target="_blank" rel="noopener noreferrer" className="hover:text-aksurim-highlight transition-colors font-semibold">Aksurim Software</a>.<br className="md:hidden" />
-            <span className="hidden md:inline"> • </span>
-            Projetado e desenvolvido com excelência.
+          <div className="text-sm text-slate-500 text-center md:text-right space-y-1">
+            <div>
+              &copy; 2024 - {new Date().getFullYear()} <a href="https://aksurim.com" target="_blank" rel="noopener noreferrer" className="hover:text-aksurim-highlight transition-colors font-semibold">Aksurim Software</a>.<br className="md:hidden" />
+              <span className="hidden md:inline"> • </span>
+              Projetado e desenvolvido com excelência.
+            </div>
+            <div className="text-xs text-slate-500/80">
+              <Link to="/termos" className="hover:text-slate-300 transition-colors">Termos de Uso</Link>
+              {' · '}
+              <Link to="/privacidade" className="hover:text-slate-300 transition-colors">Privacidade (LGPD)</Link>
+              {' · '}
+              <Link to="/reembolso" className="hover:text-slate-300 transition-colors">Cancelamento e Reembolso</Link>
+            </div>
           </div>
         </div>
       </footer>

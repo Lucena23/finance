@@ -337,6 +337,31 @@ export function RegisterPage(): JSX.Element {
               ) : null}
             </div>
 
+            <p className="text-[11px] leading-snug text-muted-foreground text-center pt-1">
+              Ao criar sua conta, você concorda com nossos{' '}
+              <Link
+                to="/termos"
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                Termos de Uso
+              </Link>
+              ,{' '}
+              <Link
+                to="/privacidade"
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                Política de Privacidade (LGPD)
+              </Link>{' '}
+              e{' '}
+              <Link
+                to="/reembolso"
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                Política de Reembolso
+              </Link>
+              .
+            </p>
+
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />

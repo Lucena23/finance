@@ -9,6 +9,12 @@ const helmet_1 = __importDefault(require("helmet"));
 const app_module_1 = require("./app.module");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
+    app.use('/api/payments/webhook', (req, _res, next) => {
+        const qIdx = req.originalUrl.indexOf('?');
+        const qs = qIdx >= 0 ? req.originalUrl.slice(qIdx) : '';
+        req.url = `/api/v1/plan/webhook${qs}`;
+        next();
+    });
     app.setGlobalPrefix('api/v1');
     app.use((0, helmet_1.default)());
     const corsOrigins = process.env.CORS_ORIGIN

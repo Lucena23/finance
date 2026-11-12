@@ -64,7 +64,7 @@ let PlanReminderCron = PlanReminderCron_1 = class PlanReminderCron {
 <p>${isGrace
                         ? `Você está nos últimos <strong>${computed.daysLeft} dia(s) de tolerância</strong> do plano Premium da família <strong>${family.name}</strong>.`
                         : `Seu período de teste 👑 Premium da família <strong>${family.name}</strong> termina em <strong>${computed.daysLeft} dia(s)</strong>.`}</p>
-<p>Seus lançamentos permanecem salvos com total segurança. Assine o 👑 Premium por menos de R$ 0,33 ao dia para manter acesso a todos os meses, relatórios em PDF e membros da família ativos.</p>`,
+<p>Seus lançamentos permanecem salvos com total segurança. Assine o 👑 Premium por menos de R$ 0,25 ao dia para manter acesso a todos os meses, relatórios em PDF e membros da família ativos.</p>`,
                 })
                     .catch((err) => this.logger.warn(`Falha ao enviar lembrete para ${owner.email}: ${err}`));
                 sent++;

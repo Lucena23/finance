@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   AlertTriangle,
   Crown,
@@ -342,9 +343,24 @@ export function SettingsPage(): JSX.Element {
         </CardContent>
       </Card>
 
-      {/* Modal nativo Aksurim de confirmação de remoção de membro */}
-      <div className="pt-1 text-center text-xs text-muted-foreground/70">
-        Aksurim Controle <span className="font-mono font-semibold">v{APP_VERSION}</span>
+      {/* Rodapé discreto com versão e acesso aos documentos legais */}
+      <div className="pt-1 text-center text-xs text-muted-foreground/70 space-y-1">
+        <div>
+          Aksurim Controle <span className="font-mono font-semibold">v{APP_VERSION}</span>
+        </div>
+        <div>
+          <Link to="/termos" className="underline-offset-4 hover:underline">
+            Termos de Uso
+          </Link>
+          {' · '}
+          <Link to="/privacidade" className="underline-offset-4 hover:underline">
+            Privacidade (LGPD)
+          </Link>
+          {' · '}
+          <Link to="/reembolso" className="underline-offset-4 hover:underline">
+            Cancelamento e Reembolso
+          </Link>
+        </div>
       </div>
       <Dialog
         open={Boolean(memberToRemove)}

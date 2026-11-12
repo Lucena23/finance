@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BILLING_CYCLE_MONTHS = exports.DAY_MS = exports.PLAN_TIMEZONE = exports.FREE_MONTH_WINDOW = exports.DEFAULT_FREE_MAX_CATEGORIES = exports.DEFAULT_GRACE_DAYS = exports.DEFAULT_TRIAL_DAYS = exports.PLAN_REQUIRED_CODE = exports.PremiumFeature = void 0;
+exports.TERMS_CURRENT_VERSION = exports.CDC_REFUND_WINDOW_DAYS = exports.PLAN_EQUIVALENT_MONTHLY_CENTS = exports.PLAN_PRICES_CENTS = exports.BILLING_CYCLE_MONTHS = exports.DAY_MS = exports.PLAN_TIMEZONE = exports.FREE_MONTH_WINDOW = exports.DEFAULT_FREE_MAX_CATEGORIES = exports.DEFAULT_GRACE_DAYS = exports.DEFAULT_TRIAL_DAYS = exports.PLAN_REQUIRED_CODE = exports.PremiumFeature = void 0;
 var PremiumFeature;
 (function (PremiumFeature) {
     PremiumFeature["MONTH_HISTORY"] = "MONTH_HISTORY";
@@ -22,4 +22,16 @@ exports.BILLING_CYCLE_MONTHS = {
     SEMIANNUAL: 6,
     ANNUAL: 12,
 };
+exports.PLAN_PRICES_CENTS = {
+    MONTHLY: 1295,
+    SEMIANNUAL: 6290,
+    ANNUAL: 8990,
+};
+exports.PLAN_EQUIVALENT_MONTHLY_CENTS = {
+    MONTHLY: 1295,
+    SEMIANNUAL: 1048,
+    ANNUAL: 749,
+};
+exports.CDC_REFUND_WINDOW_DAYS = 7;
+exports.TERMS_CURRENT_VERSION = '1.0';
 //# sourceMappingURL=plan.constants.js.map

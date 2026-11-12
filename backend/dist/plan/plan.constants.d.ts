@@ -19,3 +19,17 @@ export declare const BILLING_CYCLE_MONTHS: {
     readonly SEMIANNUAL: 6;
     readonly ANNUAL: 12;
 };
+export declare const PLAN_PRICES_CENTS: {
+    readonly MONTHLY: 1295;
+    readonly SEMIANNUAL: 6290;
+    readonly ANNUAL: 8990;
+};
+export declare const PLAN_EQUIVALENT_MONTHLY_CENTS: {
+    readonly MONTHLY: 1295;
+    readonly SEMIANNUAL: 1048;
+    readonly ANNUAL: 749;
+};
+export declare const CDC_REFUND_WINDOW_DAYS = 7;
+export declare const TERMS_CURRENT_VERSION = "1.0";
+export type CheckoutPaymentMode = 'CARD_RECURRING' | 'PIX_ONCE' | 'CHECKOUT_PRO';
+export type SubscriptionTxStatus = 'PENDING' | 'APPROVED' | 'AUTHORIZED' | 'CANCELLED' | 'REFUNDED' | 'REJECTED';

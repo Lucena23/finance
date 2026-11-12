@@ -329,6 +329,78 @@ export interface UpdateFamilyPlanPayload {
   trialDays?: number;
 }
 
+export type CheckoutPaymentMode = 'CARD_RECURRING' | 'PIX_ONCE' | 'CHECKOUT_PRO';
+
+export type SubscriptionTxStatus =
+  | 'PENDING'
+  | 'APPROVED'
+  | 'AUTHORIZED'
+  | 'CANCELLED'
+  | 'REFUNDED'
+  | 'REJECTED';
+
+export interface PlanPricingItem {
+  id: BillingCycle;
+  name: string;
+  amountCents: number;
+  equivalentMonthlyCents: number;
+  discountPercent: number;
+  popular: boolean;
+}
+
+export interface FamilySubscriptionSummary {
+  paymentsEnabled: boolean;
+  termsVersion: string;
+  pricing: PlanPricingItem[];
+  hasActiveRecurring: boolean;
+  activePreapprovalId: string | null;
+  canCancelRecurring: boolean;
+  canRequestCdcRefund: boolean;
+  cdcRefundDeadline: string | null;
+  refundableTransactionId: string | null;
+  refundableAmountCents: number | null;
+  latestTransactions: Array<{
+    id: string;
+    billingCycle: BillingCycle;
+    paymentMode: CheckoutPaymentMode;
+    amountCents: number;
+    status: SubscriptionTxStatus;
+    refundedAmountCents: number | null;
+    approvedAt: string | null;
+    createdAt: string;
+  }>;
+}
+
+export interface CheckoutSessionResult {
+  transactionId: string;
+  checkoutUrl: string;
+  billingCycle: BillingCycle;
+  paymentMode: CheckoutPaymentMode;
+  amountCents: number;
+}
+
+export interface AdminTransactionView {
+  id: string;
+  familyAccountId: string;
+  userId: string;
+  billingCycle: BillingCycle;
+  paymentMode: CheckoutPaymentMode;
+  amountCents: number;
+  status: SubscriptionTxStatus;
+  mpPaymentId: string | null;
+  mpPreapprovalId: string | null;
+  mpPreferenceId: string | null;
+  checkoutUrl: string | null;
+  refundedAmountCents: number | null;
+  refundedAt: string | null;
+  approvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  familyName: string;
+  userEmail: string;
+  userName: string;
+}
+
 /**
  * Erro normalizado da API — expõe status HTTP, código e recurso Premium bloqueado.
  */
@@ -668,6 +740,38 @@ export const planApi = {
     year: number;
   }): Promise<LockedMonthSummary> =>
     get<LockedMonthSummary>('/plan/locked-summary', { params }),
+  subscriptionSummary: (): Promise<FamilySubscriptionSummary> =>
+    get<FamilySubscriptionSummary>('/plan/subscription'),
+  createCheckout: (payload: {
+    billingCycle: BillingCycle;
+    paymentMode: CheckoutPaymentMode;
+    acceptedTerms: boolean;
+  }): Promise<CheckoutSessionResult> =>
+    post<CheckoutSessionResult>('/plan/checkout', payload),
+  syncTransaction: (
+    id: string,
+  ): Promise<{ status: SubscriptionTxStatus; plan: PlanInfo }> =>
+    get<{ status: SubscriptionTxStatus; plan: PlanInfo }>(
+      `/plan/transactions/${id}/sync`,
+    ),
+  cancelSubscription: (): Promise<{
+    cancelled: boolean;
+    message: string;
+    plan: PlanInfo;
+  }> =>
+    post<{ cancelled: boolean; message: string; plan: PlanInfo }>(
+      '/plan/subscription/cancel',
+      {},
+    ),
+  requestCdcRefund: (): Promise<{
+    refunded: boolean;
+    message: string;
+    plan: PlanInfo;
+  }> =>
+    post<{ refunded: boolean; message: string; plan: PlanInfo }>(
+      '/plan/subscription/refund',
+      {},
+    ),
 };
 
 export const reportsApi = {
@@ -695,6 +799,20 @@ export const adminApi = {
     payload: UpdateFamilyPlanPayload,
   ): Promise<PlanInfo> =>
     patch<PlanInfo>(`/admin/families/${familyAccountId}/plan`, payload),
+
+  /** Lista transações de assinatura do Mercado Pago (Admin Global). */
+  transactions: (): Promise<AdminTransactionView[]> =>
+    get<AdminTransactionView[]>('/admin/transactions'),
+
+  /** Executa estorno Total ou Parcial no Mercado Pago (Admin Global). */
+  refundTransaction: (
+    transactionId: string,
+    payload?: { amountCents?: number; reason?: string },
+  ): Promise<{ refunded: boolean; refundedAmountCents: number; plan: PlanInfo }> =>
+    post<{ refunded: boolean; refundedAmountCents: number; plan: PlanInfo }>(
+      `/admin/transactions/${transactionId}/refund`,
+      payload ?? {},
+    ),
 
   /**
    * Exporta os leads em PDF ou CSV (TAREFA 27).
