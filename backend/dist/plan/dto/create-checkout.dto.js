@@ -70,4 +70,16 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], CreateCheckoutDto.prototype, "payerCpf", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(120),
+    __metadata("design:type", String)
+], CreateCheckoutDto.prototype, "cardholderName", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(200),
+    __metadata("design:type", String)
+], CreateCheckoutDto.prototype, "deviceSessionId", void 0);
 //# sourceMappingURL=create-checkout.dto.js.map

@@ -762,6 +762,8 @@ export const planApi = {
     issuerId?: string;
     installments?: number;
     payerCpf?: string;
+    cardholderName?: string;
+    deviceSessionId?: string;
   }): Promise<CheckoutSessionResult> =>
     post<CheckoutSessionResult>('/plan/checkout', payload),
   syncTransaction: (

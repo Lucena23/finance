@@ -268,6 +268,10 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
                 throw new common_1.BadRequestException('Informe um CPF válido (11 dígitos) do titular do cartão.');
             }
             const installments = Math.min(Math.max(1, Number(dto.installments ?? 1)), maxInstallments);
+            const rawHolderName = (dto.cardholderName ?? '').trim() || dbUser.name.trim();
+            const holderParts = rawHolderName.split(/\s+/);
+            const holderFirstName = holderParts[0] || firstName;
+            const holderLastName = holderParts.slice(1).join(' ') || lastName;
             const payment = await this.createMpDirectPayment(accessToken, {
                 transaction_amount: amountReais,
                 token: dto.cardToken.trim(),
@@ -279,18 +283,33 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
                 ...(dto.issuerId ? { issuer_id: dto.issuerId.trim() } : {}),
                 external_reference: txId,
                 statement_descriptor: 'AKSURIM',
-                binary_mode: true,
                 notification_url: `${backendUrl}/api/payments/webhook`,
                 payer: {
                     email: dbUser.email,
-                    first_name: firstName,
-                    last_name: lastName,
+                    first_name: holderFirstName,
+                    last_name: holderLastName,
                     identification: {
                         type: 'CPF',
                         number: cleanCpf,
                     },
                 },
-            }, txId);
+                additional_info: {
+                    items: [
+                        {
+                            id: `AKSURIM-${dto.billingCycle}`,
+                            title: `Aksurim Controle Premium — Plano ${cycleLabel}`,
+                            description: `Assinatura Aksurim Controle Premium (${cycleLabel})`,
+                            category_id: 'services',
+                            quantity: 1,
+                            unit_price: amountReais,
+                        },
+                    ],
+                    payer: {
+                        first_name: holderFirstName,
+                        last_name: holderLastName,
+                    },
+                },
+            }, txId, dto.deviceSessionId?.trim());
             const paidCents = Math.round(Number(payment.transaction_amount ?? amountReais) * 100);
             if (payment.status === 'approved' && paidCents >= amountCents) {
                 await this.markTransactionApproved(txId, String(payment.id));
@@ -311,6 +330,7 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
                 };
             }
             if (payment.status === 'rejected' || payment.status === 'cancelled') {
+                this.logger.warn(`Cartão recusado no Mercado Pago (tx=${txId}, paymentId=${payment.id}, status=${payment.status}, status_detail=${payment.status_detail ?? 'unknown'})`);
                 await this.updateTransactionStatus(txId, 'REJECTED', String(payment.id));
                 throw new common_1.BadRequestException(this.mapCardRejectionMessage(payment.status_detail));
             }
@@ -791,13 +811,16 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
         return { received: true, processed: false };
     }
     async enforceCheckoutRateLimit(familyAccountId, paymentMode) {
+        if (paymentMode !== 'CARD_DIRECT')
+            return;
         try {
             const txs = await this.findTransactionsByFamily(familyAccountId);
             const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
-            const recentAttempts = txs.filter((t) => t.createdAt.getTime() >= tenMinutesAgo);
-            const maxAllowed = paymentMode === 'CARD_DIRECT' ? 5 : 10;
-            if (recentAttempts.length >= maxAllowed) {
-                throw new common_1.BadRequestException('Muitas tentativas de pagamento em sequência. Por segurança, aguarde alguns minutos antes de tentar novamente.');
+            const recentRejectedCards = txs.filter((t) => t.paymentMode === 'CARD_DIRECT' &&
+                t.status === 'REJECTED' &&
+                t.createdAt.getTime() >= tenMinutesAgo);
+            if (recentRejectedCards.length >= 8) {
+                throw new common_1.BadRequestException('Muitas tentativas de cartão recusadas em sequência. Por segurança, aguarde alguns minutos ou utilize o Pix.');
             }
         }
         catch (err) {
@@ -819,18 +842,19 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
                 return 'O banco emissor solicitou autorização prévia para esta compra. Autorize no app do seu banco ou utilize o Pix.';
             case 'cc_rejected_high_risk':
             case 'cc_rejected_blacklist':
-                return 'Transação recusada por segurança pelo emissor. Tente outro cartão ou pague via Pix com liberação imediata.';
+                return 'Transação não autorizada pelo sistema de segurança bancário (Nota: o Mercado Pago não permite usar um cartão do próprio titular da conta recebedora). Tente outro cartão ou utilize o Pix.';
             default:
-                return 'Pagamento não autorizado pela operadora do cartão. Verifique os dados ou utilize o Pix.';
+                return `Pagamento não autorizado pela operadora (${statusDetail ?? 'recusado'}). Verifique os dados do titular ou utilize o Pix.`;
         }
     }
-    async createMpDirectPayment(accessToken, payload, idempotencyKey) {
+    async createMpDirectPayment(accessToken, payload, idempotencyKey, deviceSessionId) {
         const res = await fetch('https://api.mercadopago.com/v1/payments', {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 'Content-Type': 'application/json',
                 'X-Idempotency-Key': idempotencyKey,
+                ...(deviceSessionId ? { 'X-meli-session-id': deviceSessionId } : {}),
             },
             body: JSON.stringify(payload),
         });

@@ -201,6 +201,17 @@ export function PlansPage(): JSX.Element {
 
   useEffect(() => {
     void loadSubscriptionSummary();
+
+    // Carrega o script antifraude oficial do Mercado Pago (Device Fingerprint) se ainda não estiver na página
+    const existingScript = document.getElementById('mp-security-device-script');
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.id = 'mp-security-device-script';
+      script.src = 'https://www.mercadopago.com/v2/security.js';
+      script.setAttribute('view', 'checkout');
+      script.async = true;
+      document.body.appendChild(script);
+    }
   }, []);
 
   // Polling automático a cada 4 segundos enquanto o QR Code Pix estiver aberto no modal
@@ -291,7 +302,7 @@ export function PlansPage(): JSX.Element {
     setPixSession(null);
     setPixCopied(false);
     setCardNumber('');
-    setCardholderName(user?.name ? user.name.toUpperCase() : '');
+    setCardholderName('');
     setCardExpiry('');
     setCardCvv('');
     setCardInstallments(1);
@@ -479,6 +490,41 @@ export function PlansPage(): JSX.Element {
       }
 
       const brand = detectCardBrand(digits);
+      let resolvedPaymentMethodId = brand.id || undefined;
+      let resolvedIssuerId: string | undefined;
+
+      // Consulta oficial de BIN no Mercado Pago para obter a bandeira exata e o banco emissor (issuer_id)
+      try {
+        const bin = digits.slice(0, 6);
+        const amountReais = (selectedTier.amountCents / 100).toFixed(2);
+        const binRes = await fetch(
+          `https://api.mercadopago.com/v1/payment_methods/installments?public_key=${encodeURIComponent(
+            publicKey,
+          )}&amount=${amountReais}&bin=${bin}`,
+        );
+        if (binRes.ok) {
+          const binData = (await binRes.json()) as Array<{
+            payment_method_id?: string;
+            issuer?: { id?: string | number };
+          }>;
+          const firstMatch = binData?.[0];
+          if (firstMatch?.payment_method_id) {
+            resolvedPaymentMethodId = firstMatch.payment_method_id;
+          }
+          if (
+            firstMatch?.issuer?.id !== undefined &&
+            firstMatch?.issuer?.id !== null
+          ) {
+            resolvedIssuerId = String(firstMatch.issuer.id);
+          }
+        }
+      } catch {
+        // segue com a bandeira detectada localmente caso a consulta de BIN falhe
+      }
+
+      const mpDeviceSessionId = (
+        window as unknown as { MP_DEVICE_SESSION_ID?: string }
+      ).MP_DEVICE_SESSION_ID;
 
       // 2. Envia apenas o token descartável de uso único para o backend
       const session = await planApi.createCheckout({
@@ -486,9 +532,12 @@ export function PlansPage(): JSX.Element {
         paymentMode: 'CARD_DIRECT',
         acceptedTerms: true,
         cardToken: tokenData.id,
-        paymentMethodId: brand.id || undefined,
+        paymentMethodId: resolvedPaymentMethodId,
+        issuerId: resolvedIssuerId,
         installments: cardInstallments,
         payerCpf: cleanCpf,
+        cardholderName: cardholderName.trim(),
+        deviceSessionId: mpDeviceSessionId || undefined,
       });
 
       // Limpa imediatamente os dados sensíveis da memória do navegador

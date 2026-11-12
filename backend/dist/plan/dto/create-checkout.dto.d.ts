@@ -9,4 +9,6 @@ export declare class CreateCheckoutDto {
     issuerId?: string;
     installments?: number;
     payerCpf?: string;
+    cardholderName?: string;
+    deviceSessionId?: string;
 }

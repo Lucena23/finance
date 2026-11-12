@@ -8,6 +8,7 @@ import {
   IsString,
   Matches,
   Max,
+  MaxLength,
   Min,
 } from 'class-validator';
 
@@ -72,4 +73,16 @@ export class CreateCheckoutDto {
     message: 'CPF informado em formato inválido.',
   })
   payerCpf?: string;
+
+  /** Nome impresso no cartão (para alinhamento antifraude com o titular do cartão). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  cardholderName?: string;
+
+  /** Identificador de sessão antifraude do dispositivo (MP_DEVICE_SESSION_ID). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  deviceSessionId?: string;
 }
