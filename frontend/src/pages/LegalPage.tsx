@@ -40,7 +40,7 @@ export function LegalPage(): JSX.Element {
             Voltar
           </Button>
           <span className="text-xs text-muted-foreground">
-            Aksurim Software · Versão 1.0 (Vigência: Nov/2026)
+            Aksurim Software · Versão 1.3 (Vigência: Nov/2026)
           </span>
         </div>
 
@@ -132,16 +132,22 @@ export function LegalPage(): JSX.Element {
                     3.3. <strong>Plano Premium:</strong> Libera todos os meses passados e futuros, relatórios executivos em PDF/CSV, visão anual de 12 meses, categorias ilimitadas e adição de membros ativos:
                   </p>
                   <ul className="list-disc pl-5 space-y-1 text-xs sm:text-sm">
-                    <li><strong>Mensal:</strong> R$ 12,95/mês (renovação automática no cartão de crédito ou pagamento avulso por 30 dias via Pix);</li>
-                    <li><strong>Semestral:</strong> R$ 62,90 a cada 6 meses (pagamento único via Pix ou cartão — equivalente a R$ 10,48/mês);</li>
-                    <li><strong>Anual:</strong> R$ 89,90 a cada 12 meses (pagamento único via Pix ou cartão — equivalente a R$ 7,49/mês).</li>
+                    <li><strong>Mensal:</strong> R$ 12,95/mês (ciclo de 30 dias via Pix ou Cartão de Crédito);</li>
+                    <li><strong>Semestral:</strong> R$ 62,90 a cada 6 meses (pagamento via Pix ou Cartão de Crédito — equivalente a R$ 10,48/mês);</li>
+                    <li><strong>Anual:</strong> R$ 89,90 a cada 12 meses (pagamento via Pix ou Cartão de Crédito — equivalente a R$ 7,49/mês).</li>
                   </ul>
                 </section>
 
                 <section className="space-y-2">
-                  <h2 className="font-bold text-foreground">4. Processamento Seguro de Pagamentos</h2>
+                  <h2 className="font-bold text-foreground">4. Processamento Seguro de Pagamentos e Padrão PCI-DSS</h2>
                   <p>
-                    4.1. Os pagamentos são processados pelo <strong>Mercado Pago</strong>. A Aksurim Software não armazena números de cartão de crédito ou códigos de segurança (CVV) em seus servidores.
+                    4.1. As transações financeiras de assinatura são processadas em conformidade com o padrão internacional de segurança <strong>PCI-DSS Nível 1</strong>, tendo o <strong>Mercado Pago</strong> como instituição processadora homologada.
+                  </p>
+                  <p>
+                    4.2. <strong>Tokenização Criptográfica Ponta a Ponta:</strong> No pagamento via cartão de crédito, os dados sensíveis (número do cartão, validade e código de segurança CVV) são criptografados diretamente no dispositivo do Usuário via protocolo <em>TLS/SSL 256-bit</em> e transmitidos exclusivamente ao cofre seguro do processador de pagamentos, gerando um <em>token</em> descartável de uso único. A Aksurim Software jamais armazena, visualiza ou registra dados brutos de cartão em seus servidores.
+                  </p>
+                  <p>
+                    4.3. <strong>Integridade e Prevenção a Fraudes:</strong> Todas as operações contam com chaves exclusivas de idempotência (impedindo cobranças em duplicidade), validação criptográfica de notificações (<em>HMAC-SHA256</em>) e mecanismos automatizados de proteção contra uso indevido.
                   </p>
                 </section>
 
@@ -179,14 +185,14 @@ export function LegalPage(): JSX.Element {
                     <li><strong>Dados cadastrais (Nome, e-mail, WhatsApp e CPF):</strong> criação da conta, autenticação, prevenção a múltiplos testes gratuitos indevidos e emissão de cobranças (Art. 7º, V e IX da LGPD).</li>
                     <li><strong>Senha de acesso:</strong> armazenada exclusivamente como hash criptográfico irreversível (bcrypt).</li>
                     <li><strong>Dados financeiros organizacionais:</strong> despesas, categorias e baixas lançadas pelo grupo para execução do serviço contratado.</li>
-                    <li><strong>Dados de pagamento:</strong> identificadores da transação e status junto ao Mercado Pago. Dados de cartão são tratados exclusivamente pelo Mercado Pago.</li>
+                    <li><strong>Dados de pagamento (Arquitetura Zero-Knowledge PCI-DSS):</strong> a Aksurim Software armazena apenas o identificador da transação, o ciclo contratado e o status de compensação. Dados de cartão de crédito são tokenizados na origem e processados exclusivamente sob custódia certificada PCI-DSS do Mercado Pago.</li>
                   </ul>
                 </section>
 
                 <section className="space-y-2">
-                  <h2 className="font-bold text-foreground">3. Isolamento e Compartilhamento</h2>
+                  <h2 className="font-bold text-foreground">3. Segurança Técnica e Isolamento Multi-Tenant</h2>
                   <p>
-                    3.1. <strong>Não vendemos nem comercializamos dados pessoais.</strong> Os dados são estritamente isolados por conta familiar e compartilhados apenas com operadores essenciais ao serviço (Mercado Pago para pagamentos e infraestrutura de hospedagem/e-mail transacional).
+                    3.1. <strong>Não vendemos nem comercializamos dados pessoais.</strong> Os dados são estritamente isolados por conta familiar (<em>Zero-Trust Tenant Isolation</em>), protegidos por criptografia em trânsito, controles rígidos de sessão e compartilhados apenas com operadores essenciais à execução do serviço.
                   </p>
                 </section>
 
@@ -211,12 +217,12 @@ export function LegalPage(): JSX.Element {
                 </header>
 
                 <section className="space-y-2">
-                  <h2 className="font-bold text-foreground">1. Como Funciona a Renovação</h2>
+                  <h2 className="font-bold text-foreground">1. Modalidades de Contratação e Renovação</h2>
                   <p>
-                    1.1. <strong>Mensal no Cartão de Crédito (Renovação Automática):</strong> cobra R$ 12,95 mensalmente de forma automática. Enviamos aviso por e-mail 3 (três) dias antes de cada renovação. Não há fidelidade nem multa: você pode cancelar a renovação com 1 clique em <em>Planos</em> ou <em>Configurações</em>.
+                    1.1. Os planos <strong>Mensal (R$ 12,95)</strong>, <strong>Semestral (R$ 62,90)</strong> e <strong>Anual (R$ 89,90)</strong> podem ser contratados via Pix (com liberação instantânea) ou Cartão de Crédito diretamente no ambiente seguro da plataforma.
                   </p>
                   <p>
-                    1.2. <strong>Mensal via Pix (30 dias), Semestral (R$ 62,90) e Anual (R$ 89,90):</strong> são pagamentos únicos pelo período escolhido, sem débito automático subsequente.
+                    1.2. Caso haja assinatura com renovação automática ativa, o titular recebe aviso prévio por e-mail antes do vencimento e pode cancelar a renovação a qualquer momento com 1 clique em <em>Planos</em> ou <em>Configurações</em>, sem fidelidade e sem multa.
                   </p>
                 </section>
 
@@ -228,14 +234,14 @@ export function LegalPage(): JSX.Element {
                     2.1. Conforme o <strong>Art. 49 do Código de Defesa do Consumidor</strong>, você pode desistir da primeira contratação do Plano Premium em até <strong>7 (sete) dias corridos</strong> contados da confirmação do pagamento, recebendo <strong>100% do valor pago de volta</strong>.
                   </p>
                   <p>
-                    2.2. <strong>Solicitação em 1 clique no sistema:</strong> Dentro dos 7 dias corridos, basta acessar a página <em>Planos</em> ou <em>Configurações</em> e clicar em <strong>&ldquo;Cancelar e solicitar reembolso integral (7 dias)&rdquo;</strong>. O estorno é enviado imediatamente ao Mercado Pago (devolução via Pix na conta de origem ou estorno na fatura do cartão). Você também pode solicitar pelo menu <em>Suporte</em> ou pelo e-mail <strong>suporte@aksurim.com</strong>.
+                    2.2. <strong>Solicitação em 1 clique no sistema:</strong> Dentro dos 7 dias corridos, basta acessar a página <em>Planos</em> ou <em>Configurações</em> e clicar em <strong>&ldquo;Cancelar e pedir reembolso (7 dias)&rdquo;</strong>. O estorno é processado automaticamente pelo gateway de pagamento para o mesmo meio utilizado na compra (devolução imediata na conta de origem via Pix ou estorno na fatura do cartão). Você também pode solicitar pelo menu <em>Suporte</em> ou pelo e-mail <strong>suporte@aksurim.com</strong>.
                   </p>
                 </section>
 
                 <section className="space-y-2">
-                  <h2 className="font-bold text-foreground">3. Cancelamento Após 7 Dias</h2>
+                  <h2 className="font-bold text-foreground">3. Cancelamento Após 7 Dias e Preservação de Dados</h2>
                   <p>
-                    3.1. Após o prazo legal de 7 dias, o cancelamento da assinatura mensal recorrente interrompe imediatamente qualquer cobrança futura, e o seu acesso Premium permanece liberado até o último dia do ciclo já pago. Ao final do período, a conta retorna ao Plano Gratuito preservando todos os seus dados.
+                    3.1. Após o prazo legal de 7 dias, o cancelamento de renovação interrompe qualquer cobrança futura, mantendo o acesso Premium ativo até o término do período já pago. Quando uma conta retorna ao Plano Gratuito (por término do ciclo ou estorno), todos os lançamentos e históricos permanecem integralmente preservados.
                   </p>
                 </section>
               </article>

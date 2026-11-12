@@ -777,7 +777,7 @@ export function PlansPage(): JSX.Element {
               </span>
             </div>
             <DialogDescription className="text-xs">
-              Conclua seu pagamento diretamente aqui com qualquer banco, sem precisar de conta no Mercado Pago.
+              Escolha a forma de pagamento para ativar imediatamente o seu acesso Premium.
             </DialogDescription>
           </DialogHeader>
 
@@ -820,7 +820,7 @@ export function PlansPage(): JSX.Element {
                   )}
                 >
                   <QrCode className="h-4 w-4 text-emerald-400" />
-                  Pix (Imediato)
+                  Pix
                 </button>
                 <button
                   type="button"
@@ -858,10 +858,10 @@ export function PlansPage(): JSX.Element {
                         </div>
                         <div className="space-y-0.5">
                           <p className="font-bold text-foreground">
-                            Pague com o app de qualquer banco
+                            Liberação instantânea via Pix
                           </p>
                           <p className="text-[11px] text-muted-foreground leading-relaxed">
-                            Nubank, Itaú, Bradesco, Santander, Inter, Banco do Brasil, Caixa, C6 ou qualquer outro banco. O QR Code e o código Copia e Cola aparecem aqui mesmo na tela.
+                            Gere o QR Code ou utilize o código Pix Copia e Cola. A confirmação e a ativação do plano ocorrem automaticamente em segundos.
                           </p>
                         </div>
                       </div>
@@ -870,7 +870,7 @@ export function PlansPage(): JSX.Element {
                     <div className="flex flex-col items-center gap-3 rounded-xl border border-emerald-400/40 bg-emerald-500/[0.06] p-4 text-center">
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-1 text-[11px] font-bold text-emerald-300">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        Aguardando pagamento no app do seu banco...
+                        Aguardando confirmação do pagamento...
                       </span>
 
                       {pixSession.qrCodeBase64 && (
@@ -884,7 +884,7 @@ export function PlansPage(): JSX.Element {
                       )}
 
                       <p className="max-w-xs text-[11px] text-muted-foreground">
-                        Abra o aplicativo do seu banco, escolha <strong>Pix &rarr; Ler QR Code</strong> ou copie o código abaixo:
+                        Escaneie o QR Code acima ou utilize o código <strong>Pix Copia e Cola</strong> abaixo:
                       </p>
 
                       {pixSession.qrCode && (
@@ -1064,7 +1064,7 @@ export function PlansPage(): JSX.Element {
 
                   <p className="flex items-center gap-1.5 pt-1 text-[11px] text-muted-foreground">
                     <Lock className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                    Seus dados são criptografados diretamente com o cofre PCI-DSS do Mercado Pago e nunca ficam salvos em nosso servidor.
+                    Transação protegida com criptografia ponta a ponta (Padrão Internacional PCI-DSS).
                   </p>
                 </div>
               )}

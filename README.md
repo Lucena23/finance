@@ -3,10 +3,11 @@
   <h1>Aksurim Controle</h1>
   <p><b>Plataforma SaaS & PWA de Gestão e Inteligência Financeira Individual e Compartilhada</b></p>
 
-  <img src="https://img.shields.io/badge/Release-v1.2.7%20Freemium-F59E0B?style=for-the-badge" alt="Version 1.2.7" />
+  <img src="https://img.shields.io/badge/Release-v1.3.0%20FinTech-F59E0B?style=for-the-badge" alt="Version 1.3.0" />
+  <img src="https://img.shields.io/badge/Payments-PCI--DSS%20Tokenized-0EA5E9?style=for-the-badge" alt="PCI-DSS Tokenized" />
   <img src="https://img.shields.io/badge/Architecture-Mobile%20First%20PWA-06777F?style=for-the-badge" alt="Mobile First" />
   <img src="https://img.shields.io/badge/Security-OWASP%20Hardened-FB4629?style=for-the-badge" alt="Security" />
-  <img src="https://img.shields.io/badge/LGPD-Compliant-10B981?style=for-the-badge" alt="LGPD Compliant" />
+  <img src="https://img.shields.io/badge/LGPD%20%26%20CDC-Compliant-10B981?style=for-the-badge" alt="LGPD & CDC Compliant" />
   <img src="https://img.shields.io/badge/Tech-React%20%7C%20NestJS-282828?style=for-the-badge" alt="Tech Stack" />
 </div>
 
@@ -29,15 +30,16 @@ Diferente de planilhas estáticas ou aplicativos pessoais isolados, o **Aksurim 
 
 ---
 
-## 👑 MODELO DE NEGÓCIO HÍBRIDO: SAAS FREEMIUM + ADTECH (v1.2)
+## 👑 MOTOR DE MONETIZAÇÃO HÍBRIDO: SAAS FREEMIUM + CHECKOUT TRANSPARENTE PCI-DSS (v1.3)
 
-Na versão **1.2**, o **Aksurim Controle** opera sob uma arquitetura de monetização dupla altamente escalável: **Assinaturas Recorrentes (👑 Premium)** combinadas com **Mídia Nativa de Patrocínio (AdTech)**.
+Na versão **1.3**, o **Aksurim Controle** opera sob uma arquitetura de monetização dupla altamente escalável: **Assinaturas Digitais com Checkout Transparente Nativo (👑 Premium)** combinadas com **Mídia Nativa de Patrocínio (AdTech)**.
 
-### Experiência de Assinatura e Retenção Inteligente
+### Engenharia de Pagamentos e Experiência de Assinatura (FinTech-Grade)
+- **Checkout Transparente Nativo (*Zero-Redirect UX*):** Contratação 100% integrada em modal executivo sem redirecionamentos externos, oferecendo **Pix Instantâneo** (QR Code dinâmico e Copia e Cola com *live polling* e liberação automática em segundos) e **Cartão de Crédito** com detecção inteligente de bandeira e parcelamento.
+- **Tokenização Criptográfica Direta (Padrão PCI-DSS Nível 1):** Os dados sensíveis do cartão são criptografados diretamente no navegador do cliente e enviados ao cofre certificado do gateway de pagamento, gerando apenas um *token* descartável de uso único (*Zero-Knowledge Card Architecture*).
 - **Degustação Automática no Onboarding:** Todo novo cadastro inicia automaticamente com período de experiência **👑 Premium gratuito**, sem exigir cartão de crédito no cadastro.
-- **Oferta de Conversão Antecipada:** Condição promocional exclusiva para novos usuários que ativam a assinatura durante o período de avaliação.
-- **Ciclos Flexíveis:** Planos **Mensal**, **Semestral** e **Anual** com economia progressiva.
-- **Período de Tolerância Automático:** Carência inteligente antes da aplicação de restrições visuais, evitando bloqueios abruptos por compensação bancária.
+- **Ciclos Flexíveis:** Planos **Mensal**, **Semestral** e **Anual** com economia progressiva e validação estrita de preços no servidor.
+- **Autoatendimento Legal Automatizado (CDC Art. 49):** Direito de arrependimento em até 7 dias corridos com solicitação e estorno integral automatizados em 1 clique diretamente pela interface do cliente, além de console administrativo executivo para gestão financeira e auditoria de transações.
 - **Retenção sem Perda de Dados:** No plano gratuito, **nenhum lançamento futuro, parcelado, recorrente ou histórico é excluído**. As restrições atuam exclusivamente na camada de visualização e produtividade avançada, preservando 100% do patrimônio de dados do cliente.
 
 ### Comparativo de Recursos: Plano Free vs. 👑 Premium
@@ -58,13 +60,14 @@ Na versão **1.2**, o **Aksurim Controle** opera sob uma arquitetura de monetiza
 
 ## 🛡️ CIBERSEGURANÇA, PRIVACIDADE (LGPD) E GOVERNANÇA
 
-O sistema foi arquitetado sob princípios de **Security by Design** e **Defense in Depth**, alinhado às diretrizes corporativas **OWASP Top 10** e à **Lei Geral de Proteção de Dados (Lei nº 13.709/2018)**:
+O sistema foi arquitetado sob princípios de **Security by Design** e **Defense in Depth**, alinhado às diretrizes corporativas **OWASP Top 10**, ao padrão **PCI-DSS** e à **Lei Geral de Proteção de Dados (Lei nº 13.709/2018)**:
 
 - **Isolamento Criptográfico Multi-Tenant:** Acesso 100% segregado por conta/núcleo diretamente na camada de sessão autenticada, impedindo qualquer vazamento horizontal de dados entre diferentes grupos (*Zero-Trust Tenant Isolation*).
-- **Higiene de Sessão Padrão FinTech:** Controle ativo de ciclo de vida de sessão com expiração automática por inatividade (*Idle Timeout*) em navegadores e PWAs instalados, revogação imediata em caso de invalidação de credenciais e limpeza segura de estado local.
-- **Validação em Dupla Camada:** Todas as regras de negócio, limites operacionais e controles de assinatura são auditados e validados no servidor, independentemente da interface cliente.
-- **Hardening de API & Criptografia:** Proteção de cabeçalhos HTTP de segurança, políticas estritas de origem cruzada (CORS), sanitização rigorosa de payloads contra injeção de código (SQLi / XSS), hashing criptográfico de credenciais e controle de frequência (*Cooldown / Rate-Limiting*) em fluxos sensíveis de mensageria.
-- **Conformidade LGPD Nativa:** Garantia do direito de **Portabilidade de Dados (Art. 18, V)** com exportação estruturada em CSV para o titular da conta, mascaramento de dados sensíveis e preservação íntegra do histórico financeiro em desligamentos de membros.
+- **Blindagem de Transações e Webhooks Bancários:** Validação de assinaturas digitais via `HMAC-SHA256` em tempo constante (`timingSafeEqual`), chaves de idempotência (`X-Idempotency-Key`), reconciliação ativa de transações pendentes e bloqueio preventivo contra tentativas automatizadas de fraude (*Anti-Carding Rate Limiting*).
+- **Higiene de Sessão Padrão FinTech:** Controle ativo de ciclo de vida de sessão com expiração automática por inatividade (*Idle Timeout*) em navegadores e PWAs instalados, revogação imediata em caso de invalidação de credenciais e sincronização reativa de permissões em tempo real.
+- **Validação em Dupla Camada:** Todas as regras de negócio, precificação em centavos, limites operacionais e controles de assinatura são auditados e validados no servidor, independentemente da interface cliente.
+- **Hardening de API & Criptografia:** Proteção de cabeçalhos HTTP de segurança, políticas estritas de origem cruzada (CORS), sanitização rigorosa de payloads contra injeção de código (SQLi / XSS), hashing criptográfico de credenciais e controle de frequência (*Cooldown / Rate-Limiting*) em fluxos sensíveis.
+- **Conformidade LGPD & CDC Nativa:** Garantia do direito de **Portabilidade de Dados (Art. 18, V da LGPD)** com exportação estruturada em CSV, transparência contratual integrada (`/termos`, `/privacidade`, `/reembolso`) e cumprimento automatizado do **Art. 49 do Código de Defesa do Consumidor**.
 
 ---
 
@@ -81,17 +84,17 @@ O sistema foi arquitetado sob princípios de **Security by Design** e **Defense 
 ## 🛠️ STACK TECNOLÓGICA PRINCIPAL
 
 - **Frontend (PWA):** React 18, TypeScript, Vite, Tailwind CSS, Shadcn UI, Recharts, Service Workers & Web Push API.
-- **Backend (API):** NestJS, TypeScript (Strict Mode), ORM Relacional Tipado, Autenticação JWT, Motor Gráfico PDF e Mensageria Transacional.
-- **Qualidade & Confiabilidade:** Suíte automatizada de testes unitários e de regressão cobrindo regras financeiras, segurança de rotas e ciclo de vida de planos.
+- **Backend (API):** NestJS, TypeScript (Strict Mode), ORM Relacional Tipado, Autenticação JWT, Integração de Pagamentos PCI-DSS, Motor Gráfico PDF e Mensageria Transacional.
+- **Qualidade & Confiabilidade:** Suíte automatizada de testes unitários e de regressão cobrindo regras financeiras, segurança criptográfica de webhooks, idempotência e ciclo de vida de planos.
 
 ---
 
 ## 🔖 GOVERNANÇA DE RELEASES E VERSIONAMENTO (SemVer)
 
-O **Aksurim Controle** adota o padrão internacional de **Versionamento Semântico (`MAJOR.MINOR.PATCH` — SemVer 2.0.0)**, com identificação da versão ativa diretamente na interface do aplicativo (`Configurações` → rodapé `v1.2.5`):
+O **Aksurim Controle** adota o padrão internacional de **Versionamento Semântico (`MAJOR.MINOR.PATCH` — SemVer 2.0.0)**, com identificação da versão ativa diretamente na interface do aplicativo (`Configurações` → rodapé `v1.3.0`):
 - **MAJOR (`1.x.x`):** Arquitetura base de produção e contratos principais da plataforma.
-- **MINOR (`x.2.x`):** Ciclos de evolução funcional e de modelo de negócio (ex.: `v1.1` Atualizações Operacionais, `v1.2` Ecossistema Freemium & AdTech).
-- **PATCH (`x.x.5`):** Correções cirúrgicas (*hotfixes*), refinamentos de compatibilidade multi-plataforma (iOS/WebKit, Android PWA) e melhorias de estabilidade sem quebra de compatibilidade.
+- **MINOR (`x.3.x`):** Ciclos de evolução funcional e de modelo de negócio (ex.: `v1.1` Atualizações Operacionais, `v1.2` Ecossistema Freemium & AdTech, `v1.3` Checkout Transparente PCI-DSS & Governança Financeira).
+- **PATCH (`x.x.0`):** Correções cirúrgicas (*hotfixes*), refinamentos de compatibilidade multi-plataforma (iOS/WebKit, Android PWA) e melhorias de estabilidade sem quebra de compatibilidade.
 
 ---
 
