@@ -3,7 +3,7 @@
   <h1>Aksurim Controle</h1>
   <p><b>Plataforma SaaS & PWA de Gestão e Inteligência Financeira Individual e Compartilhada</b></p>
 
-  <img src="https://img.shields.io/badge/Release-v1.3.0%20FinTech-F59E0B?style=for-the-badge" alt="Version 1.3.0" />
+  <img src="https://img.shields.io/badge/Release-v1.3.1%20FinTech-F59E0B?style=for-the-badge" alt="Version 1.3.1" />
   <img src="https://img.shields.io/badge/Payments-PCI--DSS%20Tokenized-0EA5E9?style=for-the-badge" alt="PCI-DSS Tokenized" />
   <img src="https://img.shields.io/badge/Architecture-Mobile%20First%20PWA-06777F?style=for-the-badge" alt="Mobile First" />
   <img src="https://img.shields.io/badge/Security-OWASP%20Hardened-FB4629?style=for-the-badge" alt="Security" />
@@ -77,7 +77,8 @@ O sistema foi arquitetado sob princípios de **Security by Design** e **Defense 
 - **Motor Nativo de Relatórios Vetoriais (PDF):** Geração server-side de relatórios executivos sintéticos e analíticos em alta resolução, com gráficos desenhados matematicamente em memória.
 - **Dashboard Gerencial Analítico:** Cruzamento em tempo real de indicadores financeiros (KPIs), distribuição percentual por categoria e evolução anual de adimplência.
 - **Ecossistema de Mídia Patrocinada (AdTech):** Módulo nativo de banners promocionais não-intrusivos integrado à experiência do usuário, conectando marcas parceiras ao público da plataforma.
-- **Arquitetura PWA Instalável:** Experiência de aplicativo nativo em **Android, iOS e Desktop**, com suporte a instalação direta e notificações push.
+- **Arquitetura PWA Instalável & Push Resiliente:** Experiência de aplicativo nativo em **Android, iOS e Desktop**, com auto-renovação silenciosa de inscrições Web Push pós-deploys e central in-app de novidades e comunicados do sistema com 100% de alcance.
+- **Central Executiva de Comunicados e Novidades:** Módulo administrativo em `/admin` para redação, pré-visualização em tempo real e broadcast auditável de notas de versão e melhorias para toda a base com push opcional.
 
 ---
 
@@ -91,7 +92,7 @@ O sistema foi arquitetado sob princípios de **Security by Design** e **Defense 
 
 ## 🔖 GOVERNANÇA DE RELEASES E VERSIONAMENTO (SemVer)
 
-O **Aksurim Controle** adota o padrão internacional de **Versionamento Semântico (`MAJOR.MINOR.PATCH` — SemVer 2.0.0)**, com identificação da versão ativa diretamente na interface do aplicativo (`Configurações` → rodapé `v1.3.0`):
+O **Aksurim Controle** adota o padrão internacional de **Versionamento Semântico (`MAJOR.MINOR.PATCH` — SemVer 2.0.0)**, com identificação da versão ativa diretamente na interface do aplicativo (`Configurações` → rodapé `v1.3.1`):
 - **MAJOR (`1.x.x`):** Arquitetura base de produção e contratos principais da plataforma.
 - **MINOR (`x.3.x`):** Ciclos de evolução funcional e de modelo de negócio (ex.: `v1.1` Atualizações Operacionais, `v1.2` Ecossistema Freemium & AdTech, `v1.3` Checkout Transparente PCI-DSS & Governança Financeira).
 - **PATCH (`x.x.0`):** Correções cirúrgicas (*hotfixes*), refinamentos de compatibilidade multi-plataforma (iOS/WebKit, Android PWA) e melhorias de estabilidade sem quebra de compatibilidade.

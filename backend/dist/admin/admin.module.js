@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminModule = void 0;
 const common_1 = require("@nestjs/common");
 const global_admin_guard_1 = require("../common/guards/global-admin.guard");
+const notification_module_1 = require("../notification/notification.module");
 const admin_controller_1 = require("./admin.controller");
 const admin_service_1 = require("./admin.service");
 const lead_export_service_1 = require("./lead-export.service");
@@ -17,6 +18,7 @@ let AdminModule = class AdminModule {
 exports.AdminModule = AdminModule;
 exports.AdminModule = AdminModule = __decorate([
     (0, common_1.Module)({
+        imports: [notification_module_1.NotificationModule],
         controllers: [admin_controller_1.AdminController],
         providers: [admin_service_1.AdminService, lead_export_service_1.LeadExportService, global_admin_guard_1.GlobalAdminGuard],
         exports: [admin_service_1.AdminService, lead_export_service_1.LeadExportService],

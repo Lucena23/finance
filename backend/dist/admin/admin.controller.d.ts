@@ -5,11 +5,14 @@ import { UpdateFamilyPlanDto } from './dto/update-family-plan.dto';
 import { AdminRefundDto } from '../plan/dto/admin-refund.dto';
 import { AdminTransactionView, PlanPaymentService } from '../plan/plan-payment.service';
 import { PlanInfo } from '../plan/plan.service';
+import { AnnouncementService, PublishAnnouncementResult, SystemAnnouncement } from '../notification/announcement.service';
+import { CreateAnnouncementDto } from '../notification/dto/create-announcement.dto';
 export declare class AdminController {
     private readonly adminService;
     private readonly leadExportService;
+    private readonly announcementService;
     private readonly planPaymentService?;
-    constructor(adminService: AdminService, leadExportService: LeadExportService, planPaymentService?: PlanPaymentService | undefined);
+    constructor(adminService: AdminService, leadExportService: LeadExportService, announcementService: AnnouncementService, planPaymentService?: PlanPaymentService | undefined);
     getMetrics(): Promise<AdminGlobalMetrics>;
     getLeads(): Promise<AdminLead[]>;
     updateFamilyPlan(id: string, dto: UpdateFamilyPlanDto): Promise<PlanInfo>;
@@ -22,5 +25,7 @@ export declare class AdminController {
         refundedAmountCents: number;
         plan: PlanInfo;
     }>;
+    listAnnouncements(): Promise<SystemAnnouncement[]>;
+    publishAnnouncement(dto: CreateAnnouncementDto): Promise<PublishAnnouncementResult>;
     exportLeads(format: string | undefined, res: Response): Promise<void>;
 }

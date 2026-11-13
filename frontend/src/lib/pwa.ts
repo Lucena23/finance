@@ -380,6 +380,41 @@ export async function enablePushNotifications(): Promise<EnablePushResult> {
 }
 
 /**
+ * Se o navegador já tiver permissão concedida ('granted'), garante silenciosamente
+ * que a subscription está criada no navegador e sincronizada no backend (v1.3.1).
+ * Não exibe nenhum prompt ou erro visível ao usuário.
+ */
+export async function ensurePushSubscriptionSilent(): Promise<boolean> {
+  if (!isPushSupported() || Notification.permission !== 'granted' || !VAPID_PUBLIC_KEY) {
+    return false;
+  }
+
+  const registration = await getReadyServiceWorker();
+  if (!registration) return false;
+
+  const applicationServerKey = urlBase64ToArrayBuffer(VAPID_PUBLIC_KEY);
+  if (!applicationServerKey) return false;
+
+  try {
+    const existing = await registration.pushManager.getSubscription();
+    const subscription =
+      existing ??
+      (await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey,
+      }));
+
+    const payload = toPushSubscriptionPayload(subscription);
+    if (!payload) return false;
+
+    await notificationsApi.subscribe(payload);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Remove a subscription de Web Push do navegador e do backend
  * (DELETE /notifications/subscribe).
  *
@@ -487,9 +522,10 @@ export async function clearLocalPushState(): Promise<boolean> {
       );
     }
 
-    // 2. Cancela a subscription localmente no navegador.
-    await subscription.unsubscribe();
-
+    // Nota de arquitetura (v1.3.1): NÃO cancelamos a subscription localmente no navegador
+    // (subscription.unsubscribe), preservando a permissão do dispositivo.
+    // Quando o usuário fizer login novamente, ensurePushSubscriptionSilent() reativa
+    // a inscrição instantaneamente no backend, sem exigir que o cliente clique em "Ativar" novamente.
     return true;
   } catch (error) {
     console.error('Falha ao limpar o estado local de push no logout:', error);

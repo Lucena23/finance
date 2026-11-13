@@ -23,10 +23,14 @@ import {
   AlertCircle,
   Building2,
   Download,
+  Eye,
   FileSpreadsheet,
   FileText,
+  Megaphone,
   RefreshCw,
+  Send,
   ShieldCheck,
+  Sparkles,
   TrendingUp,
   Users,
   Wallet,
@@ -35,6 +39,14 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
 import { useAdminLeads, useAdminMetrics } from '@/hooks/useAdmin';
 import { cn } from '@/lib/cn';
@@ -43,6 +55,7 @@ import {
   type AdminLead,
   type AdminTransactionView,
   type LeadExportFormat,
+  type SystemAnnouncement,
 } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
@@ -1079,6 +1092,318 @@ function TransactionsSection(): JSX.Element {
 }
 
 /**
+ * Seção de Comunicados e Novidades do Software para o Admin Global (v1.3.1).
+ */
+function AnnouncementsSection(): JSX.Element {
+  const [announcements, setAnnouncements] = useState<SystemAnnouncement[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [title, setTitle] = useState<string>('');
+  const [version, setVersion] = useState<string>('1.3.1');
+  const [body, setBody] = useState<string>('');
+  const [sendPush, setSendPush] = useState<boolean>(true);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [feedback, setFeedback] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
+  const [previewOpen, setPreviewOpen] = useState<boolean>(false);
+  const [confirmOpen, setConfirmOpen] = useState<boolean>(false);
+
+  const fetchHistory = async (): Promise<void> => {
+    try {
+      const data = await adminApi.announcements();
+      setAnnouncements(data);
+    } catch {
+      // ignora se offline
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void fetchHistory();
+  }, []);
+
+  const handlePublish = async (): Promise<void> => {
+    if (!title.trim() || !body.trim()) return;
+    setSubmitting(true);
+    setFeedback(null);
+    try {
+      const res = await adminApi.publishAnnouncement({
+        title: title.trim(),
+        body: body.trim(),
+        version: version.trim() || undefined,
+        sendPush,
+      });
+      setTitle('');
+      setBody('');
+      setConfirmOpen(false);
+      setFeedback({
+        type: 'success',
+        text: `Comunicado publicado com sucesso! ${res.pushSentCount} pushes entregues com sucesso.`,
+      });
+      await fetchHistory();
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        text:
+          err instanceof Error
+            ? err.message
+            : 'Falha ao publicar o comunicado.',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Card data-testid="admin-announcements">
+      <CardHeader className="flex flex-col gap-1 pb-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Megaphone className="h-4 w-4 text-amber-400" />
+            Comunicados e Novidades do Software (v1.3.1)
+          </CardTitle>
+          <p className="text-muted-foreground text-xs">
+            Publique novidades, melhorias ou notas de versão que serão exibidas
+            automaticamente no modal de 100% dos clientes e, opcionalmente,
+            disparadas como Web Push.
+          </p>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => void fetchHistory()}
+          className="gap-1.5 self-start sm:self-auto"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Atualizar
+        </Button>
+      </CardHeader>
+
+      <CardContent className="space-y-5 p-5">
+        {feedback && (
+          <div
+            role="alert"
+            className={cn(
+              'rounded-lg border p-3 text-xs font-medium',
+              feedback.type === 'success'
+                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200'
+                : 'border-destructive/50 bg-destructive/10 text-destructive',
+            )}
+          >
+            {feedback.text}
+          </div>
+        )}
+
+        {/* Formulário de Envio */}
+        <div className="rounded-xl border border-border/80 bg-muted/20 p-4 space-y-3 text-xs">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+            <div className="space-y-1 sm:col-span-3">
+              <label htmlFor="ann-title" className="font-semibold text-foreground">
+                Título do Comunicado
+              </label>
+              <input
+                id="ann-title"
+                type="text"
+                placeholder="Ex: Atualização v1.3.1 — Novo Checkout Transparente e Notificações"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="ann-ver" className="font-semibold text-foreground">
+                Versão (SemVer)
+              </label>
+              <input
+                id="ann-ver"
+                type="text"
+                placeholder="1.3.1"
+                value={version}
+                onChange={(e) => setVersion(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label htmlFor="ann-body" className="font-semibold text-foreground">
+              Mensagem / Novidades (texto formatado com parágrafos)
+            </label>
+            <textarea
+              id="ann-body"
+              rows={4}
+              placeholder="Descreva as melhorias implementadas, sugestões atendidas de clientes ou novidades operacionais..."
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              className="w-full rounded-md border border-input bg-background p-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={sendPush}
+                onChange={(e) => setSendPush(e.target.checked)}
+                className="h-4 w-4 rounded border-input accent-amber-400"
+              />
+              Disparar Web Push para dispositivos com &ldquo;Novidades do Sistema&rdquo; ativas
+            </label>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!title.trim() || !body.trim()}
+                onClick={() => setPreviewOpen(true)}
+                className="gap-1.5"
+              >
+                <Eye className="h-3.5 w-3.5" />
+                Ver Prévia
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={!title.trim() || !body.trim() || submitting}
+                onClick={() => setConfirmOpen(true)}
+                className="gap-1.5 bg-gradient-to-r from-amber-400 to-yellow-500 font-bold text-slate-950 hover:brightness-110"
+              >
+                <Send className="h-3.5 w-3.5" />
+                Publicar Comunicado
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Histórico de Comunicados */}
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Histórico de Comunicados Publicados ({announcements.length})
+          </p>
+
+          {loading ? (
+            <div className="py-4 text-center">
+              <Spinner className="mx-auto h-5 w-5" />
+            </div>
+          ) : announcements.length === 0 ? (
+            <p className="py-3 text-center text-xs text-muted-foreground">
+              Nenhum comunicado publicado ainda.
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2">Data</th>
+                    <th className="px-3 py-2">Versão</th>
+                    <th className="px-3 py-2">Título</th>
+                    <th className="px-3 py-2 text-right">Pushes Enviados</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {announcements.map((ann) => (
+                    <tr key={ann.id} className="hover:bg-muted/30">
+                      <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                        {formatDate(ann.createdAt)}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 font-mono font-bold text-foreground">
+                        {ann.version ? `v${ann.version}` : '—'}
+                      </td>
+                      <td className="px-3 py-2 font-medium text-foreground">
+                        {ann.title}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-emerald-400">
+                        {ann.pushSentCount}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </CardContent>
+
+      {/* Modal de Prévia do Comunicado */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-md sm:max-w-lg border-border/80 bg-card p-6 shadow-2xl">
+          <DialogHeader className="space-y-2 text-left">
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-500/15 px-3 py-0.5 text-xs font-bold text-amber-300">
+                <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                Novidades do Sistema (Prévia)
+              </span>
+              {version && (
+                <span className="rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-muted-foreground">
+                  v{version}
+                </span>
+              )}
+            </div>
+            <DialogTitle className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
+              {title || 'Título do Comunicado'}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Esta é exatamente a aparência com que o comunicado será exibido no app de todos os clientes.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="my-2 max-h-[60vh] overflow-y-auto rounded-lg border border-border/60 bg-muted/20 p-4 text-xs leading-relaxed text-foreground/90 sm:text-sm">
+            <div className="whitespace-pre-line space-y-2">
+              {body || 'Corpo da mensagem do comunicado...'}
+            </div>
+          </div>
+
+          <DialogFooter className="pt-2">
+            <Button
+              type="button"
+              onClick={() => setPreviewOpen(false)}
+              className="w-full sm:w-auto"
+            >
+              Fechar Prévia
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Confirmação antes de Disparar */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar publicação de comunicado?</DialogTitle>
+            <DialogDescription className="text-xs">
+              O comunicado será salvo na base e exibido no modal do app para todos os clientes.
+              {sendPush && ' Além disso, será transmitido via Web Push para todos os dispositivos cadastrados.'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={submitting}
+              onClick={() => setConfirmOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={submitting}
+              onClick={() => void handlePublish()}
+              className="bg-gradient-to-r from-amber-400 to-yellow-500 font-bold text-slate-950 hover:brightness-110"
+            >
+              {submitting ? 'Publicando...' : 'Confirmar e Publicar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
+/**
  * Página do Painel Aksurim (rota "/admin"). Exclusiva do Admin Global (RN-15).
  */
 export function AdminPage(): JSX.Element {
@@ -1099,6 +1424,7 @@ export function AdminPage(): JSX.Element {
       </header>
 
       <MetricsSection />
+      <AnnouncementsSection />
       <TransactionsSection />
       <LeadsSection />
     </section>

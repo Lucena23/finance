@@ -21,10 +21,13 @@ const lead_export_service_1 = require("./lead-export.service");
 const update_family_plan_dto_1 = require("./dto/update-family-plan.dto");
 const admin_refund_dto_1 = require("../plan/dto/admin-refund.dto");
 const plan_payment_service_1 = require("../plan/plan-payment.service");
+const announcement_service_1 = require("../notification/announcement.service");
+const create_announcement_dto_1 = require("../notification/dto/create-announcement.dto");
 let AdminController = class AdminController {
-    constructor(adminService, leadExportService, planPaymentService) {
+    constructor(adminService, leadExportService, announcementService, planPaymentService) {
         this.adminService = adminService;
         this.leadExportService = leadExportService;
+        this.announcementService = announcementService;
         this.planPaymentService = planPaymentService;
     }
     getMetrics() {
@@ -51,6 +54,17 @@ let AdminController = class AdminController {
             throw new Error('PlanPaymentService indisponível.');
         }
         return this.planPaymentService.adminRefundTransaction(id, dto);
+    }
+    listAnnouncements() {
+        return this.announcementService.list();
+    }
+    publishAnnouncement(dto) {
+        return this.announcementService.publish({
+            title: dto.title,
+            body: dto.body,
+            version: dto.version,
+            sendPush: dto.sendPush ?? true,
+        });
     }
     async exportLeads(format, res) {
         const normalized = format === 'csv' ? 'csv' : 'pdf';
@@ -104,6 +118,19 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "refundTransaction", null);
 __decorate([
+    (0, common_1.Get)('announcements'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "listAnnouncements", null);
+__decorate([
+    (0, common_1.Post)('announcements'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_announcement_dto_1.CreateAnnouncementDto]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "publishAnnouncement", null);
+__decorate([
     (0, common_1.Get)('leads/export'),
     __param(0, (0, common_1.Query)('format')),
     __param(1, (0, common_1.Res)()),
@@ -117,6 +144,7 @@ exports.AdminController = AdminController = __decorate([
     (0, common_1.UseGuards)(global_admin_guard_1.GlobalAdminGuard),
     __metadata("design:paramtypes", [admin_service_1.AdminService,
         lead_export_service_1.LeadExportService,
+        announcement_service_1.AnnouncementService,
         plan_payment_service_1.PlanPaymentService])
 ], AdminController);
 //# sourceMappingURL=admin.controller.js.map

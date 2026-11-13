@@ -4,6 +4,58 @@ Histórico Oficial do Projeto — Aksurim Software
 
 ## REGISTROS RECENTES
 
+Data: 2026-11-12
+Versão: 1.3.1
+Tipo: FEATURE / ARCHITECTURE / HOTFIX
+Origem: Central de Comunicados e Novidades, Auto-renovação Silenciosa de Push e Hotfix no Checkout de Cartão
+Descrição: Implementação da Central Executiva de Comunicados e Novidades do Software em `/admin`, permitindo a redação, pré-visualização em tempo real e broadcast auditável de melhorias e notas de versão com disparo opcional de Web Push. No frontend, adicionado modal de novidades in-app exibido uma única vez ao usuário após cada atualização (`AnnouncementModal`), garantindo 100% de alcance em Desktop, Android e iOS. Implementada auto-renovação e ressincronização silenciosa de inscrições Web Push (`ensurePushSubscriptionSilent`) na hidratação de sessão e login, eliminando o problema de desativação percebida após deploys sem incomodar o cliente com novos pedidos de permissão. Adicionada preferência granular de notificações "Novidades e Melhorias do Software" ativa por padrão. No checkout transparente de cartão de crédito, corrigido o limite do `deviceSessionId` do Mercado Pago para até 4096 caracteres e aprimorada a análise antifraude com identificação de bandeira/banco emissor via BIN, alinhamento de titularidade e coleta de fingerprint de segurança.
+Arquivos alterados:
+  - backend/src/notification/announcement.service.ts
+  - backend/src/notification/notification.controller.ts
+  - backend/src/notification/notification.module.ts
+  - backend/src/notification/dto/create-announcement.dto.ts
+  - backend/src/notification/dto/update-preferences.dto.ts
+  - backend/src/admin/admin.controller.ts
+  - backend/src/admin/admin.module.ts
+  - backend/src/plan/dto/create-checkout.dto.ts
+  - backend/package.json
+  - frontend/src/components/notification/AnnouncementModal.tsx
+  - frontend/src/components/pwa/PushNotificationToggle.tsx
+  - frontend/src/components/layout/AppShell.tsx
+  - frontend/src/pages/AdminPage.tsx
+  - frontend/src/contexts/AuthContext.tsx
+  - frontend/src/hooks/usePushNotifications.ts
+  - frontend/src/lib/api.ts
+  - frontend/src/lib/pwa.ts
+  - frontend/src/lib/constants.ts
+  - frontend/package.json
+  - README.md
+  - CHANGELOG.md
+  - docs/HOTFIX_CONTEXTO.md
+Responsável: Joannderson Lucena (Aksurim Software)
+
+Data: 2026-11-12
+Versão: 1.3.0
+Tipo: FEATURE / ARCHITECTURE / FINTECH
+Origem: Checkout Transparente PCI-DSS Nativo Mercado Pago, Compliance CDC Art. 49 e Governança Financeira
+Descrição: Lançamento do Checkout Transparente Nativo integrado sem redirecionamento com suporte a Pix Instantâneo (QR Code + Copia e Cola dinâmico e live polling de 4s) e Cartão de Crédito tokenizado no navegador seguindo os padrões PCI-DSS Nível 1. Criação das páginas institucionais de conformidade legal (/termos, /privacidade, /reembolso), autoatendimento do direito de arrependimento em até 7 dias corridos (CDC Art. 49) com estorno automatizado, módulo administrativo executivo em /admin para auditoria de transações financeiras e controle de estornos totais e parciais com revogação imediata de planos.
+Arquivos alterados:
+  - backend/src/plan/plan-payment.service.ts
+  - backend/src/plan/plan.controller.ts
+  - backend/src/plan/plan.module.ts
+  - backend/src/admin/admin.controller.ts
+  - backend/src/admin/admin.service.ts
+  - frontend/src/pages/PlansPage.tsx
+  - frontend/src/pages/AdminPage.tsx
+  - frontend/src/pages/TermsPage.tsx
+  - frontend/src/pages/PrivacyPage.tsx
+  - frontend/src/pages/RefundPolicyPage.tsx
+  - frontend/src/lib/api.ts
+  - frontend/src/lib/constants.ts
+  - README.md
+  - CHANGELOG.md
+Responsável: Joannderson Lucena (Aksurim Software)
+
 Data: 2026-11-03
 Versão: 1.2.7
 Tipo: FEATURE / UX

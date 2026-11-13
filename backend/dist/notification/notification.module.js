@@ -8,6 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationModule = void 0;
 const common_1 = require("@nestjs/common");
+const announcement_service_1 = require("./announcement.service");
 const notification_controller_1 = require("./notification.controller");
 const notification_priority_service_1 = require("./notification-priority.service");
 const notification_cron_1 = require("./notification.cron");
@@ -18,8 +19,13 @@ exports.NotificationModule = NotificationModule;
 exports.NotificationModule = NotificationModule = __decorate([
     (0, common_1.Module)({
         controllers: [notification_controller_1.NotificationController],
-        providers: [notification_service_1.NotificationService, notification_priority_service_1.NotificationPriorityService, notification_cron_1.NotificationCron],
-        exports: [notification_service_1.NotificationService, notification_priority_service_1.NotificationPriorityService],
+        providers: [
+            notification_service_1.NotificationService,
+            notification_priority_service_1.NotificationPriorityService,
+            notification_cron_1.NotificationCron,
+            announcement_service_1.AnnouncementService,
+        ],
+        exports: [notification_service_1.NotificationService, notification_priority_service_1.NotificationPriorityService, announcement_service_1.AnnouncementService],
     })
 ], NotificationModule);
 //# sourceMappingURL=notification.module.js.map

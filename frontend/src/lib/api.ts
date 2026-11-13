@@ -412,6 +412,25 @@ export interface AdminTransactionView {
   userName: string;
 }
 
+export interface SystemAnnouncement {
+  id: string;
+  title: string;
+  body: string;
+  version: string | null;
+  pushSentCount: number;
+  createdAt: string;
+}
+
+export interface NotificationPreferences {
+  systemUpdates: boolean;
+}
+
+export interface PublishAnnouncementResult {
+  announcement: SystemAnnouncement;
+  pushSentCount: number;
+  pushFailedCount: number;
+}
+
 /**
  * Erro normalizado da API — expõe status HTTP, código e recurso Premium bloqueado.
  */
@@ -733,6 +752,12 @@ export const notificationsApi = {
     post<{ id: string }>('/notifications/subscribe', payload),
   unsubscribe: (endpoint: string): Promise<void> =>
     del<void>('/notifications/subscribe', { data: { endpoint } }),
+  getPreferences: (): Promise<NotificationPreferences> =>
+    get<NotificationPreferences>('/notifications/preferences'),
+  updatePreferences: (payload: NotificationPreferences): Promise<NotificationPreferences> =>
+    patch<NotificationPreferences>('/notifications/preferences', payload),
+  getLatestAnnouncement: (): Promise<SystemAnnouncement | null> =>
+    get<SystemAnnouncement | null>('/notifications/announcements/latest'),
 };
 
 /**
@@ -835,6 +860,19 @@ export const adminApi = {
       `/admin/transactions/${transactionId}/refund`,
       payload ?? {},
     ),
+
+  /** Lista histórico de comunicados publicados (Admin Global — v1.3.1). */
+  announcements: (): Promise<SystemAnnouncement[]> =>
+    get<SystemAnnouncement[]>('/admin/announcements'),
+
+  /** Publica comunicado e dispara Web Push de novidades (Admin Global — v1.3.1). */
+  publishAnnouncement: (payload: {
+    title: string;
+    body: string;
+    version?: string;
+    sendPush?: boolean;
+  }): Promise<PublishAnnouncementResult> =>
+    post<PublishAnnouncementResult>('/admin/announcements', payload),
 
   /**
    * Exporta os leads em PDF ou CSV (TAREFA 27).

@@ -17,6 +17,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   disablePushNotifications,
   enablePushNotifications,
+  ensurePushSubscriptionSilent,
   getPushPermissionState,
   hasActivePushSubscription,
   isPushSupported,
@@ -68,11 +69,19 @@ export function usePushNotifications(): UsePushNotificationsResult {
     let isMounted = true;
 
     void (async (): Promise<void> => {
-      const active = await hasActivePushSubscription();
+      let active = await hasActivePushSubscription();
+      const currentPerm = getPushPermissionState();
+
+      if (currentPerm === 'granted') {
+        const synced = await ensurePushSubscriptionSilent();
+        if (synced) {
+          active = true;
+        }
+      }
 
       if (isMounted) {
         setIsSubscribed(active);
-        setPermission(getPushPermissionState());
+        setPermission(currentPerm);
       }
     })();
 

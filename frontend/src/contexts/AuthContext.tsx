@@ -52,7 +52,7 @@ import {
   AUTH_USER_STORAGE_KEY,
   SESSION_IDLE_TIMEOUT_MS,
 } from '@/lib/constants';
-import { clearLocalPushState } from '@/lib/pwa';
+import { clearLocalPushState, ensurePushSubscriptionSilent } from '@/lib/pwa';
 
 /**
  * Contrato público do contexto de autenticação.
@@ -245,6 +245,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
       touchLastActivity();
       setToken(storedToken);
       setUser(storedUser);
+      void ensurePushSubscriptionSilent();
     } else {
       // Estado inconsistente ou sessão expirada (JWT vencido / inatividade > 30m) → limpa tudo.
       clearSessionSilently();
@@ -320,6 +321,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     touchLastActivity();
     setToken(response.accessToken);
     setUser(response.user);
+    void ensurePushSubscriptionSilent();
 
     return response.user;
   }, []);

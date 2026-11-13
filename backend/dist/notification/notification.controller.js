@@ -15,18 +15,30 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationController = void 0;
 const common_1 = require("@nestjs/common");
 const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
+const announcement_service_1 = require("./announcement.service");
 const subscribe_push_dto_1 = require("./dto/subscribe-push.dto");
 const unsubscribe_push_dto_1 = require("./dto/unsubscribe-push.dto");
+const update_preferences_dto_1 = require("./dto/update-preferences.dto");
 const notification_service_1 = require("./notification.service");
 let NotificationController = class NotificationController {
-    constructor(notificationService) {
+    constructor(notificationService, announcementService) {
         this.notificationService = notificationService;
+        this.announcementService = announcementService;
     }
     subscribe(user, dto) {
         return this.notificationService.subscribe(user.userId, dto);
     }
     unsubscribe(user, dto) {
         return this.notificationService.unsubscribe(user.userId, dto);
+    }
+    getPreferences(user) {
+        return this.announcementService.getPreferences(user.userId);
+    }
+    updatePreferences(user, dto) {
+        return this.announcementService.updatePreferences(user.userId, dto);
+    }
+    getLatestAnnouncement() {
+        return this.announcementService.getLatest();
     }
 };
 exports.NotificationController = NotificationController;
@@ -48,8 +60,30 @@ __decorate([
     __metadata("design:paramtypes", [Object, unsubscribe_push_dto_1.UnsubscribePushDto]),
     __metadata("design:returntype", Promise)
 ], NotificationController.prototype, "unsubscribe", null);
+__decorate([
+    (0, common_1.Get)('preferences'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], NotificationController.prototype, "getPreferences", null);
+__decorate([
+    (0, common_1.Patch)('preferences'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, update_preferences_dto_1.UpdateNotificationPreferencesDto]),
+    __metadata("design:returntype", Promise)
+], NotificationController.prototype, "updatePreferences", null);
+__decorate([
+    (0, common_1.Get)('announcements/latest'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], NotificationController.prototype, "getLatestAnnouncement", null);
 exports.NotificationController = NotificationController = __decorate([
     (0, common_1.Controller)('notifications'),
-    __metadata("design:paramtypes", [notification_service_1.NotificationService])
+    __metadata("design:paramtypes", [notification_service_1.NotificationService,
+        announcement_service_1.AnnouncementService])
 ], NotificationController);
 //# sourceMappingURL=notification.controller.js.map

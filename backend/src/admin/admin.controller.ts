@@ -30,9 +30,15 @@ import {
   PlanPaymentService,
 } from '../plan/plan-payment.service';
 import { PlanInfo } from '../plan/plan.service';
+import {
+  AnnouncementService,
+  PublishAnnouncementResult,
+  SystemAnnouncement,
+} from '../notification/announcement.service';
+import { CreateAnnouncementDto } from '../notification/dto/create-announcement.dto';
 
 /**
- * AdminController — Painel Aksurim (Admin Global). RN-15 / TAREFA 25 / 27.
+ * AdminController — Painel Aksurim (Admin Global). RN-15 / TAREFA 25 / 27 / v1.3.1.
  */
 @Controller('admin')
 @GlobalAdminOnly()
@@ -41,6 +47,7 @@ export class AdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly leadExportService: LeadExportService,
+    private readonly announcementService: AnnouncementService,
     private readonly planPaymentService?: PlanPaymentService,
   ) {}
 
@@ -95,6 +102,31 @@ export class AdminController {
       throw new Error('PlanPaymentService indisponível.');
     }
     return this.planPaymentService.adminRefundTransaction(id, dto);
+  }
+
+  /**
+   * GET /api/v1/admin/announcements
+   * Lista comunicados já enviados aos usuários (v1.3.1).
+   */
+  @Get('announcements')
+  listAnnouncements(): Promise<SystemAnnouncement[]> {
+    return this.announcementService.list();
+  }
+
+  /**
+   * POST /api/v1/admin/announcements
+   * Publica comunicado e dispara push de novidades do sistema (v1.3.1).
+   */
+  @Post('announcements')
+  publishAnnouncement(
+    @Body() dto: CreateAnnouncementDto,
+  ): Promise<PublishAnnouncementResult> {
+    return this.announcementService.publish({
+      title: dto.title,
+      body: dto.body,
+      version: dto.version,
+      sendPush: dto.sendPush ?? true,
+    });
   }
 
   @Get('leads/export')

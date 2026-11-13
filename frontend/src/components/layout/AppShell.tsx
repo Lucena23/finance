@@ -14,6 +14,7 @@
 
 import { Outlet } from 'react-router-dom';
 
+import { AnnouncementModal } from '@/components/notification/AnnouncementModal';
 import { PremiumModal } from '@/components/plan/PremiumModal';
 
 import { BottomNav } from './BottomNav';
@@ -35,6 +36,7 @@ export function AppShell(): JSX.Element {
 
       <BottomNav />
       <PremiumModal />
+      <AnnouncementModal />
     </div>
   );
 }
