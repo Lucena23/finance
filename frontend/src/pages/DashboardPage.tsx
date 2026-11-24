@@ -7,56 +7,27 @@
  * de relatórios PDF (ReportModal), centralizando a inteligência financeira.
  */
 
-import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Lock } from 'lucide-react';
+import { useState } from 'react';
 
-import { cn } from '@/lib/cn';
 import { CategoryDonut } from '@/components/dashboard/CategoryDonut';
 import { MonthlyBars } from '@/components/dashboard/MonthlyBars';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
 import { YearlyQualityCard } from '@/components/dashboard/YearlyQualityCard';
 import { ReportModal } from '@/components/dashboard/ReportModal';
+import {
+  MonthCarousel,
+  getPeriodForOffset,
+} from '@/components/payment/MonthCarousel';
 import { LockedMonthOverlay } from '@/components/plan/LockedMonthOverlay';
 import { AnimatedAdBanner } from '@/components/ads/AnimatedAdBanner';
 import { usePlan } from '@/contexts/PlanContext';
-import { DEFAULT_TIMEZONE } from '@/lib/constants';
-
-/**
- * Retorna o mês e o ano correntes no fuso America/Sao_Paulo.
- */
-function currentPeriod(): { month: number; year: number } {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: DEFAULT_TIMEZONE,
-    year: 'numeric',
-    month: '2-digit',
-  });
-
-  // formatToParts evita depender do separador/ordem (WebKit/iOS formata en-CA como "MM/AAAA").
-  const parts = formatter.formatToParts(new Date());
-  const yearPart = parts.find((part) => part.type === 'year')?.value;
-  const monthPart = parts.find((part) => part.type === 'month')?.value;
-
-  return {
-    month: Number(monthPart),
-    year: Number(yearPart),
-  };
-}
 
 export function DashboardPage(): JSX.Element {
-  const { month, year: currentYear } = useMemo(currentPeriod, []);
-  const { showGoldCue, isFreeAllowedPeriod, canViewPeriod } = usePlan();
-  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [selectedMonth, setSelectedMonth] = useState<number>(month);
+  const { canViewPeriod } = usePlan();
+  const [monthOffset, setMonthOffset] = useState<number>(0);
 
-  const monthsList = [
-    'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-    'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
-  ];
-
-  const handlePreviousYear = () => setSelectedYear((v) => v - 1);
-  const handleNextYear = () => setSelectedYear((v) => Math.min(currentYear + 1, v + 1));
-
-  const isCurrentYear = selectedYear >= currentYear;
+  const { month: selectedMonth, year: selectedYear } =
+    getPeriodForOffset(monthOffset);
   const isMonthUnlocked = canViewPeriod(selectedMonth, selectedYear);
 
   return (
@@ -73,75 +44,8 @@ export function DashboardPage(): JSX.Element {
         <ReportModal />
       </header>
 
-      {/* Seletor de ano (Trazido da antiga página de relatórios) */}
-      <div className="flex items-center justify-between gap-2" data-testid="dashboard-year-selector">
-        <button
-          type="button"
-          onClick={handlePreviousYear}
-          className={cn(
-            'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border',
-            'text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'
-          )}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-
-        <span className="text-base font-bold tabular-nums">
-          {selectedYear}
-        </span>
-
-        <button
-          type="button"
-          onClick={handleNextYear}
-          disabled={isCurrentYear}
-          className={cn(
-            'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border',
-            'text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
-            'disabled:pointer-events-none disabled:opacity-40'
-          )}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
-
-      {/* Seletor de Mês */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x">
-        {monthsList.map((mName, idx) => {
-          const mNum = idx + 1;
-          const isSelected = selectedMonth === mNum;
-          const isGoldMonth =
-            showGoldCue && !isFreeAllowedPeriod(mNum, selectedYear);
-
-          return (
-            <button
-              key={mNum}
-              type="button"
-              onClick={() => setSelectedMonth(mNum)}
-              className={cn(
-                'inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap snap-center transition-colors focus:outline-none',
-                isSelected
-                  ? isGoldMonth
-                    ? 'border border-amber-400 bg-gradient-to-r from-amber-400 to-yellow-500 font-bold text-slate-950'
-                    : 'bg-primary text-primary-foreground'
-                  : isGoldMonth
-                    ? 'border border-amber-400/45 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'
-                    : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-              )}
-            >
-              {isGoldMonth && (
-                <Lock
-                  aria-hidden="true"
-                  className={cn(
-                    'h-3 w-3 shrink-0',
-                    isSelected ? 'text-slate-950' : 'text-amber-400',
-                  )}
-                />
-              )}
-              {mName}
-            </button>
-          );
-        })}
-      </div>
+      {/* Seletor de Meses unificado com a Fila (TAREFA 16) */}
+      <MonthCarousel value={monthOffset} onSelect={setMonthOffset} />
 
       {!isMonthUnlocked ? (
         <>
@@ -149,10 +53,7 @@ export function DashboardPage(): JSX.Element {
             month={selectedMonth}
             year={selectedYear}
             variant="dashboard"
-            onBackToCurrentMonth={() => {
-              setSelectedMonth(month);
-              setSelectedYear(currentYear);
-            }}
+            onBackToCurrentMonth={() => setMonthOffset(0)}
           />
           <div className="pt-2 pb-2">
             <AnimatedAdBanner type="rectangle" />

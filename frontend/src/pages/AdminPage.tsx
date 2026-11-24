@@ -50,6 +50,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { useAdminLeads, useAdminMetrics } from '@/hooks/useAdmin';
 import { cn } from '@/lib/cn';
+import { APP_VERSION } from '@/lib/constants';
 import {
   adminApi,
   type AdminLead,
@@ -1098,7 +1099,7 @@ function AnnouncementsSection(): JSX.Element {
   const [announcements, setAnnouncements] = useState<SystemAnnouncement[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [title, setTitle] = useState<string>('');
-  const [version, setVersion] = useState<string>('1.3.1');
+  const [version, setVersion] = useState<string>(APP_VERSION);
   const [body, setBody] = useState<string>('');
   const [sendPush, setSendPush] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -1162,7 +1163,7 @@ function AnnouncementsSection(): JSX.Element {
         <div className="space-y-1">
           <CardTitle className="flex items-center gap-2 text-base">
             <Megaphone className="h-4 w-4 text-amber-400" />
-            Comunicados e Novidades do Software (v1.3.1)
+            Comunicados e Novidades do Software (v{APP_VERSION})
           </CardTitle>
           <p className="text-muted-foreground text-xs">
             Publique novidades, melhorias ou notas de versão que serão exibidas
@@ -1207,7 +1208,7 @@ function AnnouncementsSection(): JSX.Element {
               <input
                 id="ann-title"
                 type="text"
-                placeholder="Ex: Atualização v1.3.1 — Novo Checkout Transparente e Notificações"
+                placeholder={`Ex: Atualização v${APP_VERSION} — Novas melhorias e recursos`}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
@@ -1220,7 +1221,7 @@ function AnnouncementsSection(): JSX.Element {
               <input
                 id="ann-ver"
                 type="text"
-                placeholder="1.3.1"
+                placeholder={APP_VERSION}
                 value={version}
                 onChange={(e) => setVersion(e.target.value)}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"

@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
-import { addMonths } from 'date-fns';
 import { Crown, Lock, Plus } from 'lucide-react';
 
 import { ExpenseForm } from '@/components/expense/ExpenseForm';
 import { PayDrawer } from '@/components/payment/PayDrawer';
 import { PaymentQueue } from '@/components/payment/PaymentQueue';
 import { PaymentHistory } from '@/components/payment/PaymentHistory';
-import { MonthCarousel } from '@/components/payment/MonthCarousel';
+import {
+  MonthCarousel,
+  getPeriodForOffset,
+} from '@/components/payment/MonthCarousel';
 import { LockedMonthOverlay } from '@/components/plan/LockedMonthOverlay';
 import { AnimatedAdBanner } from '@/components/ads/AnimatedAdBanner';
 import { Button } from '@/components/ui/button';
@@ -50,9 +52,8 @@ export function QueuePage(): JSX.Element {
   // O estado é preservado ao navegar entre páginas (filtro mantido).
   const [monthOffset, setMonthOffset] = useState(0);
 
-  const referenceDate = addMonths(new Date(), monthOffset);
-  const selectedMonth = referenceDate.getMonth() + 1;
-  const selectedYear = referenceDate.getFullYear();
+  const { month: selectedMonth, year: selectedYear } =
+    getPeriodForOffset(monthOffset);
   const isMonthUnlocked = canViewPeriod(selectedMonth, selectedYear);
 
   const handleSelectItem = useCallback(

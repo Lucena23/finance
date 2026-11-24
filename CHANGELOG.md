@@ -4,6 +4,25 @@ Histórico Oficial do Projeto — Aksurim Software
 
 ## REGISTROS RECENTES
 
+Data: 2026-11-24
+Versão: 1.3.2
+Tipo: FEATURE / UX
+Origem: Totais Somados nos Cabeçalhos da Fila e Carrossel Unificado de Meses no Painel Gerencial
+Descrição: Inclusão da soma monetária total em tempo real nos cabeçalhos dos agrupamentos da Fila (`Em atraso`, `Mês atual`, `A vencer` e `Pagas neste Mês`), mantendo visíveis tanto a quantidade de registros quanto o valor total mesmo quando os blocos estão recolhidos, além de ampliar o limite da listagem de histórico para 500 itens no mês. Substituição do antigo seletor de ano/meses no Painel Gerencial pelo mesmo componente `MonthCarousel` da Fila, com centralização imediata do mês atual na abertura da tela e cálculo seguro de período ancorado ao fuso `America/Sao_Paulo`. Sincronização da versão SemVer oficial para `v1.3.2` com referência dinâmica `APP_VERSION` na Central de Comunicados (`/admin`).
+Arquivos alterados:
+  - frontend/src/components/payment/PaymentQueue.tsx
+  - frontend/src/components/payment/PaymentHistory.tsx
+  - frontend/src/components/payment/MonthCarousel.tsx
+  - frontend/src/pages/QueuePage.tsx
+  - frontend/src/pages/DashboardPage.tsx
+  - frontend/src/pages/AdminPage.tsx
+  - frontend/src/lib/constants.ts
+  - frontend/package.json
+  - backend/package.json
+  - README.md
+  - CHANGELOG.md
+Responsável: Joannderson Lucena (Aksurim Software)
+
 Data: 2026-11-12
 Versão: 1.3.1
 Tipo: FEATURE / ARCHITECTURE / HOTFIX

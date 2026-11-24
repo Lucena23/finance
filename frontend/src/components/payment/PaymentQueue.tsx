@@ -32,6 +32,7 @@ import { usePaymentQueue } from '@/hooks/usePaymentQueue';
 import type { PaymentItemWithPayer } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { QueueGroup } from '@/lib/constants';
+import { formatCurrency } from '@/lib/utils';
 
 import { PaymentCard } from './PaymentCard';
 
@@ -206,6 +207,10 @@ export function PaymentQueue({
         }
 
         const isCollapsed = Boolean(collapsedGroups[meta.key]);
+        const groupTotal = items.reduce(
+          (sum, item) => sum + item.expectedAmount,
+          0,
+        );
 
         return (
           <section
@@ -219,23 +224,32 @@ export function PaymentQueue({
               onClick={() => toggleGroup(meta.key)}
               aria-expanded={!isCollapsed}
               className={cn(
-                'flex w-full items-center justify-between rounded-md px-3 py-2 text-left transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 meta.headerBgClass,
               )}
             >
               <h2
                 className={cn(
-                  'flex items-center gap-2 text-sm font-semibold',
+                  'flex min-w-0 items-center gap-2 text-sm font-semibold',
                   meta.textClass,
                 )}
               >
                 <span aria-hidden="true">{meta.emoji}</span>
-                {meta.label}
+                <span className="truncate">{meta.label}</span>
               </h2>
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2">
                 <span
                   className={cn(
-                    'rounded-full bg-white/70 px-2 py-0.5 text-xs font-semibold',
+                    'text-xs font-bold tabular-nums sm:text-sm',
+                    meta.textClass,
+                  )}
+                  data-testid={`payment-queue-group-total-${meta.key}`}
+                >
+                  {formatCurrency(groupTotal)}
+                </span>
+                <span
+                  className={cn(
+                    'rounded-full bg-white/70 px-2 py-0.5 text-xs font-semibold tabular-nums',
                     meta.textClass,
                   )}
                 >

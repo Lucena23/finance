@@ -11,6 +11,7 @@ import {
 
 import { usePlan } from '@/contexts/PlanContext';
 import { cn } from '@/lib/cn';
+import { DEFAULT_TIMEZONE } from '@/lib/constants';
 
 export interface MonthOption {
   offset: number;
@@ -28,17 +29,49 @@ interface MonthCarouselProps {
   className?: string;
 }
 
+/**
+ * Calcula mês/ano (1-12) no fuso oficial (America/Sao_Paulo) ancorando no dia 1
+ * do mês corrente, evitando desvios nos dias 29/30/31 ou bugs do WebKit/iOS.
+ */
+export function getPeriodForOffset(offset: number): {
+  month: number;
+  year: number;
+  date: Date;
+} {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: DEFAULT_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+  });
+  // formatToParts evita depender do separador/ordem (WebKit/iOS formata en-CA como "MM/AAAA").
+  const parts = formatter.formatToParts(now);
+  const currentYear = Number(
+    parts.find((part) => part.type === 'year')?.value ?? now.getFullYear(),
+  );
+  const currentMonth = Number(
+    parts.find((part) => part.type === 'month')?.value ?? now.getMonth() + 1,
+  );
+  const baseDate = new Date(currentYear, currentMonth - 1, 1);
+  const date = addMonths(baseDate, offset);
+
+  return {
+    month: date.getMonth() + 1,
+    year: date.getFullYear(),
+    date,
+  };
+}
+
 function buildMonths(pastCount: number, futureCount: number): MonthOption[] {
-  const base = new Date();
   const months: MonthOption[] = [];
   for (let i = -pastCount; i <= futureCount; i++) {
-    const date = addMonths(base, i);
+    const { date, year, month } = getPeriodForOffset(i);
     months.push({
       offset: i,
       label: format(date, 'MMM/yy', { locale: ptBR }).toUpperCase(),
       monthName: format(date, 'MMMM', { locale: ptBR }),
-      year: date.getFullYear(),
-      month: date.getMonth() + 1,
+      year,
+      month,
     });
   }
   return months;
@@ -55,17 +88,51 @@ export function MonthCarousel({
   const months = useMemo<MonthOption[]>(() => buildMonths(pastCount, futureCount), [pastCount, futureCount]);
   const listRef = useRef<HTMLUListElement>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const isInitialScrollRef = useRef<boolean>(true);
 
   useEffect(() => {
     const targetIndex = months.findIndex(m => m.offset === value);
     const active = itemRefs.current[targetIndex];
-    if (active && typeof active.scrollIntoView === 'function') {
-      active.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center',
-      });
-    }
+    const list = listRef.current;
+
+    const frameId = window.requestAnimationFrame(() => {
+      const behavior: ScrollBehavior = isInitialScrollRef.current
+        ? 'auto'
+        : 'smooth';
+
+      if (list && active) {
+        const listRect = list.getBoundingClientRect();
+        if (listRect.width > 0) {
+          const activeRect = active.getBoundingClientRect();
+          const targetLeft =
+            list.scrollLeft +
+            (activeRect.left - listRect.left) -
+            (listRect.width - activeRect.width) / 2;
+          const clampedLeft = Math.max(0, targetLeft);
+
+          if (typeof list.scrollTo === 'function') {
+            list.scrollTo({ left: clampedLeft, behavior });
+          } else {
+            list.scrollLeft = clampedLeft;
+          }
+          isInitialScrollRef.current = false;
+          return;
+        }
+      }
+
+      if (active && typeof active.scrollIntoView === 'function') {
+        active.scrollIntoView({
+          behavior,
+          block: 'nearest',
+          inline: 'center',
+        });
+      }
+      isInitialScrollRef.current = false;
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
   }, [value, months]);
 
   const focusOffset = useCallback(
@@ -143,7 +210,7 @@ export function MonthCarousel({
           aria-label="Selecione o mês de referência"
           onKeyDown={handleKeyDown}
           className={cn(
-            'flex flex-1 gap-2 overflow-x-auto scroll-smooth pb-1',
+            'flex flex-1 gap-2 overflow-x-auto pb-1',
             'snap-x snap-mandatory scrollbar-hide'
           )}
         >

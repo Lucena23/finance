@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ApiError, paymentItemsApi } from '@/lib/api';
 import type { PaymentItemWithPayer } from '@/lib/api';
 import { cn } from '@/lib/cn';
+import { formatCurrency } from '@/lib/utils';
 import { PaymentCard } from './PaymentCard';
 import { PaidDetailsDrawer } from './PaidDetailsDrawer';
 
@@ -36,7 +37,7 @@ export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Elemen
     try {
       setIsLoading(true);
       setError(null);
-      const res = await paymentItemsApi.history({ month, year, limit: 100 });
+      const res = await paymentItemsApi.history({ month, year, limit: 500 });
       setItems(res.data);
     } catch (err) {
       const message =
@@ -95,18 +96,32 @@ export function PaymentHistory({ month, year }: PaymentHistoryProps): JSX.Elemen
     }
   }, []);
 
+  const paidTotal = items.reduce(
+    (sum, item) => sum + (item.paidAmount ?? item.expectedAmount),
+    0,
+  );
+
   const headerElement = (
     <button
       type="button"
       onClick={() => setIsCollapsed((prev) => !prev)}
       aria-expanded={!isCollapsed}
-      className="flex w-full items-center justify-between rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-left transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="flex w-full items-center justify-between gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-left transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
-        <span aria-hidden="true">🟢</span> Pagas neste Mês
+      <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold text-emerald-300">
+        <span aria-hidden="true">🟢</span>
+        <span className="truncate">Pagas neste Mês</span>
       </h2>
-      <div className="flex items-center gap-2">
-        <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-300">
+      <div className="flex shrink-0 items-center gap-2">
+        {!isLoading ? (
+          <span
+            className="text-xs font-bold tabular-nums text-emerald-300 sm:text-sm"
+            data-testid="payment-history-total"
+          >
+            {formatCurrency(paidTotal)}
+          </span>
+        ) : null}
+        <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold tabular-nums text-emerald-300">
           {items.length}
         </span>
         <ChevronDown
