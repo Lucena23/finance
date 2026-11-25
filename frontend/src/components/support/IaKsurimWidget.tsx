@@ -521,7 +521,7 @@ export function IaKsurimWidget({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'group relative flex h-13 w-13 items-center justify-center rounded-full border-2 p-0.5 shadow-[0_8px_25px_rgba(6,119,127,0.5)] transition-all duration-300 hover:scale-110 active:scale-95',
+          'group relative flex h-14 w-14 max-h-14 max-w-14 shrink-0 items-center justify-center rounded-full border-2 p-0.5 shadow-[0_8px_25px_rgba(6,119,127,0.5)] transition-all duration-300 hover:scale-110 active:scale-95',
           isOpen
             ? 'border-slate-600 bg-slate-800'
             : 'border-[#DAF043] bg-gradient-to-tr from-[#06777F] to-slate-900'
@@ -535,10 +535,10 @@ export function IaKsurimWidget({
             <img
               src="/images/ia-ksurim-avatar.jpg"
               alt="IA-ksurim"
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover rounded-full aspect-square pointer-events-none"
             />
             {/* Brilho neon de IA */}
-            <span className="absolute inset-0 rounded-full border border-[#DAF043]/30" />
+            <span className="absolute inset-0 rounded-full border border-[#DAF043]/30 pointer-events-none" />
           </div>
         )}
       </button>
