@@ -1,18 +1,17 @@
 import { Module } from '@nestjs/common';
 
+import { PlanModule } from '../plan/plan.module';
+import { DeepSeekService } from './deepseek.service';
 import { SupportController } from './support.controller';
 import { SupportService } from './support.service';
 
 /**
- * SupportModule — Suporte ao cliente via Telegram (TAREFA 21).
- * ARCHITECTURE §3.2 — MÓDULO SUPPORT — RN-14.
- *
- * Apenas o backend fala com a API do Telegram, usando as credenciais
- * `TELEGRAM_BOT_TOKEN` e `TELEGRAM_CHAT_ID` do `.env` (RN-14).
+ * SupportModule — Suporte ao cliente, Telegram e IA-ksurim (v1.4.0).
  */
 @Module({
+  imports: [PlanModule],
   controllers: [SupportController],
-  providers: [SupportService],
-  exports: [SupportService],
+  providers: [SupportService, DeepSeekService],
+  exports: [SupportService, DeepSeekService],
 })
 export class SupportModule {}

@@ -4,6 +4,39 @@ Histórico Oficial do Projeto — Aksurim Software
 
 ## REGISTROS RECENTES
 
+Data: 2026-11-25
+Versão: 1.4.0
+Tipo: FEATURE / AI / ARCHITECTURE
+Origem: IA-ksurim Suporte e Navegação, Atendimento Público na Frontpage e Desacoplamento dos Bots do Telegram
+Descrição: Implementação da central inteligente de suporte impulsionada pela IA-ksurim (motor LLM DeepSeek) com avatar oficial 3D e guardrail inegociável de escopo estrito a suporte e navegação da plataforma, preservando o modelo da futura Consultoria Financeira com IA. Lançamento do suporte público na Landing Page e tela de Login para assistência imediata a novos visitantes e recuperação de acesso (erros de digitação de e-mail e redefinição de senha) com fechamento comercial elegante para teste gratuito de 15 dias e rate limit de segurança por IP. No frontend, criação do widget responsivo flutuante IaKsurimWidget, integrado à LandingPage, LoginPage, AppShell e remodelagem da tela de Ajuda & Suporte, com modelo de Unit Economics que oferece suporte em tempo real ilimitado para contas Premium e Trial de 15 dias e resposta nativa cordial de upsell (zero tokens consumidos) para contas Free. No backend, desacoplamento completo dos bots do Telegram em dois canais dedicados e independentes (Controle Aksurim Financeiro e Controle Aksurim Suporte), liberando totalmente a infraestrutura de orquestração da Workstation.
+Arquivos alterados:
+  - backend/src/support/deepseek.service.ts
+  - backend/src/support/support.service.ts
+  - backend/src/support/support.controller.ts
+  - backend/src/support/support.module.ts
+  - backend/src/support/dto/chat-message.dto.ts
+  - backend/src/support/dto/public-support-form.dto.ts
+  - backend/src/plan/plan-payment.service.ts
+  - backend/src/common/route-regression.spec.ts
+  - backend/src/support/support.service.spec.ts
+  - backend/package.json
+  - frontend/src/components/support/IaKsurimWidget.tsx
+  - frontend/src/components/support/IaKsurimWidget.test.tsx
+  - frontend/src/lib/api.ts
+  - frontend/src/lib/constants.ts
+  - frontend/src/pages/LandingPage.tsx
+  - frontend/src/pages/LoginPage.tsx
+  - frontend/src/pages/SupportPage.tsx
+  - frontend/src/components/layout/AppShell.tsx
+  - frontend/public/images/ia-ksurim-avatar.jpg
+  - frontend/package.json
+  - package.json
+  - README.md
+  - CHANGELOG.md
+  - docs/IA_KSURIM_ARQUITETURA.md
+  - docs/CHECKLIST_v1.4.0.md
+Responsável: Joannderson Lucena (Aksurim Software)
+
 Data: 2026-11-24
 Versão: 1.3.2
 Tipo: FEATURE / UX

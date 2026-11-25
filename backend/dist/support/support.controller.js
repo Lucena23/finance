@@ -15,17 +15,64 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SupportController = void 0;
 const common_1 = require("@nestjs/common");
 const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
+const public_decorator_1 = require("../common/decorators/public.decorator");
+const chat_message_dto_1 = require("./dto/chat-message.dto");
 const create_support_message_dto_1 = require("./dto/create-support-message.dto");
+const public_support_form_dto_1 = require("./dto/public-support-form.dto");
 const support_service_1 = require("./support.service");
 let SupportController = class SupportController {
     constructor(supportService) {
         this.supportService = supportService;
+    }
+    chatPublic(dto, req) {
+        const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+            req.socket.remoteAddress ||
+            'unknown';
+        return this.supportService.chatPublic(dto, ip);
+    }
+    sendPublicForm(dto, req) {
+        const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+            req.socket.remoteAddress ||
+            'unknown';
+        return this.supportService.sendPublicSupportForm(dto, ip);
+    }
+    chatAuthenticated(user, dto) {
+        return this.supportService.chatAuthenticated(user, dto);
     }
     send(user, dto) {
         return this.supportService.sendToTelegram(user, dto);
     }
 };
 exports.SupportController = SupportController;
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('public/chat'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [chat_message_dto_1.ChatMessageDto, Object]),
+    __metadata("design:returntype", Promise)
+], SupportController.prototype, "chatPublic", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('public/form'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [public_support_form_dto_1.PublicSupportFormDto, Object]),
+    __metadata("design:returntype", Promise)
+], SupportController.prototype, "sendPublicForm", null);
+__decorate([
+    (0, common_1.Post)('chat'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, chat_message_dto_1.ChatMessageDto]),
+    __metadata("design:returntype", Promise)
+], SupportController.prototype, "chatAuthenticated", null);
 __decorate([
     (0, common_1.Post)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),

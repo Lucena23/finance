@@ -27,6 +27,7 @@ import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { InstallAppButton } from '@/components/pwa/InstallAppButton';
+import { IaKsurimWidget } from '@/components/support/IaKsurimWidget';
 import { useAuth } from '@/hooks/useAuth';
 import { ApiError } from '@/lib/api';
 import { isValidEmail, isNonEmpty } from '@/lib/validators';
@@ -226,6 +227,9 @@ export function LoginPage(): JSX.Element {
         <p>&copy; 2024 - {new Date().getFullYear()} Aksurim Software.</p>
         <p>Marca Registrada. Todos os direitos reservados.</p>
       </footer>
+
+      {/* Widget IA-ksurim Suporte */}
+      <IaKsurimWidget isPublic />
     </main>
   );
 }

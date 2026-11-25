@@ -16,6 +16,7 @@ import { Outlet } from 'react-router-dom';
 
 import { AnnouncementModal } from '@/components/notification/AnnouncementModal';
 import { PremiumModal } from '@/components/plan/PremiumModal';
+import { IaKsurimWidget } from '@/components/support/IaKsurimWidget';
 
 import { BottomNav } from './BottomNav';
 import { Header } from './Header';
@@ -37,6 +38,7 @@ export function AppShell(): JSX.Element {
       <BottomNav />
       <PremiumModal />
       <AnnouncementModal />
+      <IaKsurimWidget className="bottom-20 md:bottom-5" />
     </div>
   );
 }
