@@ -8,8 +8,9 @@ Data: 2026-11-24
 Versão: 1.3.2
 Tipo: FEATURE / UX
 Origem: Totais Somados nos Cabeçalhos da Fila e Carrossel Unificado de Meses no Painel Gerencial
-Descrição: Inclusão da soma monetária total em tempo real nos cabeçalhos dos agrupamentos da Fila (`Em atraso`, `Mês atual`, `A vencer` e `Pagas neste Mês`), mantendo visíveis tanto a quantidade de registros quanto o valor total mesmo quando os blocos estão recolhidos, além de ampliar o limite da listagem de histórico para 500 itens no mês. Substituição do antigo seletor de ano/meses no Painel Gerencial pelo mesmo componente `MonthCarousel` da Fila, com centralização imediata do mês atual na abertura da tela e cálculo seguro de período ancorado ao fuso `America/Sao_Paulo`. Sincronização da versão SemVer oficial para `v1.3.2` com referência dinâmica `APP_VERSION` na Central de Comunicados (`/admin`).
+Descrição: Inclusão da soma monetária total em tempo real nos cabeçalhos dos agrupamentos da Fila (`Em atraso`, `Mês atual`, `A vencer` e `Pagas neste Mês`), mantendo visíveis tanto a quantidade de registros quanto o valor total mesmo quando os blocos estão recolhidos, além de ampliar o limite da listagem de histórico para 500 itens no mês (frontend e validação `@Max(500)` no `QueryHistoryDto`). Substituição do antigo seletor de ano/meses no Painel Gerencial pelo mesmo componente `MonthCarousel` da Fila, com centralização imediata do mês atual na abertura da tela e cálculo seguro de período ancorado ao fuso `America/Sao_Paulo`. Sincronização da versão SemVer oficial para `v1.3.2` com referência dinâmica `APP_VERSION` na Central de Comunicados (`/admin`).
 Arquivos alterados:
+  - backend/src/payment-item/dto/query-history.dto.ts
   - frontend/src/components/payment/PaymentQueue.tsx
   - frontend/src/components/payment/PaymentHistory.tsx
   - frontend/src/components/payment/MonthCarousel.tsx
@@ -73,6 +74,25 @@ Arquivos alterados:
   - frontend/src/lib/constants.ts
   - README.md
   - CHANGELOG.md
+Responsável: Joannderson Lucena (Aksurim Software)
+
+Data: 2026-11-03
+Versão: 1.2.8
+Tipo: FEATURE / FINTECH
+Origem: Quitação Parcial, Desconto, Juros/Multa, Reajuste Automático e Radar de Juros no Painel/Relatórios
+Descrição: Implementação de quitação inteligente quando o valor pago difere do valor previsto (`PayDrawer` e `PaymentItemService`): suporte a pagamento parcial mantendo o saldo restante em aberto na fila (com recomposição automática do card único ao desfazer a quitação parcial), quitação integral com desconto/acordo, registro pontual de juros/multas sem alterar parcelas futuras e reajuste automático de valor para próximas parcelas e recorrências pendentes. Inclusão do Radar de Juros, Encargos & Economia e barras proporcionais por membro no Painel Gerencial (`DashboardService` e `SummaryCards`), selos visuais nos cards da Fila (`PaymentCard`) e Demonstrativo de Juros/Economia nos relatórios PDF e CSV (`ReportsService`).
+Arquivos alterados:
+  - backend/src/payment-item/dto/pay-item.dto.ts
+  - backend/src/payment-item/payment-item.service.ts
+  - backend/src/payment-item/payment-item.service.spec.ts
+  - backend/src/dashboard/dashboard.service.ts
+  - backend/src/reports/reports.service.ts
+  - frontend/src/components/payment/PayDrawer.tsx
+  - frontend/src/components/payment/PaymentCard.tsx
+  - frontend/src/components/dashboard/SummaryCards.tsx
+  - frontend/src/pages/QueuePage.tsx
+  - frontend/src/lib/api.ts
+  - frontend/src/lib/constants.ts
 Responsável: Joannderson Lucena (Aksurim Software)
 
 Data: 2026-11-03
