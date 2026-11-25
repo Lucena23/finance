@@ -19,7 +19,7 @@ DIRETRIZES FUNDAMENTAIS:
    - Apresente-se como IA-ksurim (Suporte & Ajuda da Aksurim).
    - Seja cordial, executiva, direta, precisa e didática.
    - Responda em Português do Brasil com excelente clareza.
-   - Máximo de 2 a 3 parágrafos curtos por resposta. Seja concisa e evite respostas prolixas.
+   - Máximo de 2 a 3 parágrafos curtos por resposta. Seja concisa e termine sempre suas frases com ponto final.
 
 2. ESCOPO PERMITIDO:
    - Dúvidas de uso do sistema: cadastrar despesas (avulsas, parceladas, recorrentes), histórico de pagamentos, relatórios PDF/CSV, categorias, configurações de família.
@@ -39,8 +39,11 @@ DIRETRIZES FUNDAMENTAIS:
    - Se o usuário perguntar sobre consultoria financeira pessoal, responda polidamente:
      "Como sou a assistente oficial de Suporte e Navegação da plataforma, meu foco é te ajudar a usar todas as ferramentas do Aksurim Controle. Em breve lançaremos um módulo exclusivo de Consultoria Financeira com IA para analisar seus hábitos e sugerir economias!"
 
-4. SUGESTÕES DE AÇÃO:
-   - Sempre que fizer sentido, sugira 2 ou 3 ações rápidas e curtas para o usuário dar o próximo passo.`;
+4. REGRA DE BOTÕES INTERATIVOS (MUITO IMPORTANTE):
+   - NUNCA escreva no corpo do texto listas numéricas do tipo "1) x, 2) y" prometendo opções.
+   - Ao final de toda resposta, em uma linha separada, adicione EXATAMENTE a tag de botões com 2 a 3 sugestões curtas de ações que o usuário pode tocar para continuar:
+     BOTOES: Sugestão 1 | Sugestão 2 | Sugestão 3
+   - O sistema converterá essa linha em botões interativos clicáveis na tela do usuário.`;
 
 @Injectable()
 export class DeepSeekService {
@@ -79,7 +82,8 @@ export class DeepSeekService {
 - Incentive com simpatia a experimentar os 15 dias grátis de Trial.
 - Se o usuário perguntar dados pessoais de despesas ou saldo, avise que por segurança bancária ele deve entrar na conta.`;
       if (turnNumber >= 4) {
-        dynamicSystemPrompt += `\n- ESTE É O ÚLTIMO TURNO DA VISITA: Conclua calorosamente convidando o usuário a criar a conta gratuita ou fazer login para continuar o atendimento completo.`;
+        dynamicSystemPrompt += `\n- ESTE É O ÚLTIMO TURNO DA VISITA: Conclua calorosamente convidando o usuário a criar a conta gratuita ou fazer login para continuar o atendimento completo.
+BOTOES: 🚀 Criar Conta Gratuita | 🔑 Fazer Login | 📩 Abrir Chamado`;
       }
     } else {
       dynamicSystemPrompt += `\n\nCONTEXTO: O usuário é um cliente autenticado no plano Premium/Trial${
@@ -106,7 +110,7 @@ export class DeepSeekService {
         body: JSON.stringify({
           model: this.model,
           messages,
-          max_tokens: 220,
+          max_tokens: 500,
           temperature: 0.3,
           stream: false,
         }),
@@ -124,13 +128,21 @@ export class DeepSeekService {
         choices?: Array<{ message?: { content?: string } }>;
       };
 
-      const replyContent =
+      const rawReply =
         data.choices?.[0]?.message?.content?.trim() ||
         'Olá! Como posso ajudar você com o Aksurim Controle hoje?';
 
+      // Extrai os botões se a IA colocou a tag BOTOES:
+      const parsed = this.parseReplyAndButtons(rawReply);
+
+      const finalButtons =
+        parsed.buttons && parsed.buttons.length > 0
+          ? parsed.buttons
+          : this.deriveQuickReplies(userMessage, contextType, turnNumber);
+
       return {
-        reply: replyContent,
-        quickReplies: this.deriveQuickReplies(userMessage, contextType, turnNumber),
+        reply: parsed.cleanText,
+        quickReplies: finalButtons,
         isCommercialClose: contextType === 'PUBLIC_FRONTPAGE' && turnNumber >= 4,
       };
     } catch (error) {
@@ -141,6 +153,21 @@ export class DeepSeekService {
       );
       return this.fallbackResponse(contextType);
     }
+  }
+
+  private parseReplyAndButtons(text: string): { cleanText: string; buttons?: string[] } {
+    const match = text.match(/(?:^|\n)BOTOES:\s*(.+)$/i);
+    if (!match) {
+      return { cleanText: text };
+    }
+
+    const cleanText = text.replace(/(?:^|\n)BOTOES:\s*(.+)$/i, '').trim();
+    const buttons = match[1]
+      .split('|')
+      .map((b) => b.trim())
+      .filter((b) => b.length > 0 && b.length < 40);
+
+    return { cleanText, buttons };
   }
 
   private deriveQuickReplies(

@@ -19,6 +19,7 @@ export declare class DeepSeekService {
         role: 'user' | 'assistant';
         content: string;
     }>, contextType?: 'PUBLIC_FRONTPAGE' | 'AUTHENTICATED_PREMIUM', turnNumber?: number, userName?: string): Promise<IaKsurimChatResponse>;
+    private parseReplyAndButtons;
     private deriveQuickReplies;
     private fallbackResponse;
 }

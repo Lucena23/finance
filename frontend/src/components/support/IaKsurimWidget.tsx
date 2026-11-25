@@ -35,6 +35,41 @@ interface MessageItem {
   isCommercialClose?: boolean;
 }
 
+function renderFormattedMessage(text: string) {
+  const paragraphs = text.split('\n\n');
+  return (
+    <div className="space-y-2">
+      {paragraphs.map((para, pIdx) => {
+        const lines = para.split('\n');
+        return (
+          <div key={pIdx} className="space-y-1">
+            {lines.map((line, lIdx) => {
+              const isBullet = line.trim().startsWith('- ') || line.trim().startsWith('* ');
+              const lineClean = isBullet ? line.trim().replace(/^[-*]\s+/, '') : line;
+              const parts = lineClean.split(/(\*\*[^*]+\*\*)/g);
+
+              return (
+                <p key={lIdx} className={cn(isBullet && 'pl-2 border-l-2 border-[#06777F]/80 text-slate-200 my-0.5')}>
+                  {parts.map((part, idx) => {
+                    if (part.startsWith('**') && part.endsWith('**')) {
+                      return (
+                        <strong key={idx} className="font-semibold text-white">
+                          {part.slice(2, -2)}
+                        </strong>
+                      );
+                    }
+                    return part;
+                  })}
+                </p>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function IaKsurimWidget({
   isPublic = false,
   className,
@@ -76,9 +111,12 @@ export function IaKsurimWidget({
   useEffect(() => {
     if (isOpen) {
       setShowTooltip(false);
-      messagesEndRef.current?.scrollIntoView?.({ behavior: 'smooth' });
+      const timer = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView?.({ behavior: 'smooth' });
+      }, 60);
+      return () => clearTimeout(timer);
     }
-  }, [isOpen, messages, viewMode]);
+  }, [isOpen, messages, viewMode, isLoading]);
 
   async function handleSendMessage(textToSend?: string) {
     const text = (textToSend || inputMessage).trim();
@@ -281,26 +319,26 @@ export function IaKsurimWidget({
                   >
                     <div
                       className={cn(
-                        'max-w-[85%] rounded-2xl px-3.5 py-2.5 leading-relaxed shadow-sm',
+                        'max-w-[88%] rounded-2xl px-3.5 py-2.5 leading-relaxed shadow-sm text-xs',
                         m.sender === 'user'
                           ? 'bg-[#06777F] text-white rounded-br-none'
                           : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-bl-none'
                       )}
                     >
-                      <p className="whitespace-pre-wrap">{m.text}</p>
+                      {renderFormattedMessage(m.text)}
                     </div>
 
-                    {/* Botões Rápidos / Quick Replies */}
+                    {/* Botões Rápidos / Quick Replies Clicáveis */}
                     {m.quickReplies && m.quickReplies.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
+                      <div className="mt-2.5 flex flex-wrap gap-1.5 animate-in fade-in duration-200">
                         {m.quickReplies.map((reply) => (
                           <button
                             key={reply}
                             type="button"
                             onClick={() => handleQuickReplyClick(reply)}
-                            className="rounded-full border border-[#06777F]/50 bg-slate-900/80 px-2.5 py-1 text-[11px] font-medium text-slate-300 shadow-sm transition-all hover:border-[#DAF043] hover:bg-[#06777F]/20 hover:text-white"
+                            className="flex items-center gap-1.5 rounded-full border border-[#06777F]/60 bg-gradient-to-r from-slate-900 via-slate-900 to-[#06777F]/20 px-3 py-1.5 text-[11px] font-medium text-slate-200 shadow-sm transition-all hover:scale-[1.02] hover:border-[#DAF043] hover:text-white active:scale-95 cursor-pointer"
                           >
-                            {reply}
+                            <span>{reply}</span>
                           </button>
                         ))}
                       </div>
