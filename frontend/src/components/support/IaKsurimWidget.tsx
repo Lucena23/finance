@@ -36,31 +36,165 @@ interface MessageItem {
   isCommercialClose?: boolean;
 }
 
+/** Menus e botões conhecidos da interface para destaque visual com badge */
+const KNOWN_UI_MENUS = new Set([
+  'painel',
+  'despesas',
+  'fila',
+  'categorias',
+  'config',
+  'configurações',
+  'planos',
+  'suporte',
+  '+ nova despesa',
+  'nova despesa',
+]);
+
+function isMenuOrBadge(label: string): boolean {
+  const normalized = label.trim().toLowerCase();
+  return (
+    KNOWN_UI_MENUS.has(normalized) ||
+    normalized.startsWith('👑') ||
+    normalized.startsWith('+ ')
+  );
+}
+
+function renderInlineTokens(lineText: string) {
+  // Limpa preventivamente qualquer rota técnica como (/dashboard) ou (/plans)
+  const sanitized = lineText.replace(/\s*\(\/[a-z0-9_-]+\)/gi, '');
+  const parts = sanitized.split(/(\*\*\[[^\]]+\]\*\*|\[[^\]]+\]|\*\*[^*]+\*\*)/g);
+
+  return parts.map((part, idx) => {
+    // 1. Tag no formato **[Nome]** ou [Nome]
+    if (
+      (part.startsWith('**[') && part.endsWith(']**')) ||
+      (part.startsWith('[') && part.endsWith(']'))
+    ) {
+      const raw = part.startsWith('**[')
+        ? part.slice(3, -3).trim()
+        : part.slice(1, -1).trim();
+
+      return (
+        <span
+          key={idx}
+          className="inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded-md font-bold text-[11px] text-[#DAF043] bg-[#DAF043]/15 border border-[#DAF043]/40 shadow-sm tracking-wide align-baseline"
+        >
+          {raw}
+        </span>
+      );
+    }
+
+    // 2. Negrito padrão **Texto**
+    if (part.startsWith('**') && part.endsWith('**')) {
+      const boldText = part.slice(2, -2).trim();
+
+      // Se for o nome de um menu em negrito simples, destaca como badge
+      if (isMenuOrBadge(boldText)) {
+        return (
+          <span
+            key={idx}
+            className="inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded-md font-bold text-[11px] text-[#DAF043] bg-[#DAF043]/15 border border-[#DAF043]/40 shadow-sm tracking-wide align-baseline"
+          >
+            {boldText}
+          </span>
+        );
+      }
+
+      return (
+        <strong key={idx} className="font-semibold text-white">
+          {boldText}
+        </strong>
+      );
+    }
+
+    return part;
+  });
+}
+
+function renderTable(tableLines: string[]) {
+  const rows = tableLines
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith('|') && line.endsWith('|'))
+    .map((line) =>
+      line
+        .slice(1, -1)
+        .split('|')
+        .map((c) => c.trim()),
+    );
+
+  if (rows.length < 2) return null;
+  const header = rows[0];
+  const dataRows = rows.slice(1).filter((r) => !r.every((c) => /^-+$/.test(c)));
+
+  return (
+    <div className="overflow-x-auto my-2.5 rounded-lg border border-slate-700/60 bg-slate-900/80 shadow-md">
+      <table className="min-w-full text-[11px] text-left border-collapse">
+        <thead className="bg-slate-800/90 text-[#DAF043] font-bold border-b border-slate-700">
+          <tr>
+            {header.map((col, idx) => (
+              <th key={idx} className="px-2.5 py-1.5 whitespace-nowrap">
+                {col}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-800 text-slate-200">
+          {dataRows.map((row, rIdx) => (
+            <tr key={rIdx} className="hover:bg-slate-800/40 transition-colors">
+              {row.map((cell, cIdx) => (
+                <td key={cIdx} className="px-2.5 py-1.5 whitespace-nowrap">
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function renderFormattedMessage(text: string) {
   const paragraphs = text.split('\n\n');
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5 text-[12.5px] leading-relaxed">
       {paragraphs.map((para, pIdx) => {
-        const lines = para.split('\n');
+        const rawLines = para.split('\n').map((l) => l.trim()).filter(Boolean);
+
+        // Verifica se o parágrafo é uma tabela Markdown
+        const isTable =
+          rawLines.length >= 2 &&
+          rawLines.every((l) => l.startsWith('|') && l.endsWith('|'));
+
+        if (isTable) {
+          return <div key={pIdx}>{renderTable(rawLines)}</div>;
+        }
+
         return (
           <div key={pIdx} className="space-y-1">
-            {lines.map((line, lIdx) => {
-              const isBullet = line.trim().startsWith('- ') || line.trim().startsWith('* ');
-              const lineClean = isBullet ? line.trim().replace(/^[-*]\s+/, '') : line;
-              const parts = lineClean.split(/(\*\*[^*]+\*\*)/g);
+            {rawLines.map((line, lIdx) => {
+              const isBullet =
+                line.startsWith('- ') ||
+                line.startsWith('* ') ||
+                line.startsWith('• ');
+              const lineClean = isBullet
+                ? line.replace(/^[-*•]\s+/, '')
+                : line;
+
+              if (isBullet) {
+                return (
+                  <div key={lIdx} className="flex items-start gap-1.5 pl-1.5 my-1 text-slate-200">
+                    <span className="text-[#DAF043] font-bold select-none">•</span>
+                    <div className="flex-1 leading-relaxed">
+                      {renderInlineTokens(lineClean)}
+                    </div>
+                  </div>
+                );
+              }
 
               return (
-                <p key={lIdx} className={cn(isBullet && 'pl-2 border-l-2 border-[#06777F]/80 text-slate-200 my-0.5')}>
-                  {parts.map((part, idx) => {
-                    if (part.startsWith('**') && part.endsWith('**')) {
-                      return (
-                        <strong key={idx} className="font-semibold text-white">
-                          {part.slice(2, -2)}
-                        </strong>
-                      );
-                    }
-                    return part;
-                  })}
+                <p key={lIdx} className="leading-relaxed text-slate-200">
+                  {renderInlineTokens(line)}
                 </p>
               );
             })}
