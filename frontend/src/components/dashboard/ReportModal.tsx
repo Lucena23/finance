@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Crown, Download, FileText, Loader2, Lock } from 'lucide-react';
+import { Crown, Download, FileSpreadsheet, FileText, Loader2, Lock } from 'lucide-react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
@@ -23,49 +23,54 @@ export function ReportModal(): JSX.Element {
   const { hasPremiumAccess, showGoldCue, openPremiumModal } = usePlan();
   const [isOpen, setIsOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isExportingCsv, setIsExportingCsv] = useState(false);
 
   const isReadOnlyMember = !hasPremiumAccess && user?.role === Role.MEMBER;
 
-  // Default values
+  // Datas padrão: primeiro e último dia do mês atual
   const [startDate, setStartDate] = useState(() => format(startOfMonth(new Date()), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(() => format(endOfMonth(new Date()), 'yyyy-MM-dd'));
-  const [reportType, setReportType] = useState<'sintetico' | 'analitico'>('sintetico');
+  const [exportFormat, setExportFormat] = useState<'sintetico' | 'analitico' | 'csv'>('sintetico');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleOpenPdfModal = () => {
-    if (!hasPremiumAccess) {
-      openPremiumModal(isReadOnlyMember ? 'FAMILY_PLAN_EXPIRED' : 'REPORTS');
-      return;
-    }
+  const handleOpenModal = () => {
+    setErrorMsg('');
     setIsOpen(true);
   };
 
-  const handleExportCsv = async () => {
-    if (isReadOnlyMember) {
-      openPremiumModal('FAMILY_PLAN_EXPIRED');
-      return;
-    }
-    try {
-      setIsExportingCsv(true);
-      await reportsApi.exportCsv();
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 402) {
-        openPremiumModal(err.feature ?? 'FAMILY_PLAN_EXPIRED');
-      }
-    } finally {
-      setIsExportingCsv(false);
-    }
-  };
-
-  const handleGenerate = async () => {
+  const handleExecuteExport = async () => {
     try {
       setIsGenerating(true);
       setErrorMsg('');
 
+      // Se for exportação em planilha CSV
+      if (exportFormat === 'csv') {
+        if (isReadOnlyMember) {
+          openPremiumModal('FAMILY_PLAN_EXPIRED');
+          return;
+        }
+
+        try {
+          await reportsApi.exportCsv(startDate, endDate);
+          setIsOpen(false);
+        } catch (err) {
+          if (err instanceof ApiError && err.status === 402) {
+            openPremiumModal(err.feature ?? 'FAMILY_PLAN_EXPIRED');
+          } else {
+            setErrorMsg('Falha ao exportar a planilha CSV. Tente novamente.');
+          }
+        }
+        return;
+      }
+
+      // Se for relatório em PDF (Sintético ou Analítico)
+      if (!hasPremiumAccess) {
+        openPremiumModal(isReadOnlyMember ? 'FAMILY_PLAN_EXPIRED' : 'REPORTS');
+        return;
+      }
+
       const token = getAuthToken();
       const response = await fetch(
-        `${API_BASE_URL}/reports/pdf?startDate=${startDate}&endDate=${endDate}&type=${reportType}`,
+        `${API_BASE_URL}/reports/pdf?startDate=${startDate}&endDate=${endDate}&type=${exportFormat}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -80,14 +85,14 @@ export function ReportModal(): JSX.Element {
       }
 
       if (!response.ok) {
-        throw new Error('Erro ao gerar relatório');
+        throw new Error('Erro ao gerar relatório PDF');
       }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Relatorio_Aksurim_${reportType}_${startDate}_a_${endDate}.pdf`;
+      a.download = `Relatorio_Aksurim_${exportFormat}_${startDate}_a_${endDate}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -95,7 +100,7 @@ export function ReportModal(): JSX.Element {
 
       setIsOpen(false);
     } catch (err) {
-      setErrorMsg('Falha ao gerar o relatório. Tente novamente.');
+      setErrorMsg('Falha ao gerar o documento. Verifique os dados e tente novamente.');
       console.error(err);
     } finally {
       setIsGenerating(false);
@@ -103,35 +108,15 @@ export function ReportModal(): JSX.Element {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex items-center">
+      {/* Botão Único e Moderno no Topo do Painel */}
       <Button
         type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => void handleExportCsv()}
-        disabled={isExportingCsv}
-        title="Exportação básica de dados em CSV (Portabilidade LGPD)"
+        onClick={handleOpenModal}
         className={cn(
-          'gap-1.5 text-xs',
-          isReadOnlyMember &&
-            'border-amber-400/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20',
-        )}
-      >
-        {isReadOnlyMember ? (
-          <Lock className="h-3.5 w-3.5 text-amber-400" />
-        ) : (
-          <Download className="h-3.5 w-3.5" />
-        )}
-        {isExportingCsv ? 'Exportando...' : 'CSV (LGPD)'}
-      </Button>
-
-      <Button
-        type="button"
-        onClick={handleOpenPdfModal}
-        className={cn(
-          'w-full sm:w-auto gap-2 font-semibold',
+          'w-full sm:w-auto gap-2 font-semibold shadow-sm transition-all',
           showGoldCue
-            ? 'border border-amber-400 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 hover:brightness-105'
+            ? 'border border-amber-400/80 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 hover:brightness-105'
             : 'bg-aksurim-primary hover:bg-aksurim-primary/90 text-white',
         )}
       >
@@ -140,120 +125,200 @@ export function ReportModal(): JSX.Element {
         ) : (
           <FileText size={18} />
         )}
-        <span>Exportar Relatório PDF</span>
+        <span>Emitir Relatório</span>
         {showGoldCue && <Crown className="h-3.5 w-3.5 shrink-0" />}
       </Button>
 
+      {/* Modal Unificado de Relatórios */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Exportar Relatório Financeiro</DialogTitle>
-            <DialogDescription>
-              Selecione o período e o formato desejado para baixar seu documento PDF profissional.
+            <DialogTitle className="text-base sm:text-lg font-bold text-white">
+              Emitir Relatório Financeiro
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-400">
+              Selecione o período e escolha o formato desejado (PDF executivo ou Planilha CSV).
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="start-date">Data Inicial</Label>
+          <div className="grid gap-4 py-2 text-xs">
+            {/* Filtros de Data */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="report-start-date" className="text-slate-300 font-medium text-xs">
+                  Data Inicial
+                </Label>
                 <Input
-                  id="start-date"
+                  id="report-start-date"
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
+                  className="bg-slate-900/80 border-slate-700 text-slate-200 text-xs"
                 />
               </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="end-date">Data Final</Label>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="report-end-date" className="text-slate-300 font-medium text-xs">
+                  Data Final
+                </Label>
                 <Input
-                  id="end-date"
+                  id="report-end-date"
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
+                  className="bg-slate-900/80 border-slate-700 text-slate-200 text-xs"
                 />
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 pt-2">
-              <Label>Tipo de Relatório</Label>
+            {/* Opções de Formato */}
+            <div className="flex flex-col gap-2.5 pt-1">
+              <Label className="text-slate-300 font-medium text-xs">Formato de Exportação</Label>
 
+              {/* PDF Sintético */}
               <label
-                className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
-                  reportType === 'sintetico'
-                    ? 'border-aksurim-primary bg-aksurim-primary/5'
-                    : 'hover:bg-muted'
-                }`}
+                className={cn(
+                  'flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors',
+                  exportFormat === 'sintetico'
+                    ? 'border-aksurim-primary bg-aksurim-primary/10'
+                    : 'border-slate-800 bg-slate-900/40 hover:bg-slate-800/40',
+                )}
               >
                 <div className="flex h-5 items-center">
                   <input
                     type="radio"
-                    name="report-type"
+                    name="export-format"
                     className="h-4 w-4 text-aksurim-primary focus:ring-aksurim-primary"
-                    checked={reportType === 'sintetico'}
-                    onChange={() => setReportType('sintetico')}
+                    checked={exportFormat === 'sintetico'}
+                    onChange={() => setExportFormat('sintetico')}
                   />
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">
-                    Sintético (Resumo Executivo)
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    Visão geral de totais, balanço e gráficos de categorias. Ideal para leitura rápida.
+                <div className="flex-1 flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                      <FileText className="h-3.5 w-3.5 text-aksurim-primary" />
+                      PDF Sintético (Resumo Executivo)
+                    </span>
+                    {!hasPremiumAccess && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                        <Crown className="h-2.5 w-2.5" /> Premium
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-slate-400 mt-0.5">
+                    Visão geral dos totais, balanço mensal e gráficos de distribuição por categoria.
                   </span>
                 </div>
               </label>
 
+              {/* PDF Analítico */}
               <label
-                className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
-                  reportType === 'analitico'
-                    ? 'border-aksurim-primary bg-aksurim-primary/5'
-                    : 'hover:bg-muted'
-                }`}
+                className={cn(
+                  'flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors',
+                  exportFormat === 'analitico'
+                    ? 'border-aksurim-primary bg-aksurim-primary/10'
+                    : 'border-slate-800 bg-slate-900/40 hover:bg-slate-800/40',
+                )}
               >
                 <div className="flex h-5 items-center">
                   <input
                     type="radio"
-                    name="report-type"
+                    name="export-format"
                     className="h-4 w-4 text-aksurim-primary focus:ring-aksurim-primary"
-                    checked={reportType === 'analitico'}
-                    onChange={() => setReportType('analitico')}
+                    checked={exportFormat === 'analitico'}
+                    onChange={() => setExportFormat('analitico')}
                   />
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">
-                    Analítico (Detalhado)
+                <div className="flex-1 flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                      <FileText className="h-3.5 w-3.5 text-aksurim-primary" />
+                      PDF Analítico (Detalhado)
+                    </span>
+                    {!hasPremiumAccess && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                        <Crown className="h-2.5 w-2.5" /> Premium
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-slate-400 mt-0.5">
+                    Resumo executivo completo + listagem detalhada linha a linha de todas as despesas.
                   </span>
-                  <span className="text-xs text-muted-foreground">
-                    Resumo executivo + lista detalhada linha a linha de todas as despesas do período.
+                </div>
+              </label>
+
+              {/* Planilha CSV */}
+              <label
+                className={cn(
+                  'flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors',
+                  exportFormat === 'csv'
+                    ? 'border-aksurim-primary bg-aksurim-primary/10'
+                    : 'border-slate-800 bg-slate-900/40 hover:bg-slate-800/40',
+                )}
+              >
+                <div className="flex h-5 items-center">
+                  <input
+                    type="radio"
+                    name="export-format"
+                    className="h-4 w-4 text-aksurim-primary focus:ring-aksurim-primary"
+                    checked={exportFormat === 'csv'}
+                    onChange={() => setExportFormat('csv')}
+                  />
+                </div>
+                <div className="flex-1 flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                      <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-400" />
+                      Planilha (CSV)
+                    </span>
+                    <span className="inline-flex items-center text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                      Excel / Sheets
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-400 mt-0.5">
+                    Dados tabulares estruturados do período selecionado para abrir no Excel ou Google Sheets.
                   </span>
                 </div>
               </label>
             </div>
 
-            {errorMsg && <p className="text-sm text-red-500">{errorMsg}</p>}
+            {errorMsg && (
+              <p className="text-xs text-red-400 bg-red-950/40 border border-red-900/60 p-2 rounded">
+                {errorMsg}
+              </p>
+            )}
           </div>
 
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-2.5 pt-2">
             <Button
               variant="outline"
+              size="sm"
               onClick={() => setIsOpen(false)}
               disabled={isGenerating}
+              className="text-xs border-slate-700 text-slate-300 hover:bg-slate-800"
             >
               Cancelar
             </Button>
             <Button
-              onClick={handleGenerate}
+              size="sm"
+              onClick={handleExecuteExport}
               disabled={isGenerating || !startDate || !endDate}
-              className="bg-aksurim-primary hover:bg-aksurim-primary/90 text-white min-w-[140px]"
+              className="bg-aksurim-primary hover:bg-aksurim-primary/90 text-white min-w-[150px] text-xs font-semibold gap-1.5"
             >
               {isGenerating ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processando...
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Processando...</span>
+                </>
+              ) : exportFormat === 'csv' ? (
+                <>
+                  <Download className="h-3.5 w-3.5" />
+                  <span>Exportar Planilha (CSV)</span>
                 </>
               ) : (
-                'Gerar PDF'
+                <>
+                  <FileText className="h-3.5 w-3.5" />
+                  <span>Gerar Relatório PDF</span>
+                </>
               )}
             </Button>
           </div>

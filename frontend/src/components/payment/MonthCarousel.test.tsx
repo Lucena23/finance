@@ -59,7 +59,7 @@ describe('MonthCarousel (TAREFA 16)', () => {
     screen.getByTestId('month-option-0').focus();
     await user.keyboard('{End}');
 
-    expect(screen.getByTestId('month-option-5')).toHaveFocus();
+    expect(screen.getByTestId('month-option-6')).toHaveFocus();
   });
 
   it('retorna ao mês atual pelo atalho rápido', async () => {

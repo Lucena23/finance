@@ -1,5 +1,6 @@
 import {
   BadGatewayException,
+  ForbiddenException,
   Injectable,
   Logger,
   ServiceUnavailableException,
@@ -7,60 +8,223 @@ import {
 import { ConfigService } from '@nestjs/config';
 
 import { AuthenticatedUser } from '../auth/jwt.strategy';
+import { PlanService } from '../plan/plan.service';
+import { DeepSeekService, IaKsurimChatResponse } from './deepseek.service';
+import { ChatMessageDto } from './dto/chat-message.dto';
 import { CreateSupportMessageDto } from './dto/create-support-message.dto';
+import { PublicSupportFormDto } from './dto/public-support-form.dto';
 
-/**
- * Resposta pública do endpoint de suporte.
- */
 export interface SupportMessageResult {
-  /** Indica que a mensagem foi aceita e encaminhada ao Telegram. */
   delivered: boolean;
-  /** Mensagem amigável para exibição no frontend. */
   message: string;
 }
 
-/**
- * SupportService — encaminha mensagens de suporte ao Telegram (TAREFA 21).
- * ARCHITECTURE §3.2 — MÓDULO SUPPORT — RN-14.
- *
- * REGRA RN-14: APENAS o backend fala com a API do Telegram. As credenciais
- * (`TELEGRAM_BOT_TOKEN` e `TELEGRAM_CHAT_ID`) residem exclusivamente no `.env`
- * do diretório privado do backend e NUNCA são expostas ao frontend.
- *
- * O `familyAccountId` e os dados do remetente são derivados exclusivamente do
- * JWT autenticado (RN-01 / §8.3) — nunca aceitos como parâmetro do cliente.
- */
+export interface SupportChatResult extends IaKsurimChatResponse {
+  isUpsell?: boolean;
+}
+
+interface RateLimitRecord {
+  count: number;
+  resetAt: number;
+}
+
 @Injectable()
 export class SupportService {
   private readonly logger = new Logger(SupportService.name);
+  private readonly ipRateLimits = new Map<string, RateLimitRecord>();
 
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    private readonly deepSeekService: DeepSeekService,
+    private readonly planService: PlanService,
+  ) {}
+
+  private checkRateLimit(ip: string, maxRequests: number, windowMs = 3600000): void {
+    const now = Date.now();
+    const record = this.ipRateLimits.get(ip);
+
+    if (!record || now > record.resetAt) {
+      this.ipRateLimits.set(ip, { count: 1, resetAt: now + windowMs });
+      return;
+    }
+
+    if (record.count >= maxRequests) {
+      throw new ForbiddenException(
+        'Limite de solicitações de suporte atingido temporariamente para o seu endereço IP. Tente novamente mais tarde.',
+      );
+    }
+
+    record.count += 1;
+  }
 
   /**
-   * Envia a mensagem de suporte para o chat do Telegram da Aksurim.
-   *
-   * @param user Usuário autenticado (derivado do JWT).
-   * @param dto  Conteúdo validado do formulário de suporte.
+   * Chat público com a IA-ksurim na Frontpage (não logados).
+   */
+  async chatPublic(
+    dto: ChatMessageDto,
+    clientIp = 'unknown',
+  ): Promise<SupportChatResult> {
+    this.checkRateLimit(clientIp, 12, 3600000);
+
+    const historyTurns = dto.history || [];
+    // Cada turno do usuário tem 1 pergunta + 1 resposta (2 mensagens no histórico)
+    const turnNumber = Math.floor(historyTurns.length / 2) + 1;
+
+    // Alerta imediato no Telegram se o visitante pedir especialista / suporte técnico
+    if (this.isHumanEscalationRequest(dto.message)) {
+      this.notifyTelegramPublicEscalation(clientIp, dto.message).catch((err) =>
+        this.logger.warn(`Falha ao disparar alerta de escalada pública no Telegram: ${err}`),
+      );
+    }
+
+    return this.deepSeekService.generateReply(
+      dto.message,
+      historyTurns,
+      'PUBLIC_FRONTPAGE',
+      turnNumber,
+    );
+  }
+
+  /**
+   * Chat autenticado com a IA-ksurim dentro da plataforma.
+   */
+  async chatAuthenticated(
+    user: AuthenticatedUser,
+    dto: ChatMessageDto,
+  ): Promise<SupportChatResult> {
+    const plan = await this.planService.getComputedPlan(user.familyAccountId);
+
+    if (plan.status === 'FREE') {
+      return {
+        reply:
+          'Olá! O atendimento interativo em tempo real via IA-ksurim é um benefício exclusivo dos assinantes Premium.\n\nComo usuário do plano gratuito, você pode enviar sua dúvida ou solicitação através do nosso formulário tradicional de suporte que nossa equipe responderá por e-mail com total atenção!',
+        quickReplies: [
+          '💎 Conhecer o Plano Premium',
+          '📩 Abrir Formulário de Chamado',
+        ],
+        isUpsell: true,
+      };
+    }
+
+    const historyTurns = dto.history || [];
+
+    // Alerta imediato no Telegram se o assinante pedir especialista / suporte técnico
+    if (this.isHumanEscalationRequest(dto.message)) {
+      this.notifyTelegramHumanEscalation(
+        user.email,
+        plan.status,
+        dto.message,
+        user.familyAccountId,
+      ).catch((err) =>
+        this.logger.warn(`Falha ao disparar alerta de escalada no Telegram: ${err}`),
+      );
+    }
+
+    return this.deepSeekService.generateReply(
+      dto.message,
+      historyTurns,
+      'AUTHENTICATED_PREMIUM',
+      1,
+      {
+        userName: user.email.split('@')[0],
+        email: user.email,
+        status: plan.status,
+        daysRemaining: plan.daysLeft,
+        effectiveUntil: plan.currentPeriodEndsAt,
+      },
+    );
+  }
+
+  /**
+   * Formulário formal público (recuperação de acesso / erro de e-mail).
+   */
+  async sendPublicSupportForm(
+    dto: PublicSupportFormDto,
+    clientIp = 'unknown',
+  ): Promise<SupportMessageResult> {
+    this.checkRateLimit(clientIp, 10, 3600000);
+
+    const botToken =
+      this.config.get<string>('TELEGRAM_SUPPORT_BOT_TOKEN') ||
+      this.config.get<string>('TELEGRAM_BOT_TOKEN');
+    const chatId =
+      this.config.get<string>('TELEGRAM_SUPPORT_CHAT_ID') ||
+      this.config.get<string>('TELEGRAM_CHAT_ID');
+
+    if (!botToken || !chatId) {
+      this.logger.error('TELEGRAM_SUPPORT_BOT_TOKEN ou CHAT_ID ausente no .env');
+      throw new ServiceUnavailableException(
+        'O canal de suporte está temporariamente indisponível. Tente novamente mais tarde.',
+      );
+    }
+
+    const timestamp = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(new Date());
+
+    const text = [
+      '🌐 <b>Novo Chamado Público de Suporte — Frontpage</b>',
+      '',
+      `<b>Nome:</b> ${this.escapeHtml(dto.name)}`,
+      `<b>E-mail:</b> ${this.escapeHtml(dto.email)}`,
+      dto.contact ? `<b>Contato:</b> ${this.escapeHtml(dto.contact)}` : '',
+      `<b>Assunto:</b> ${this.escapeHtml(dto.subject)}`,
+      '',
+      `<b>Mensagem:</b>\n${this.escapeHtml(dto.message)}`,
+      '',
+      `<b>Data/Hora:</b> ${timestamp} (BRT)`,
+      `<b>IP do Visitante:</b> <code>${this.escapeHtml(clientIp)}</code>`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    await this.dispatchTelegramMessage(botToken, chatId, text);
+
+    return {
+      delivered: true,
+      message:
+        'Sua solicitação foi encaminhada com sucesso ao nosso suporte técnico! Entraremos em contato no e-mail informado.',
+    };
+  }
+
+  /**
+   * Formulário formal autenticado na área logada.
    */
   async sendToTelegram(
     user: AuthenticatedUser,
     dto: CreateSupportMessageDto,
   ): Promise<SupportMessageResult> {
-    const botToken = this.config.get<string>('TELEGRAM_BOT_TOKEN');
-    const chatId = this.config.get<string>('TELEGRAM_CHAT_ID');
+    const botToken =
+      this.config.get<string>('TELEGRAM_SUPPORT_BOT_TOKEN') ||
+      this.config.get<string>('TELEGRAM_BOT_TOKEN');
+    const chatId =
+      this.config.get<string>('TELEGRAM_SUPPORT_CHAT_ID') ||
+      this.config.get<string>('TELEGRAM_CHAT_ID');
 
     if (!botToken || !chatId) {
-      this.logger.error(
-        'TELEGRAM_BOT_TOKEN ou TELEGRAM_CHAT_ID ausente no .env — suporte indisponível.',
-      );
+      this.logger.error('TELEGRAM_SUPPORT_BOT_TOKEN ou CHAT_ID ausente no .env');
       throw new ServiceUnavailableException(
         'O canal de suporte está temporariamente indisponível. Tente novamente mais tarde.',
       );
     }
 
     const text = this.buildTelegramMessage(user, dto);
-    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    await this.dispatchTelegramMessage(botToken, chatId, text);
 
+    return {
+      delivered: true,
+      message: 'Mensagem enviada ao suporte com sucesso!',
+    };
+  }
+
+  private async dispatchTelegramMessage(
+    botToken: string,
+    chatId: string,
+    text: string,
+  ): Promise<void> {
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -82,19 +246,14 @@ export class SupportService {
           'Não foi possível encaminhar sua mensagem ao suporte. Tente novamente.',
         );
       }
-
-      return {
-        delivered: true,
-        message: 'Mensagem enviada ao suporte com sucesso!',
-      };
     } catch (error) {
       if (
         error instanceof BadGatewayException ||
-        error instanceof ServiceUnavailableException
+        error instanceof ServiceUnavailableException ||
+        error instanceof ForbiddenException
       ) {
         throw error;
       }
-
       this.logger.error(
         `Erro de rede ao contatar a API do Telegram: ${
           error instanceof Error ? error.message : String(error)
@@ -106,10 +265,6 @@ export class SupportService {
     }
   }
 
-  /**
-   * Monta o texto da mensagem enviada ao Telegram, enriquecido com os dados
-   * do remetente derivados do JWT (RN-14 / §8.3).
-   */
   private buildTelegramMessage(
     user: AuthenticatedUser,
     dto: CreateSupportMessageDto,
@@ -135,9 +290,79 @@ export class SupportService {
     ].join('\n');
   }
 
-  /**
-   * Escapa caracteres reservados do HTML aceito pelo Telegram (parse_mode HTML).
-   */
+  private isHumanEscalationRequest(text: string): boolean {
+    const pattern = /\b(atendente|humano|humana|pessoa\s+real|atendimento\s+humano|falar\s+com\s+algu[eé]m|suporte\s+humano|falar\s+com\s+uma\s+pessoa|falar\s+com\s+tendente)\b/i;
+    return pattern.test(text);
+  }
+
+  private async notifyTelegramHumanEscalation(
+    email: string,
+    planStatus: string,
+    message: string,
+    familyAccountId: string,
+  ): Promise<void> {
+    const botToken =
+      this.config.get<string>('TELEGRAM_SUPPORT_BOT_TOKEN') ||
+      this.config.get<string>('TELEGRAM_BOT_TOKEN');
+    const chatId =
+      this.config.get<string>('TELEGRAM_SUPPORT_CHAT_ID') ||
+      this.config.get<string>('TELEGRAM_CHAT_ID');
+
+    if (!botToken || !chatId) return;
+
+    const timestamp = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(new Date());
+
+    const text = [
+      '🔔 <b>Alerta: Solicitação de Especialista / Suporte Técnico no Chat</b>',
+      '',
+      `👤 <b>Usuário:</b> ${this.escapeHtml(email)}`,
+      `🏷️ <b>Plano:</b> ${this.escapeHtml(planStatus)}`,
+      `🏢 <b>Workspace:</b> <code>${this.escapeHtml(familyAccountId)}</code>`,
+      `💬 <b>Mensagem:</b> <i>"${this.escapeHtml(message)}"</i>`,
+      '',
+      `🕒 <b>Horário:</b> ${timestamp} (BRT)`,
+      '<i>ℹ️ O usuário solicitou contato com nossos especialistas durante a conversa com a IA-ksurim. O formulário para coleta de WhatsApp foi aberto na tela dele.</i>',
+    ].join('\n');
+
+    await this.dispatchTelegramMessage(botToken, chatId, text);
+  }
+
+  private async notifyTelegramPublicEscalation(
+    clientIp: string,
+    message: string,
+  ): Promise<void> {
+    const botToken =
+      this.config.get<string>('TELEGRAM_SUPPORT_BOT_TOKEN') ||
+      this.config.get<string>('TELEGRAM_BOT_TOKEN');
+    const chatId =
+      this.config.get<string>('TELEGRAM_SUPPORT_CHAT_ID') ||
+      this.config.get<string>('TELEGRAM_CHAT_ID');
+
+    if (!botToken || !chatId) return;
+
+    const timestamp = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(new Date());
+
+    const text = [
+      '🔔 <b>Alerta: Visitante Solicitou Especialista na Frontpage</b>',
+      '',
+      `🌐 <b>IP do Visitante:</b> <code>${this.escapeHtml(clientIp)}</code>`,
+      `💬 <b>Mensagem:</b> <i>"${this.escapeHtml(message)}"</i>`,
+      '',
+      `🕒 <b>Horário:</b> ${timestamp} (BRT)`,
+      '<i>ℹ️ O visitante pediu atendimento com nossa equipe na página pública. O formulário foi disponibilizado.</i>',
+    ].join('\n');
+
+    await this.dispatchTelegramMessage(botToken, chatId, text);
+  }
+
   private escapeHtml(value: string): string {
     return value
       .replace(/&/g, '&amp;')

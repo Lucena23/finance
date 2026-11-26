@@ -737,18 +737,36 @@ export class ReportsService {
   }
 
   /**
-   * Exportação simples em CSV de todos os lançamentos da família (LGPD — portabilidade).
+   * Exportação simples em CSV dos lançamentos da família.
+   * Suporta filtro opcional por período (startDate e endDate no formato YYYY-MM-DD).
    * Disponível para todos os planos (Free e Premium).
    */
-  async generateCsvExport(familyAccountId: string): Promise<string> {
+  async generateCsvExport(
+    familyAccountId: string,
+    startDateStr?: string,
+    endDateStr?: string,
+  ): Promise<string> {
+    const where: any = {
+      expense: { familyAccountId },
+      OR: [
+        { expense: { deletedAt: null } },
+        { status: PaymentStatus.PAID },
+      ],
+    };
+
+    if (startDateStr && endDateStr) {
+      const [sy, sm, sd] = startDateStr.split('-').map(Number);
+      const [ey, em, ed] = endDateStr.split('-').map(Number);
+      if (!isNaN(sy) && !isNaN(ey)) {
+        where.dueDate = {
+          gte: new Date(Date.UTC(sy, sm - 1, sd, 0, 0, 0, 0)),
+          lte: new Date(Date.UTC(ey, em - 1, ed, 23, 59, 59, 999)),
+        };
+      }
+    }
+
     const items = await this.prisma.paymentItem.findMany({
-      where: {
-        expense: { familyAccountId },
-        OR: [
-          { expense: { deletedAt: null } },
-          { status: PaymentStatus.PAID },
-        ],
-      },
+      where,
       include: {
         expense: {
           select: {

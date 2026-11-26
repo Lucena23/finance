@@ -8,6 +8,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SupportModule = void 0;
 const common_1 = require("@nestjs/common");
+const plan_module_1 = require("../plan/plan.module");
+const deepseek_service_1 = require("./deepseek.service");
 const support_controller_1 = require("./support.controller");
 const support_service_1 = require("./support.service");
 let SupportModule = class SupportModule {
@@ -15,9 +17,10 @@ let SupportModule = class SupportModule {
 exports.SupportModule = SupportModule;
 exports.SupportModule = SupportModule = __decorate([
     (0, common_1.Module)({
+        imports: [plan_module_1.PlanModule],
         controllers: [support_controller_1.SupportController],
-        providers: [support_service_1.SupportService],
-        exports: [support_service_1.SupportService],
+        providers: [support_service_1.SupportService, deepseek_service_1.DeepSeekService],
+        exports: [support_service_1.SupportService, deepseek_service_1.DeepSeekService],
     })
 ], SupportModule);
 //# sourceMappingURL=support.module.js.map

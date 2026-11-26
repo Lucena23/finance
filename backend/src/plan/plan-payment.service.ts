@@ -1785,8 +1785,12 @@ export class PlanPaymentService implements OnModuleInit {
   }
 
   private async notifyTelegram(htmlText: string): Promise<void> {
-    const botToken = this.config.get<string>('TELEGRAM_BOT_TOKEN');
-    const chatId = this.config.get<string>('TELEGRAM_CHAT_ID');
+    const botToken =
+      this.config.get<string>('TELEGRAM_FINANCE_BOT_TOKEN') ||
+      this.config.get<string>('TELEGRAM_BOT_TOKEN');
+    const chatId =
+      this.config.get<string>('TELEGRAM_FINANCE_CHAT_ID') ||
+      this.config.get<string>('TELEGRAM_CHAT_ID');
     if (!botToken || !chatId) return;
 
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {

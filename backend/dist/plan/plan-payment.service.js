@@ -1111,8 +1111,10 @@ let PlanPaymentService = PlanPaymentService_1 = class PlanPaymentService {
             .catch((err) => this.logger.warn(`Falha ao enviar e-mail de reembolso para ${to}: ${err}`));
     }
     async notifyTelegram(htmlText) {
-        const botToken = this.config.get('TELEGRAM_BOT_TOKEN');
-        const chatId = this.config.get('TELEGRAM_CHAT_ID');
+        const botToken = this.config.get('TELEGRAM_FINANCE_BOT_TOKEN') ||
+            this.config.get('TELEGRAM_BOT_TOKEN');
+        const chatId = this.config.get('TELEGRAM_FINANCE_CHAT_ID') ||
+            this.config.get('TELEGRAM_CHAT_ID');
         if (!botToken || !chatId)
             return;
         await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {

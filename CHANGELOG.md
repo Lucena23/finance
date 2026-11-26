@@ -4,6 +4,71 @@ Histórico Oficial do Projeto — Aksurim Software
 
 ## REGISTROS RECENTES
 
+Data: 2026-11-26
+Versão: 1.4.1
+Tipo: HOTFIX / UX / REPORTS
+Origem: Unificação da Central de Relatórios e Suporte a Período em Planilha CSV
+Descrição: Correção e modernização do fluxo de emissão de relatórios no Painel Gerencial. Unificação dos antigos botões duplicados ("Exportar Relatório PDF" e "CSV LGPD") em um único botão limpo e corporativo: "Emitir Relatório". O modal agora centraliza a seleção de período (data inicial e data final) e permite a escolha direta entre os formatos: Relatório PDF (Sintético ou Analítico) e Planilha (CSV) para Excel e Google Sheets. No backend e frontend, a rota de exportação CSV (`GET /api/v1/reports/csv`) passa a aceitar os parâmetros opcionais `startDate` e `endDate`, gerando a planilha exatamente para o intervalo filtrado pelo usuário.
+Arquivos alterados:
+  - backend/src/reports/reports.controller.ts
+  - backend/src/reports/reports.service.ts
+  - backend/src/support/deepseek.service.ts
+  - frontend/src/components/dashboard/ReportModal.tsx
+  - frontend/src/lib/api.ts
+  - frontend/src/lib/constants.ts
+  - docs/IA_KSURIM_CATALOGO_CONHECIMENTO.md
+  - package.json
+  - backend/package.json
+  - frontend/package.json
+  - README.md
+  - CHANGELOG.md
+
+Data: 2026-11-26
+Versão: 1.4.0 (Refinamento & Calibração)
+Tipo: ENHANCEMENT / UX / CALIBRATION
+Origem: Calibração de Precisão da IA-ksurim, Anti-Alucinação de Rotas, Formatação Moderna e Vocabulário Corporativo
+Descrição: Calibração fina do motor da IA-ksurim com eliminação completa de alucinações de rotas técnicas de desenvolvedor (sanitização defensiva de `/dashboard`, `/plans`, etc.), renderização de tabelas responsivas estilizadas para apresentação de planos comerciais no chat, destaque visual em badges com brilho (#DAF043) para botões e menus da interface, alinhamento estrito da navegação pública (Frontpage direciona exclusivamente para cadastro gratuito de 15 dias de Trial sem cartão, sem citar menus internos inexistentes), mapeamento rigoroso da gestão de planos (selo dourado e submenu [👑 Meu Plano] no perfil), centralização oficial de relatórios (PDF e CSV) no menu [Painel] e padronização corporativa do vocabulário de suporte ("nossa equipe técnica" e "nossos especialistas"), eliminando expressões amadoras.
+Arquivos alterados:
+  - backend/src/support/deepseek.service.ts
+  - backend/src/support/support.service.ts
+  - frontend/src/components/support/IaKsurimWidget.tsx
+  - docs/IA_KSURIM_CATALOGO_CONHECIMENTO.md
+  - docs/CHECKLIST_v1.4.0.md
+  - CHANGELOG.md
+
+Data: 2026-11-25
+Versão: 1.4.0
+Tipo: FEATURE / AI / ARCHITECTURE
+Origem: IA-ksurim Suporte e Navegação, Atendimento Público na Frontpage e Desacoplamento dos Bots do Telegram
+Descrição: Implementação da central inteligente de suporte impulsionada pela IA-ksurim (motor LLM DeepSeek) com avatar oficial 3D e guardrail inegociável de escopo estrito a suporte e navegação da plataforma, preservando o modelo da futura Consultoria Financeira com IA. Lançamento do suporte público na Landing Page e tela de Login para assistência imediata a novos visitantes e recuperação de acesso (erros de digitação de e-mail e redefinição de senha) com fechamento comercial elegante para teste gratuito de 15 dias e rate limit de segurança por IP. No frontend, criação do widget responsivo flutuante IaKsurimWidget, integrado à LandingPage, LoginPage, AppShell e remodelagem da tela de Ajuda & Suporte, com modelo de Unit Economics que oferece suporte em tempo real ilimitado para contas Premium e Trial de 15 dias e resposta nativa cordial de upsell (zero tokens consumidos) para contas Free. No backend, desacoplamento completo dos bots do Telegram em dois canais dedicados e independentes (Controle Aksurim Financeiro e Controle Aksurim Suporte), liberando totalmente a infraestrutura de orquestração da Workstation.
+Arquivos alterados:
+  - backend/src/support/deepseek.service.ts
+  - backend/src/support/support.service.ts
+  - backend/src/support/support.controller.ts
+  - backend/src/support/support.module.ts
+  - backend/src/support/dto/chat-message.dto.ts
+  - backend/src/support/dto/public-support-form.dto.ts
+  - backend/src/plan/plan-payment.service.ts
+  - backend/src/common/route-regression.spec.ts
+  - backend/src/support/support.service.spec.ts
+  - backend/package.json
+  - frontend/src/components/support/IaKsurimWidget.tsx
+  - frontend/src/components/support/IaKsurimWidget.test.tsx
+  - frontend/src/lib/api.ts
+  - frontend/src/lib/constants.ts
+  - frontend/src/pages/LandingPage.tsx
+  - frontend/src/pages/LoginPage.tsx
+  - frontend/src/pages/SupportPage.tsx
+  - frontend/src/components/layout/AppShell.tsx
+  - frontend/public/images/ia-ksurim-avatar.jpg
+  - frontend/package.json
+  - package.json
+  - README.md
+  - CHANGELOG.md
+  - docs/IA_KSURIM_ARQUITETURA.md
+  - docs/CHECKLIST_v1.4.0.md
+Responsável: Joannderson Lucena (Aksurim Software)
+
 Data: 2026-11-24
 Versão: 1.3.2
 Tipo: FEATURE / UX

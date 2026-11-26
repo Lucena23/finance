@@ -134,12 +134,38 @@ export function SupportPage(): JSX.Element {
   return (
     <section className="flex flex-col gap-5 pb-8">
       <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight">Suporte</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Ajuda & Suporte</h1>
         <p className="text-muted-foreground text-sm">
-          Fale com a equipe Aksurim. Sua mensagem é encaminhada diretamente ao
-          nosso canal de atendimento no Telegram.
+          Tire dúvidas em tempo real com a <b>IA-ksurim</b> ou abra um chamado formal para nossa equipe técnica.
         </p>
       </header>
+
+      {/* CARD DESTAQUE: IA-KSURIM */}
+      <Card className="border border-[#06777F]/40 bg-gradient-to-r from-slate-900 via-slate-900 to-[#06777F]/20 shadow-md">
+        <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <img
+                src="/images/ia-ksurim-avatar.jpg"
+                alt="IA-ksurim"
+                className="h-14 w-14 rounded-full border-2 border-[#06777F] object-cover shadow-lg"
+              />
+              <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-slate-950 bg-emerald-500" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-white">IA-ksurim · Atendimento Inteligente</h2>
+                <span className="rounded bg-[#06777F]/30 px-2 py-0.5 text-[10px] font-bold text-[#DAF043]">
+                  ONLINE 24/7
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Tire dúvidas instantâneas sobre despesas, relatórios, planos e uso da plataforma pelo balão flutuante no canto da tela.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="border-t-4 border-t-primary shadow-sm">
         <CardHeader className="flex flex-row items-start gap-3 pb-2">

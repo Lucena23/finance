@@ -2,6 +2,7 @@ import { ArrowRight, CheckCircle2, Link2, PieChart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { InstallAppButton } from '@/components/pwa/InstallAppButton';
+import { IaKsurimWidget } from '@/components/support/IaKsurimWidget';
 import { Button } from '@/components/ui/button';
 
 export function LandingPage(): JSX.Element {
@@ -253,6 +254,9 @@ export function LandingPage(): JSX.Element {
           </div>
         </div>
       </footer>
+
+      {/* ATENDIMENTO INTELIGENTE IA-KSURIM NA FRONTPAGE */}
+      <IaKsurimWidget isPublic />
     </div>
   );
 }

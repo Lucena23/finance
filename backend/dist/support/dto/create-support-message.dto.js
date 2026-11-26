@@ -22,7 +22,7 @@ __decorate([
 ], CreateSupportMessageDto.prototype, "subject", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MinLength)(10, { message: 'A mensagem deve ter ao menos 10 caracteres.' }),
+    (0, class_validator_1.MinLength)(5, { message: 'A mensagem deve ter ao menos 5 caracteres.' }),
     (0, class_validator_1.MaxLength)(2000, { message: 'A mensagem deve ter no máximo 2000 caracteres.' }),
     __metadata("design:type", String)
 ], CreateSupportMessageDto.prototype, "message", void 0);

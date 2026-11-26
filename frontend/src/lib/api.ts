@@ -760,13 +760,45 @@ export const notificationsApi = {
     get<SystemAnnouncement | null>('/notifications/announcements/latest'),
 };
 
+export interface ChatTurnPayload {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ChatMessagePayload {
+  message: string;
+  sessionId?: string;
+  history?: ChatTurnPayload[];
+}
+
+export interface SupportChatResult {
+  reply: string;
+  quickReplies?: string[];
+  isCommercialClose?: boolean;
+  isUpsell?: boolean;
+}
+
+export interface PublicSupportFormPayload {
+  name: string;
+  email: string;
+  contact?: string;
+  subject: string;
+  message: string;
+}
+
 /**
- * Suporte ao cliente via Telegram (TAREFA 20 / TAREFA 21 / RN-14).
- * O backend é o único que fala com a API do Telegram.
+ * Suporte ao cliente via Telegram e IA-ksurim (v1.4.0).
+ * O backend é o único que fala com a API do Telegram e DeepSeek.
  */
 export const supportApi = {
   send: (payload: SupportMessagePayload): Promise<SupportMessageResult> =>
     post<SupportMessageResult>('/support', payload),
+  chatPublic: (payload: ChatMessagePayload): Promise<SupportChatResult> =>
+    post<SupportChatResult>('/support/public/chat', payload),
+  sendPublicForm: (payload: PublicSupportFormPayload): Promise<SupportMessageResult> =>
+    post<SupportMessageResult>('/support/public/form', payload),
+  chatAuthenticated: (payload: ChatMessagePayload): Promise<SupportChatResult> =>
+    post<SupportChatResult>('/support/chat', payload),
 };
 
 export const planApi = {
@@ -818,8 +850,17 @@ export const planApi = {
 };
 
 export const reportsApi = {
-  exportCsv: (): Promise<void> =>
-    downloadFile('/reports/csv', 'Dados_Aksurim_Controle.csv'),
+  exportCsv: (startDate?: string, endDate?: string): Promise<void> => {
+    const params =
+      startDate && endDate
+        ? `?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`
+        : '';
+    const filename =
+      startDate && endDate
+        ? `Dados_Aksurim_${startDate}_a_${endDate}.csv`
+        : 'Dados_Aksurim_Controle.csv';
+    return downloadFile(`/reports/csv${params}`, filename);
+  },
 };
 
 /**
