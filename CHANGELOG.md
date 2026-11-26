@@ -4,6 +4,19 @@ Histórico Oficial do Projeto — Aksurim Software
 
 ## REGISTROS RECENTES
 
+Data: 2026-11-26
+Versão: 1.4.0 (Refinamento & Calibração)
+Tipo: ENHANCEMENT / UX / CALIBRATION
+Origem: Calibração de Precisão da IA-ksurim, Anti-Alucinação de Rotas, Formatação Moderna e Vocabulário Corporativo
+Descrição: Calibração fina do motor da IA-ksurim com eliminação completa de alucinações de rotas técnicas de desenvolvedor (sanitização defensiva de `/dashboard`, `/plans`, etc.), renderização de tabelas responsivas estilizadas para apresentação de planos comerciais no chat, destaque visual em badges com brilho (#DAF043) para botões e menus da interface, alinhamento estrito da navegação pública (Frontpage direciona exclusivamente para cadastro gratuito de 15 dias de Trial sem cartão, sem citar menus internos inexistentes), mapeamento rigoroso da gestão de planos (selo dourado e submenu [👑 Meu Plano] no perfil), centralização oficial de relatórios (PDF e CSV) no menu [Painel] e padronização corporativa do vocabulário de suporte ("nossa equipe técnica" e "nossos especialistas"), eliminando expressões amadoras.
+Arquivos alterados:
+  - backend/src/support/deepseek.service.ts
+  - backend/src/support/support.service.ts
+  - frontend/src/components/support/IaKsurimWidget.tsx
+  - docs/IA_KSURIM_CATALOGO_CONHECIMENTO.md
+  - docs/CHECKLIST_v1.4.0.md
+  - CHANGELOG.md
+
 Data: 2026-11-25
 Versão: 1.4.0
 Tipo: FEATURE / AI / ARCHITECTURE
