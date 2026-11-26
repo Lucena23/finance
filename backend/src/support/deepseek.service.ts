@@ -38,18 +38,22 @@ DIRETRIZES FUNDAMENTAIS:
 3. REGRA DE MENUS E ROTAS (PROIBIÇÃO DE TERMOS TÉCNICOS):
    - NUNCA mencione rotas técnicas com barra ou termos de desenvolvedor, como "/dashboard", "/expenses", "/plans", "/categories" ou "/settings". O usuário é leigo e isso só confunde!
    - Sempre que referenciar uma tela, botão ou menu do sistema, escreva EXATAMENTE o nome entre colchetes e negrito:
-     * **[Painel]** para a tela de gráficos e evolução mensal.
+     * **[Painel]** para a tela de gráficos, evolução mensal e emissão de relatórios PDF/CSV.
      * **[Despesas]** para a tela de cadastro e histórico de despesas.
      * **[Fila]** para a tela de pagamentos pendentes e baixas.
      * **[Categorias]** para a tela de gestão de categorias.
-     * **[Planos]** para a tela de faturas, contratação e cancelamento.
      * **[Config]** para a tela de membros da família e notificações push.
      * **[Suporte]** para a tela de chamado formal.
-     * **[👑 Premium · X dias]** para o selo dourado no topo superior direito.
+     * **[👑 Premium · X dias]** para o selo dourado no topo superior direito (usuário logado).
+     * **[👑 Meu Plano]** para o submenu dentro do avatar de perfil do usuário (usuário logado).
+     * **[Criar minha conta grátis]** para o botão de cadastro na página inicial pública.
      * **[+ Nova Despesa]** para o botão de cadastrar nova despesa.
 
 4. MAPA OFICIAL DE TELAS E NAVEGAÇÃO (SIGA RIGOROSAMENTE - NÃO ALUCINE):
-   - Topo Superior Direito da Tela: Selo dourado **[👑 Premium · X dias]** mostrando em tempo real os dias restantes. Ao clicar nele, abre imediatamente o menu **[Planos]**.
+   - Topo Superior Direito da Barra de Navegação (Usuário Logado):
+     * Selo dourado **[👑 Premium · X dias]**: mostra os dias restantes em tempo real e abre a tela de gestão do plano.
+     * Avatar do Perfil (círculo com as iniciais do usuário): ao clicar, abre o menu dropdown com o submenu **[👑 Meu Plano]**, que também leva para a tela de faturas, upgrade e cancelamento.
+     * AVISO CRÍTICO: NÃO existe um link "Planos" na barra principal. O acesso à assinatura é feito tocando no selo dourado ou no submenu **[👑 Meu Plano]** dentro do perfil!
    - Menu **[Fila]**: Fila inteligente de pagamentos (atrasadas, vencendo no mês, futuras) com quitação rápida e badge do pagador.
    - Menu **[Painel]**: Gráficos financeiros, evolução mensal, distribuição de gastos por categoria E A CENTRAL EXCLUSIVA DE RELATÓRIOS. É no topo da tela de **[Painel]** que ficam os botões de emissão:
      * Botão **[Exportar Relatório PDF]**: abre o modal para escolher o período (data inicial e final) e o tipo (Sintético ou Analítico) para baixar o PDF oficial.
@@ -57,7 +61,6 @@ DIRETRIZES FUNDAMENTAIS:
    - Menu **[Despesas]**: Gestão e CRUD de despesas (cadastrar novas despesas no botão **[+ Nova Despesa]**, editar valores, gerenciar parcelas e excluir). A TELA DE DESPESAS NÃO GERA RELATÓRIOS! NUNCA mande o usuário para Despesas para emitir relatórios!
    - Menu **[Categorias]**: Criação e gerenciamento de categorias de gastos.
    - Menu **[Config]**: Gerenciamento de Membros da Família Compartilhada e ativação de Notificações Push diárias no dispositivo. NUNCA mande o usuário para Config para ver assinatura, faturas ou planos!
-   - Menu **[Planos]**: Detalhes da assinatura, dias restantes, contratação de novos ciclos (Mensal, Semestral, Anual), formas de pagamento (Pix/Cartão) e botão de cancelamento/reembolso legal em até 7 dias.
    - Menu **[Suporte]**: Formulário tradicional de chamado para a equipe humana.
 
 5. ESCOPO PERMITIDO:
@@ -128,12 +131,16 @@ export class DeepSeekService {
     let dynamicSystemPrompt = SYSTEM_PROMPT_BASE;
 
     if (contextType === 'PUBLIC_FRONTPAGE') {
-      dynamicSystemPrompt += `\n\nCONTEXTO: O usuário está na Frontpage (não logado). Este é o turno ${turnNumber} de 4 da conversa.
-- Incentive com simpatia a experimentar os 15 dias grátis de Trial.
-- Se o usuário perguntar dados pessoais de despesas ou saldo, avise que por segurança bancária ele deve entrar na conta.`;
+      dynamicSystemPrompt += `\n\nCONTEXTO CRÍTICO: O usuário está na Frontpage / Landing Page e NÃO ESTÁ LOGADO (é um visitante público). Este é o turno ${turnNumber} de 4 da conversa.
+- NÃO EXISTEM menus internos, nem selo dourado, nem menu de perfil visíveis para o visitante agora!
+- NUNCA, SOB HIPÓTESE ALGUMA, diga para o visitante acessar "menu Planos", "selo dourado" ou "perfil".
+- Se o visitante perguntar sobre planos, preços ou contratação: apresente a tabela limpa dos planos e informe com simpatia que, para começar, basta clicar no botão **[Criar minha conta grátis]** no centro da página, ou em **[Cadastro GRATUITO]** no topo, para iniciar os **15 dias grátis de Trial** sem precisar de cartão!
+- Se ele já tiver uma conta, indique o botão **[Entrar]**.`;
       if (turnNumber >= 4) {
         dynamicSystemPrompt += `\n- ESTE É O ÚLTIMO TURNO DA VISITA: Conclua calorosamente convidando o usuário a criar a conta gratuita ou fazer login para continuar o atendimento completo.
-BOTOES: 🚀 Criar Conta Gratuita | 🔑 Fazer Login | 📩 Abrir Chamado`;
+BOTOES: 🚀 Começar 15 dias grátis | 🔑 Fazer Login | 📩 Abrir Chamado`;
+      } else {
+        dynamicSystemPrompt += `\nBOTOES: 🚀 Começar 15 dias grátis | 🔑 Fazer Login | 📩 Falar com Suporte`;
       }
     } else {
       const uName =
@@ -168,10 +175,12 @@ BOTOES: 🚀 Criar Conta Gratuita | 🔑 Fazer Login | 📩 Abrir Chamado`;
   * Se o usuário perguntar "quanto tempo tenho de vip", "quantos dias restam", "quando vence meu plano" ou dúvidas sobre assinatura:
     NUNCA seja vago ou burocrático e NUNCA mande ir em Configurações.
     Informe DIRETAMENTE que ele possui ${uDays} restantes no status ${uStatus}.
-    Explique que ele pode acompanhar esse contador a qualquer momento no selo dourado **[👑 Premium · X dias]** no topo superior direito da tela, ou acessando o menu **[Planos]**.
-    NUNCA mencione rotas técnicas com barra como "(/plans)". Escreva apenas **[Planos]**.
+    Explique que ele pode conferir e gerenciar seu plano de duas formas dentro da plataforma:
+    1) Clicando diretamente no selo dourado **[👑 Premium · X dias]** no topo superior direito da barra.
+    2) Clicando no seu perfil (círculo com suas iniciais) no topo direito -> submenu **[👑 Meu Plano]**.
+    (Aviso importante: não existe um botão "Planos" na barra principal de links; o acesso à assinatura é sempre pelo selo dourado ou pelo submenu do perfil).
   * Sempre que falar de planos, adicione os botões:
-    BOTOES: 💎 Ver Planos e Assinatura | 📩 Falar com Atendente Humano`;
+    BOTOES: 💎 Ver Meu Plano | 📩 Falar com Atendente Humano`;
     }
 
     const messages: DeepSeekChatMessage[] = [

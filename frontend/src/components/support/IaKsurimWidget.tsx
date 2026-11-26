@@ -45,6 +45,8 @@ const KNOWN_UI_MENUS = new Set([
   'config',
   'configurações',
   'planos',
+  'meu plano',
+  '👑 meu plano',
   'suporte',
   '+ nova despesa',
   'nova despesa',
@@ -53,6 +55,9 @@ const KNOWN_UI_MENUS = new Set([
   'relatório pdf',
   'relatórios',
   'csv',
+  'criar minha conta grátis',
+  'cadastro gratuito',
+  'entrar',
 ]);
 
 function isMenuOrBadge(label: string): boolean {
@@ -341,24 +346,35 @@ export function IaKsurimWidget({
       setViewMode('form');
       return;
     }
-    if (reply.includes('Criar Conta') || reply.includes('Testar')) {
+    if (
+      reply.includes('Criar Conta') ||
+      reply.includes('Começar 15 dias') ||
+      reply.includes('Testar') ||
+      reply.includes('Cadastro')
+    ) {
       navigate('/register');
       setIsOpen(false);
       return;
     }
-    if (reply.includes('Fazer Login')) {
+    if (reply.includes('Fazer Login') || reply.includes('Entrar')) {
       navigate('/login');
       setIsOpen(false);
       return;
     }
     if (
+      reply.includes('Meu Plano') ||
       reply.includes('Plano') ||
       reply.includes('Upgrade') ||
       reply.includes('Preço') ||
       reply.includes('Assinatura')
     ) {
       if (isPublic) {
-        void handleSendMessage('Quais são os planos e preços disponíveis?');
+        if (reply.includes('Conhecer')) {
+          void handleSendMessage('Quais são os planos e preços disponíveis?');
+          return;
+        }
+        navigate('/register');
+        setIsOpen(false);
         return;
       }
       navigate('/plans');
