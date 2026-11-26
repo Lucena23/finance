@@ -241,8 +241,12 @@ export function IaKsurimWidget({
         });
       }
       setFormSentSuccess(true);
-    } catch {
-      setFormError('Não foi possível encaminhar o formulário no momento. Tente novamente.');
+    } catch (err: unknown) {
+      const errorMsg =
+        err instanceof Error
+          ? err.message
+          : 'Não foi possível encaminhar o formulário no momento. Tente novamente.';
+      setFormError(errorMsg);
     } finally {
       setFormLoading(false);
     }
@@ -554,6 +558,7 @@ export function IaKsurimWidget({
                     <Label className="text-[11px] text-slate-300">Mensagem *</Label>
                     <textarea
                       required
+                      minLength={5}
                       rows={3}
                       value={publicForm.message}
                       onChange={(e) => setPublicForm({ ...publicForm, message: e.target.value })}

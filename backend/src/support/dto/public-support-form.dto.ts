@@ -31,7 +31,7 @@ export class PublicSupportFormDto {
 
   @IsString()
   @IsNotEmpty({ message: 'Descreva sua dúvida ou solicitação.' })
-  @MinLength(10, { message: 'A mensagem deve ter ao menos 10 caracteres.' })
+  @MinLength(5, { message: 'A mensagem deve ter ao menos 5 caracteres.' })
   @MaxLength(2000, { message: 'A mensagem deve ter no máximo 2000 caracteres.' })
   message!: string;
 }

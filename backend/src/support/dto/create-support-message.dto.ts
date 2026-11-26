@@ -17,7 +17,7 @@ export class CreateSupportMessageDto {
 
   /** Corpo da mensagem com a descrição detalhada do problema/dúvida. */
   @IsString()
-  @MinLength(10, { message: 'A mensagem deve ter ao menos 10 caracteres.' })
+  @MinLength(5, { message: 'A mensagem deve ter ao menos 5 caracteres.' })
   @MaxLength(2000, { message: 'A mensagem deve ter no máximo 2000 caracteres.' })
   message!: string;
 

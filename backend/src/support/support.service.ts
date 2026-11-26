@@ -136,7 +136,7 @@ export class SupportService {
     dto: PublicSupportFormDto,
     clientIp = 'unknown',
   ): Promise<SupportMessageResult> {
-    this.checkRateLimit(clientIp, 4, 3600000);
+    this.checkRateLimit(clientIp, 10, 3600000);
 
     const botToken =
       this.config.get<string>('TELEGRAM_SUPPORT_BOT_TOKEN') ||

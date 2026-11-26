@@ -63,7 +63,7 @@ let SupportService = SupportService_1 = class SupportService {
         return this.deepSeekService.generateReply(dto.message, historyTurns, 'AUTHENTICATED_PREMIUM', 1, user.email);
     }
     async sendPublicSupportForm(dto, clientIp = 'unknown') {
-        this.checkRateLimit(clientIp, 4, 3600000);
+        this.checkRateLimit(clientIp, 10, 3600000);
         const botToken = this.config.get('TELEGRAM_SUPPORT_BOT_TOKEN') ||
             this.config.get('TELEGRAM_BOT_TOKEN');
         const chatId = this.config.get('TELEGRAM_SUPPORT_CHAT_ID') ||
