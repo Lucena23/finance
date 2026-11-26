@@ -33,11 +33,9 @@ describe('SupportService & IA-ksurim (v1.4.0)', () => {
         mockPlanService = {
             getComputedPlan: jest.fn().mockResolvedValue({
                 status: 'PREMIUM',
-                trialEndsAt: null,
-                premiumEndsAt: new Date(Date.now() + 86400000),
-                effectiveUntil: new Date(Date.now() + 86400000),
-                daysRemaining: 1,
-                isWithinGrace: false,
+                hasPremiumAccess: true,
+                currentPeriodEndsAt: new Date(Date.now() + 86400000),
+                daysLeft: 1,
             }),
         };
         service = new support_service_1.SupportService(mockConfigService, mockDeepSeekService, mockPlanService);
@@ -78,7 +76,10 @@ describe('SupportService & IA-ksurim (v1.4.0)', () => {
                 message: 'Como emitir relatório?',
             });
             expect(res.isUpsell).toBeUndefined();
-            expect(mockDeepSeekService.generateReply).toHaveBeenCalledWith('Como emitir relatório?', [], 'AUTHENTICATED_PREMIUM', 1, mockUser.email);
+            expect(mockDeepSeekService.generateReply).toHaveBeenCalledWith('Como emitir relatório?', [], 'AUTHENTICATED_PREMIUM', 1, expect.objectContaining({
+                email: mockUser.email,
+                status: 'PREMIUM',
+            }));
         });
     });
     describe('sendPublicSupportForm & sendToTelegram', () => {

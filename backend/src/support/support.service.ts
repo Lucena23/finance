@@ -125,7 +125,13 @@ export class SupportService {
       historyTurns,
       'AUTHENTICATED_PREMIUM',
       1,
-      user.email,
+      {
+        userName: user.email.split('@')[0],
+        email: user.email,
+        status: plan.status,
+        daysRemaining: plan.daysLeft,
+        effectiveUntil: plan.currentPeriodEndsAt,
+      },
     );
   }
 

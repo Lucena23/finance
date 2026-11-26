@@ -60,7 +60,13 @@ let SupportService = SupportService_1 = class SupportService {
         if (this.isHumanEscalationRequest(dto.message)) {
             this.notifyTelegramHumanEscalation(user.email, plan.status, dto.message, user.familyAccountId).catch((err) => this.logger.warn(`Falha ao disparar alerta de escalada humana no Telegram: ${err}`));
         }
-        return this.deepSeekService.generateReply(dto.message, historyTurns, 'AUTHENTICATED_PREMIUM', 1, user.email);
+        return this.deepSeekService.generateReply(dto.message, historyTurns, 'AUTHENTICATED_PREMIUM', 1, {
+            userName: user.email.split('@')[0],
+            email: user.email,
+            status: plan.status,
+            daysRemaining: plan.daysLeft,
+            effectiveUntil: plan.currentPeriodEndsAt,
+        });
     }
     async sendPublicSupportForm(dto, clientIp = 'unknown') {
         this.checkRateLimit(clientIp, 10, 3600000);

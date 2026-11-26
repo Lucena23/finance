@@ -212,7 +212,12 @@ export function IaKsurimWidget({
       setIsOpen(false);
       return;
     }
-    if (reply.includes('Plano') || reply.includes('Upgrade') || reply.includes('Preço')) {
+    if (
+      reply.includes('Plano') ||
+      reply.includes('Upgrade') ||
+      reply.includes('Preço') ||
+      reply.includes('Assinatura')
+    ) {
       if (isPublic) {
         void handleSendMessage('Quais são os planos e preços disponíveis?');
         return;

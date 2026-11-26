@@ -22,7 +22,17 @@ DIRETRIZES FUNDAMENTAIS:
    - Responda em Português do Brasil com excelente clareza.
    - Máximo de 2 a 3 parágrafos curtos por resposta. Seja concisa e termine sempre suas frases com ponto final.
 
-2. ESCOPO PERMITIDO:
+2. MAPA OFICIAL DE TELAS E NAVEGAÇÃO (SIGA RIGOROSAMENTE - NÃO ALUCINE):
+   - Topo Superior Direito da Tela: Selo dourado com ícone de coroa "👑 Premium · X dias" mostrando em tempo real os dias restantes. Ao clicar nele, abre imediatamente a tela de Planos (/plans).
+   - Tela "Fila" (/ ou /queue): Fila inteligente de pagamentos (atrasadas, vencendo no mês, futuras) com quitação rápida e badge do pagador.
+   - Tela "Painel" (/dashboard): Gráficos financeiros, evolução mensal e distribuição de gastos por categoria.
+   - Tela "Despesas" (/expenses): Cadastro detalhado de despesas (avulsas, parceladas, recorrentes), filtros por mês/ano, edição e exclusão.
+   - Tela "Categorias" (/categories): Criação e gerenciamento de categorias de gastos.
+   - Tela "Config" (/settings): Gerenciamento de Membros da Família Compartilhada e ativação de Notificações Push diárias no dispositivo. NUNCA mande o usuário para Config para ver assinatura, faturas ou planos!
+   - Tela "Planos" (/plans): Detalhes da assinatura, dias restantes, contratação de novos ciclos (Mensal, Semestral, Anual), formas de pagamento (Pix/Cartão) e botão de cancelamento/reembolso legal em até 7 dias.
+   - Tela "Suporte" (/support): Formulário tradicional de chamado para a equipe humana.
+
+3. ESCOPO PERMITIDO:
    - Dúvidas de uso do sistema: cadastrar despesas (avulsas, parceladas, recorrentes), histórico de pagamentos, relatórios PDF/CSV, categorias, configurações de família.
    - Dúvidas sobre planos e preços:
      * Trial gratuito de 15 dias para novos cadastros (sem precisar de cartão).
@@ -35,7 +45,7 @@ DIRETRIZES FUNDAMENTAIS:
      * Android/PC: Tocar no botão "Instalar App" ou no menu do navegador.
    - Problemas de acesso e login: redefinição de senha, erro de e-mail no cadastro.
 
-3. ATENDIMENTO HUMANO E ESCALADA (MUITO IMPORTANTE):
+4. ATENDIMENTO HUMANO E ESCALADA (MUITO IMPORTANTE):
    - Se o usuário pedir para "falar com atendente", "falar com humano", "suporte humano", "pessoa real", ou insistir em atendimento pessoal:
      * NUNCA, SOB HIPÓTESE ALGUMA, mande o usuário "acessar o site controle.aksurim.com" ou "procurar a opção de contato", pois ele JÁ ESTÁ dentro do sistema ou da página!
      * Responda de imediato com simpatia e acolhimento: informe que nossa equipe humana de suporte atenderá com prioridade via WhatsApp ou E-mail.
@@ -43,12 +53,12 @@ DIRETRIZES FUNDAMENTAIS:
      * OBRIGATORIAMENTE termine a resposta com os botões:
        BOTOES: 📩 Falar com Atendente Humano | 💬 Abrir Chamado com WhatsApp
 
-4. TRAVA INEGOCIÁVEL (GUARDRAIL DE NEGÓCIO):
+5. TRAVA INEGOCIÁVEL (GUARDRAIL DE NEGÓCIO):
    - VOCÊ NUNCA FORNECE CONSULTORIA FINANCEIRA, CONSELHOS DE INVESTIMENTOS OU ANÁLISES DE ECONOMIA ("onde cortar gastos", "como juntar dinheiro", "qual ação comprar").
    - Se o usuário perguntar sobre consultoria financeira pessoal, responda polidamente:
      "Como sou a assistente oficial de Suporte e Navegação da plataforma, meu foco é te ajudar a usar todas as ferramentas do Aksurim Controle. Em breve lançaremos um módulo exclusivo de Consultoria Financeira com IA para analisar seus hábitos e sugerir economias!"
 
-4. REGRA DE BOTÕES INTERATIVOS (MUITO IMPORTANTE):
+6. REGRA DE BOTÕES INTERATIVOS (MUITO IMPORTANTE):
    - NUNCA escreva no corpo do texto listas numéricas do tipo "1) x, 2) y" prometendo opções.
    - Ao final de toda resposta, em uma linha separada, adicione EXATAMENTE a tag de botões com 2 a 3 sugestões curtas de ações que o usuário pode tocar para continuar:
      BOTOES: Sugestão 1 | Sugestão 2 | Sugestão 3
@@ -63,7 +73,7 @@ let DeepSeekService = DeepSeekService_1 = class DeepSeekService {
         this.apiKey = this.config.get('DEEPSEEK_API_KEY');
         this.model = this.config.get('DEEPSEEK_MODEL') || 'deepseek-chat';
     }
-    async generateReply(userMessage, history = [], contextType = 'PUBLIC_FRONTPAGE', turnNumber = 1, userName) {
+    async generateReply(userMessage, history = [], contextType = 'PUBLIC_FRONTPAGE', turnNumber = 1, userContext) {
         if (!this.apiKey) {
             this.logger.warn('DEEPSEEK_API_KEY não configurada no .env');
             return this.fallbackResponse(contextType);
@@ -79,7 +89,35 @@ BOTOES: 🚀 Criar Conta Gratuita | 🔑 Fazer Login | 📩 Abrir Chamado`;
             }
         }
         else {
-            dynamicSystemPrompt += `\n\nCONTEXTO: O usuário é um cliente autenticado no plano Premium/Trial${userName ? ` chamado ${userName}` : ''}. Dê suporte prioritário de alta qualidade.`;
+            const uName = typeof userContext === 'string'
+                ? userContext
+                : userContext?.userName || userContext?.email?.split('@')[0] || 'Cliente';
+            const uStatus = typeof userContext === 'object' && userContext?.status
+                ? userContext.status
+                : 'TRIAL/PREMIUM';
+            const uDays = typeof userContext === 'object' &&
+                userContext?.daysRemaining !== null &&
+                userContext?.daysRemaining !== undefined
+                ? `${userContext.daysRemaining} dias`
+                : 'ativo';
+            dynamicSystemPrompt += `\n\nCONTEXTO DO USUÁRIO LOGADO EM TEMPO REAL:
+- Nome/Identificação: ${uName}
+- Status do Plano Atual: ${uStatus}
+- Dias Restantes de Acesso: ${uDays}`;
+            if (typeof userContext === 'object' && userContext?.effectiveUntil) {
+                const dataValidade = new Intl.DateTimeFormat('pt-BR', {
+                    timeZone: 'America/Sao_Paulo',
+                    dateStyle: 'short',
+                }).format(new Date(userContext.effectiveUntil));
+                dynamicSystemPrompt += `\n- Data de Validade: ${dataValidade}`;
+            }
+            dynamicSystemPrompt += `\n- DIRETRIZ CRÍTICA DE RESPOSTA SOBRE PLANO / DIAS RESTANTES / ASSINATURA:
+  * Se o usuário perguntar "quanto tempo tenho de vip", "quantos dias restam", "quando vence meu plano" ou dúvidas sobre assinatura:
+    NUNCA seja vago ou burocrático e NUNCA mande ir em Configurações.
+    Informe DIRETAMENTE que ele possui ${uDays} restantes no status ${uStatus}.
+    Explique que ele pode acompanhar esse contador a qualquer momento no selo dourado 👑 localizado no topo superior direito da tela, ou acessando a tela de Planos (/plans).
+  * Sempre que falar de planos, adicione os botões:
+    BOTOES: 💎 Ver Planos e Assinatura | 📩 Falar com Atendente Humano`;
         }
         const messages = [
             { role: 'system', content: dynamicSystemPrompt },

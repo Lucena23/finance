@@ -8,6 +8,13 @@ export interface IaKsurimChatResponse {
     quickReplies?: string[];
     isCommercialClose?: boolean;
 }
+export interface UserPlanContext {
+    userName?: string;
+    email?: string;
+    status?: string;
+    daysRemaining?: number | null;
+    effectiveUntil?: Date | null;
+}
 export declare class DeepSeekService {
     private readonly config;
     private readonly logger;
@@ -18,7 +25,7 @@ export declare class DeepSeekService {
     generateReply(userMessage: string, history?: Array<{
         role: 'user' | 'assistant';
         content: string;
-    }>, contextType?: 'PUBLIC_FRONTPAGE' | 'AUTHENTICATED_PREMIUM', turnNumber?: number, userName?: string): Promise<IaKsurimChatResponse>;
+    }>, contextType?: 'PUBLIC_FRONTPAGE' | 'AUTHENTICATED_PREMIUM', turnNumber?: number, userContext?: UserPlanContext | string): Promise<IaKsurimChatResponse>;
     private parseReplyAndButtons;
     private deriveQuickReplies;
     private fallbackResponse;
