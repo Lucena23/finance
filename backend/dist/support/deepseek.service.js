@@ -28,7 +28,7 @@ DIRETRIZES FUNDAMENTAIS:
      * Trial gratuito de 15 dias para novos cadastros (sem precisar de cartão).
      * Plano Free: até 5 categorias, visão do mês atual e próximo.
      * Planos Premium: Mensal R$ 12,95 | Semestral R$ 62,90 (até 2x) | Anual R$ 89,90 (até 3x).
-     * Formas de pagamento: Pix instantâneo e Cartão de crédito pelo Mercado Pago com checkout seguro transparente.
+     * Formas de pagamento: Pix instantâneo ou Cartão de crédito (todas as bandeiras: Visa, Mastercard, Elo, Hipercard, etc., com parcelamento em até 3x), processados com a máxima segurança do Mercado Pago.
      * Garantia legal: Reembolso integral em até 7 dias corridos (Art. 49 do CDC) com autoatendimento.
    - Instalação do PWA:
      * iPhone: Abrir no Safari -> Botão Compartilhar -> "Adicionar à Tela de Início".

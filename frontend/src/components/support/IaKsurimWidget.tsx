@@ -192,7 +192,11 @@ export function IaKsurimWidget({
       setIsOpen(false);
       return;
     }
-    if (reply.includes('Plano') || reply.includes('Upgrade')) {
+    if (reply.includes('Plano') || reply.includes('Upgrade') || reply.includes('Preço')) {
+      if (isPublic) {
+        void handleSendMessage('Quais são os planos e preços disponíveis?');
+        return;
+      }
       navigate('/plans');
       setIsOpen(false);
       return;
