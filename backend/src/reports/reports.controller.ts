@@ -44,7 +44,7 @@ export class ReportsController {
   }
 
   /**
-   * GET /api/v1/reports/csv — Exportação simples de portabilidade de dados (LGPD).
+   * GET /api/v1/reports/csv — Exportação em planilha CSV com filtro opcional por período.
    * Liberada ao ADMIN em todos os planos (Free e Premium) e aos membros no Premium.
    * No plano Free, membros ficam em modo somente leitura (assertMemberCanWrite).
    */
@@ -52,6 +52,8 @@ export class ReportsController {
   async exportCsv(
     @FamilyScopeParam() scope: FamilyScope,
     @CurrentUser() user: AuthenticatedUser,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
     @Res() res: Response,
   ): Promise<void> {
     if (this.planService && user?.role) {
@@ -63,11 +65,18 @@ export class ReportsController {
 
     const csvContent = await this.reportsService.generateCsvExport(
       scope.familyAccountId,
+      startDate,
+      endDate,
     );
+
+    const filename =
+      startDate && endDate
+        ? `Dados_Aksurim_${startDate}_a_${endDate}.csv`
+        : 'Dados_Aksurim_Controle.csv';
 
     res.set({
       'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': 'attachment; filename="Dados_Aksurim_Controle.csv"',
+      'Content-Disposition': `attachment; filename="${filename}"`,
     });
 
     res.send(csvContent);

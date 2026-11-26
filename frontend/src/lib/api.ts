@@ -850,8 +850,17 @@ export const planApi = {
 };
 
 export const reportsApi = {
-  exportCsv: (): Promise<void> =>
-    downloadFile('/reports/csv', 'Dados_Aksurim_Controle.csv'),
+  exportCsv: (startDate?: string, endDate?: string): Promise<void> => {
+    const params =
+      startDate && endDate
+        ? `?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`
+        : '';
+    const filename =
+      startDate && endDate
+        ? `Dados_Aksurim_${startDate}_a_${endDate}.csv`
+        : 'Dados_Aksurim_Controle.csv';
+    return downloadFile(`/reports/csv${params}`, filename);
+  },
 };
 
 /**

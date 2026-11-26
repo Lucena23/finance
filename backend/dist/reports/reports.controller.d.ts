@@ -8,5 +8,5 @@ export declare class ReportsController {
     private readonly planService?;
     constructor(reportsService: ReportsService, planService?: PlanService | undefined);
     generatePdfReport(user: any, startDate: string, endDate: string, type: 'sintetico' | 'analitico', res: Response): Promise<void>;
-    exportCsv(scope: FamilyScope, user: AuthenticatedUser, res: Response): Promise<void>;
+    exportCsv(scope: FamilyScope, user: AuthenticatedUser, startDate: string, endDate: string, res: Response): Promise<void>;
 }

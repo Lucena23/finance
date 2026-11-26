@@ -35,14 +35,17 @@ let ReportsController = class ReportsController {
         pdfDoc.pipe(res);
         pdfDoc.end();
     }
-    async exportCsv(scope, user, res) {
+    async exportCsv(scope, user, startDate, endDate, res) {
         if (this.planService && user?.role) {
             await this.planService.assertMemberCanWrite(scope.familyAccountId, user.role);
         }
-        const csvContent = await this.reportsService.generateCsvExport(scope.familyAccountId);
+        const csvContent = await this.reportsService.generateCsvExport(scope.familyAccountId, startDate, endDate);
+        const filename = startDate && endDate
+            ? `Dados_Aksurim_${startDate}_a_${endDate}.csv`
+            : 'Dados_Aksurim_Controle.csv';
         res.set({
             'Content-Type': 'text/csv; charset=utf-8',
-            'Content-Disposition': 'attachment; filename="Dados_Aksurim_Controle.csv"',
+            'Content-Disposition': `attachment; filename="${filename}"`,
         });
         res.send(csvContent);
     }
@@ -64,9 +67,11 @@ __decorate([
     (0, common_1.Get)('csv'),
     __param(0, (0, family_scope_decorator_1.FamilyScopeParam)()),
     __param(1, (0, current_user_decorator_1.CurrentUser)()),
-    __param(2, (0, common_1.Res)()),
+    __param(2, (0, common_1.Query)('startDate')),
+    __param(3, (0, common_1.Query)('endDate')),
+    __param(4, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object, Object]),
+    __metadata("design:paramtypes", [Object, Object, String, String, Object]),
     __metadata("design:returntype", Promise)
 ], ReportsController.prototype, "exportCsv", null);
 exports.ReportsController = ReportsController = __decorate([

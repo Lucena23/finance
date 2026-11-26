@@ -580,15 +580,26 @@ let ReportsService = class ReportsService {
         }
         return doc;
     }
-    async generateCsvExport(familyAccountId) {
+    async generateCsvExport(familyAccountId, startDateStr, endDateStr) {
+        const where = {
+            expense: { familyAccountId },
+            OR: [
+                { expense: { deletedAt: null } },
+                { status: client_1.PaymentStatus.PAID },
+            ],
+        };
+        if (startDateStr && endDateStr) {
+            const [sy, sm, sd] = startDateStr.split('-').map(Number);
+            const [ey, em, ed] = endDateStr.split('-').map(Number);
+            if (!isNaN(sy) && !isNaN(ey)) {
+                where.dueDate = {
+                    gte: new Date(Date.UTC(sy, sm - 1, sd, 0, 0, 0, 0)),
+                    lte: new Date(Date.UTC(ey, em - 1, ed, 23, 59, 59, 999)),
+                };
+            }
+        }
         const items = await this.prisma.paymentItem.findMany({
-            where: {
-                expense: { familyAccountId },
-                OR: [
-                    { expense: { deletedAt: null } },
-                    { status: client_1.PaymentStatus.PAID },
-                ],
-            },
+            where,
             include: {
                 expense: {
                     select: {

@@ -5,6 +5,25 @@ Histórico Oficial do Projeto — Aksurim Software
 ## REGISTROS RECENTES
 
 Data: 2026-11-26
+Versão: 1.4.1
+Tipo: HOTFIX / UX / REPORTS
+Origem: Unificação da Central de Relatórios e Suporte a Período em Planilha CSV
+Descrição: Correção e modernização do fluxo de emissão de relatórios no Painel Gerencial. Unificação dos antigos botões duplicados ("Exportar Relatório PDF" e "CSV LGPD") em um único botão limpo e corporativo: "Emitir Relatório". O modal agora centraliza a seleção de período (data inicial e data final) e permite a escolha direta entre os formatos: Relatório PDF (Sintético ou Analítico) e Planilha (CSV) para Excel e Google Sheets. No backend e frontend, a rota de exportação CSV (`GET /api/v1/reports/csv`) passa a aceitar os parâmetros opcionais `startDate` e `endDate`, gerando a planilha exatamente para o intervalo filtrado pelo usuário.
+Arquivos alterados:
+  - backend/src/reports/reports.controller.ts
+  - backend/src/reports/reports.service.ts
+  - backend/src/support/deepseek.service.ts
+  - frontend/src/components/dashboard/ReportModal.tsx
+  - frontend/src/lib/api.ts
+  - frontend/src/lib/constants.ts
+  - docs/IA_KSURIM_CATALOGO_CONHECIMENTO.md
+  - package.json
+  - backend/package.json
+  - frontend/package.json
+  - README.md
+  - CHANGELOG.md
+
+Data: 2026-11-26
 Versão: 1.4.0 (Refinamento & Calibração)
 Tipo: ENHANCEMENT / UX / CALIBRATION
 Origem: Calibração de Precisão da IA-ksurim, Anti-Alucinação de Rotas, Formatação Moderna e Vocabulário Corporativo
