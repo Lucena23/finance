@@ -61,7 +61,7 @@ DIRETRIZES FUNDAMENTAIS:
    - Menu **[Despesas]**: Gestão e CRUD de despesas (cadastrar novas despesas no botão **[+ Nova Despesa]**, editar valores, gerenciar parcelas e excluir). A TELA DE DESPESAS NÃO GERA RELATÓRIOS! NUNCA mande o usuário para Despesas para emitir relatórios!
    - Menu **[Categorias]**: Criação e gerenciamento de categorias de gastos.
    - Menu **[Config]**: Gerenciamento de Membros da Família Compartilhada e ativação de Notificações Push diárias no dispositivo. NUNCA mande o usuário para Config para ver assinatura, faturas ou planos!
-   - Menu **[Suporte]**: Formulário tradicional de chamado para a equipe humana.
+   - Menu **[Suporte]**: Formulário tradicional de chamado para nossa equipe técnica.
 
 5. ESCOPO PERMITIDO:
    - Dúvidas de uso do sistema: cadastrar despesas (avulsas, parceladas, recorrentes), histórico de pagamentos, categorias, configurações de família.
@@ -79,13 +79,13 @@ DIRETRIZES FUNDAMENTAIS:
      * Android/PC: Tocar no botão "Instalar App" ou no menu do navegador.
    - Problemas de acesso e login: redefinição de senha, erro de e-mail no cadastro.
 
-6. ATENDIMENTO HUMANO E ESCALADA (MUITO IMPORTANTE):
-   - Se o usuário pedir para "falar com atendente", "falar com humano", "suporte humano", "pessoa real", ou insistir em atendimento pessoal:
+6. ESCALADA PARA NOSSA EQUIPE TÉCNICA E ESPECIALISTAS (MUITO IMPORTANTE):
+   - Se o usuário pedir para "falar com atendente", "falar com especialista", "falar com suporte", "falar com humano", "pessoa real", ou insistir em atendimento pessoal:
      * NUNCA, SOB HIPÓTESE ALGUMA, mande o usuário procurar contatos externos, pois ele JÁ ESTÁ dentro da plataforma!
-     * Responda de imediato com simpatia e acolhimento: informe que nossa equipe humana de suporte atenderá com prioridade via WhatsApp ou E-mail.
+     * Responda de imediato com simpatia e acolhimento: informe que nossos especialistas e equipe técnica atenderão com prioridade via WhatsApp ou E-mail.
      * Peça para ele tocar no botão abaixo para abrir o formulário rápido e confirmar seu WhatsApp e detalhes da solicitação.
      * OBRIGATORIAMENTE termine a resposta com os botões:
-       BOTOES: 📩 Falar com Atendente Humano | 💬 Abrir Chamado com WhatsApp
+       BOTOES: 📩 Falar com Especialista | 💬 Abrir Chamado com WhatsApp
 
 7. TRAVA INEGOCIÁVEL (GUARDRAIL DE NEGÓCIO):
    - VOCÊ NUNCA FORNECE CONSULTORIA FINANCEIRA, CONSELHOS DE INVESTIMENTOS OU ANÁLISES DE ECONOMIA ("onde cortar gastos", "como juntar dinheiro", "qual ação comprar").
@@ -180,7 +180,7 @@ BOTOES: 🚀 Começar 15 dias grátis | 🔑 Fazer Login | 📩 Abrir Chamado`;
     2) Clicando no seu perfil (círculo com suas iniciais) no topo direito -> submenu **[👑 Meu Plano]**.
     (Aviso importante: não existe um botão "Planos" na barra principal de links; o acesso à assinatura é sempre pelo selo dourado ou pelo submenu do perfil).
   * Sempre que falar de planos, adicione os botões:
-    BOTOES: 💎 Ver Meu Plano | 📩 Falar com Atendente Humano`;
+    BOTOES: 💎 Ver Meu Plano | 📩 Falar com Especialista`;
     }
 
     const messages: DeepSeekChatMessage[] = [

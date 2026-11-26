@@ -70,7 +70,7 @@ export class SupportService {
     // Cada turno do usuário tem 1 pergunta + 1 resposta (2 mensagens no histórico)
     const turnNumber = Math.floor(historyTurns.length / 2) + 1;
 
-    // Alerta imediato no Telegram se o visitante pedir atendente humano
+    // Alerta imediato no Telegram se o visitante pedir especialista / suporte técnico
     if (this.isHumanEscalationRequest(dto.message)) {
       this.notifyTelegramPublicEscalation(clientIp, dto.message).catch((err) =>
         this.logger.warn(`Falha ao disparar alerta de escalada pública no Telegram: ${err}`),
@@ -108,7 +108,7 @@ export class SupportService {
 
     const historyTurns = dto.history || [];
 
-    // Alerta imediato no Telegram se o assinante pedir atendente humano
+    // Alerta imediato no Telegram se o assinante pedir especialista / suporte técnico
     if (this.isHumanEscalationRequest(dto.message)) {
       this.notifyTelegramHumanEscalation(
         user.email,
@@ -116,7 +116,7 @@ export class SupportService {
         dto.message,
         user.familyAccountId,
       ).catch((err) =>
-        this.logger.warn(`Falha ao disparar alerta de escalada humana no Telegram: ${err}`),
+        this.logger.warn(`Falha ao disparar alerta de escalada no Telegram: ${err}`),
       );
     }
 
@@ -317,7 +317,7 @@ export class SupportService {
     }).format(new Date());
 
     const text = [
-      '🔔 <b>Alerta: Solicitação de Atendente Humano no Chat</b>',
+      '🔔 <b>Alerta: Solicitação de Especialista / Suporte Técnico no Chat</b>',
       '',
       `👤 <b>Usuário:</b> ${this.escapeHtml(email)}`,
       `🏷️ <b>Plano:</b> ${this.escapeHtml(planStatus)}`,
@@ -325,7 +325,7 @@ export class SupportService {
       `💬 <b>Mensagem:</b> <i>"${this.escapeHtml(message)}"</i>`,
       '',
       `🕒 <b>Horário:</b> ${timestamp} (BRT)`,
-      '<i>ℹ️ O usuário solicitou contato humano durante a conversa com a IA-ksurim. O formulário para coleta de WhatsApp foi aberto na tela dele.</i>',
+      '<i>ℹ️ O usuário solicitou contato com nossos especialistas durante a conversa com a IA-ksurim. O formulário para coleta de WhatsApp foi aberto na tela dele.</i>',
     ].join('\n');
 
     await this.dispatchTelegramMessage(botToken, chatId, text);
@@ -351,13 +351,13 @@ export class SupportService {
     }).format(new Date());
 
     const text = [
-      '🔔 <b>Alerta: Visitante Solicitou Atendente na Frontpage</b>',
+      '🔔 <b>Alerta: Visitante Solicitou Especialista na Frontpage</b>',
       '',
       `🌐 <b>IP do Visitante:</b> <code>${this.escapeHtml(clientIp)}</code>`,
       `💬 <b>Mensagem:</b> <i>"${this.escapeHtml(message)}"</i>`,
       '',
       `🕒 <b>Horário:</b> ${timestamp} (BRT)`,
-      '<i>ℹ️ O visitante pediu atendimento humano na página pública. O formulário foi disponibilizado.</i>',
+      '<i>ℹ️ O visitante pediu atendimento com nossa equipe na página pública. O formulário foi disponibilizado.</i>',
     ].join('\n');
 
     await this.dispatchTelegramMessage(botToken, chatId, text);

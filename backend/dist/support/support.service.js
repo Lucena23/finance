@@ -58,7 +58,7 @@ let SupportService = SupportService_1 = class SupportService {
         }
         const historyTurns = dto.history || [];
         if (this.isHumanEscalationRequest(dto.message)) {
-            this.notifyTelegramHumanEscalation(user.email, plan.status, dto.message, user.familyAccountId).catch((err) => this.logger.warn(`Falha ao disparar alerta de escalada humana no Telegram: ${err}`));
+            this.notifyTelegramHumanEscalation(user.email, plan.status, dto.message, user.familyAccountId).catch((err) => this.logger.warn(`Falha ao disparar alerta de escalada no Telegram: ${err}`));
         }
         return this.deepSeekService.generateReply(dto.message, historyTurns, 'AUTHENTICATED_PREMIUM', 1, {
             userName: user.email.split('@')[0],
@@ -186,7 +186,7 @@ let SupportService = SupportService_1 = class SupportService {
             timeStyle: 'short',
         }).format(new Date());
         const text = [
-            '🔔 <b>Alerta: Solicitação de Atendente Humano no Chat</b>',
+            '🔔 <b>Alerta: Solicitação de Especialista / Suporte Técnico no Chat</b>',
             '',
             `👤 <b>Usuário:</b> ${this.escapeHtml(email)}`,
             `🏷️ <b>Plano:</b> ${this.escapeHtml(planStatus)}`,
@@ -194,7 +194,7 @@ let SupportService = SupportService_1 = class SupportService {
             `💬 <b>Mensagem:</b> <i>"${this.escapeHtml(message)}"</i>`,
             '',
             `🕒 <b>Horário:</b> ${timestamp} (BRT)`,
-            '<i>ℹ️ O usuário solicitou contato humano durante a conversa com a IA-ksurim. O formulário para coleta de WhatsApp foi aberto na tela dele.</i>',
+            '<i>ℹ️ O usuário solicitou contato com nossos especialistas durante a conversa com a IA-ksurim. O formulário para coleta de WhatsApp foi aberto na tela dele.</i>',
         ].join('\n');
         await this.dispatchTelegramMessage(botToken, chatId, text);
     }
@@ -211,13 +211,13 @@ let SupportService = SupportService_1 = class SupportService {
             timeStyle: 'short',
         }).format(new Date());
         const text = [
-            '🔔 <b>Alerta: Visitante Solicitou Atendente na Frontpage</b>',
+            '🔔 <b>Alerta: Visitante Solicitou Especialista na Frontpage</b>',
             '',
             `🌐 <b>IP do Visitante:</b> <code>${this.escapeHtml(clientIp)}</code>`,
             `💬 <b>Mensagem:</b> <i>"${this.escapeHtml(message)}"</i>`,
             '',
             `🕒 <b>Horário:</b> ${timestamp} (BRT)`,
-            '<i>ℹ️ O visitante pediu atendimento humano na página pública. O formulário foi disponibilizado.</i>',
+            '<i>ℹ️ O visitante pediu atendimento com nossa equipe na página pública. O formulário foi disponibilizado.</i>',
         ].join('\n');
         await this.dispatchTelegramMessage(botToken, chatId, text);
     }

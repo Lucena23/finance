@@ -341,6 +341,8 @@ export function IaKsurimWidget({
       reply.includes('Abrir Chamado') ||
       reply.includes('Atendente') ||
       reply.includes('Humano') ||
+      reply.includes('Especialista') ||
+      reply.includes('Técnica') ||
       reply.includes('WhatsApp')
     ) {
       setViewMode('form');
@@ -646,7 +648,7 @@ export function IaKsurimWidget({
             <div className="flex-1 overflow-y-auto p-4 text-xs scrollbar-thin scrollbar-thumb-slate-800">
               <div className="mb-3 text-center">
                 <h4 className="font-bold text-white text-sm">
-                  {isPublic ? 'Abertura de Chamado Formal' : 'Chamado para Atendente Humano'}
+                  {isPublic ? 'Abertura de Chamado Formal' : 'Chamado para Equipe Técnica'}
                 </h4>
                 <p className="text-[11px] text-slate-400">
                   Nossa equipe técnica receberá seu chamado via Telegram e entrará em contato via WhatsApp ou E-mail com prioridade.
