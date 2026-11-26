@@ -26,5 +26,8 @@ export declare class SupportService {
     sendToTelegram(user: AuthenticatedUser, dto: CreateSupportMessageDto): Promise<SupportMessageResult>;
     private dispatchTelegramMessage;
     private buildTelegramMessage;
+    private isHumanEscalationRequest;
+    private notifyTelegramHumanEscalation;
+    private notifyTelegramPublicEscalation;
     private escapeHtml;
 }

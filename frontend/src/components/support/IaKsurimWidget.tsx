@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useContext, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ExternalLink,
@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { AuthContext } from '@/contexts/AuthContext';
 import {
   ChatTurnPayload,
   supportApi,
@@ -95,7 +96,10 @@ export function IaKsurimWidget({
     },
   ]);
 
-  // Estado do formulário formal público
+  // Estado do formulário formal público / escalada humana
+  const authContext = useContext(AuthContext);
+  const currentUser = authContext?.user;
+
   const [publicForm, setPublicForm] = useState<PublicSupportFormPayload>({
     name: '',
     email: '',
@@ -105,6 +109,16 @@ export function IaKsurimWidget({
   const [formSentSuccess, setFormSentSuccess] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (currentUser) {
+      setPublicForm((prev) => ({
+        ...prev,
+        name: prev.name || currentUser.name || '',
+        email: prev.email || currentUser.email || '',
+      }));
+    }
+  }, [currentUser]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -178,7 +192,13 @@ export function IaKsurimWidget({
   }
 
   function handleQuickReplyClick(reply: string) {
-    if (reply.includes('Formulário') || reply.includes('Abrir Chamado')) {
+    if (
+      reply.includes('Formulário') ||
+      reply.includes('Abrir Chamado') ||
+      reply.includes('Atendente') ||
+      reply.includes('Humano') ||
+      reply.includes('WhatsApp')
+    ) {
       setViewMode('form');
       return;
     }
@@ -211,7 +231,15 @@ export function IaKsurimWidget({
     setFormLoading(true);
 
     try {
-      await supportApi.sendPublicForm(publicForm);
+      if (isPublic) {
+        await supportApi.sendPublicForm(publicForm);
+      } else {
+        await supportApi.send({
+          subject: publicForm.subject,
+          message: publicForm.message,
+          contact: publicForm.contact || publicForm.email,
+        });
+      }
       setFormSentSuccess(true);
     } catch {
       setFormError('Não foi possível encaminhar o formulário no momento. Tente novamente.');
@@ -444,18 +472,20 @@ export function IaKsurimWidget({
             /* Visualização do Formulário Formal */
             <div className="flex-1 overflow-y-auto p-4 text-xs scrollbar-thin scrollbar-thumb-slate-800">
               <div className="mb-3 text-center">
-                <h4 className="font-bold text-white text-sm">Abertura de Chamado Formal</h4>
+                <h4 className="font-bold text-white text-sm">
+                  {isPublic ? 'Abertura de Chamado Formal' : 'Chamado para Atendente Humano'}
+                </h4>
                 <p className="text-[11px] text-slate-400">
-                  Nossa equipe de especialistas receberá sua mensagem no suporte oficial.
+                  Nossa equipe técnica receberá seu chamado via Telegram e entrará em contato via WhatsApp ou E-mail com prioridade.
                 </p>
               </div>
 
               {formSentSuccess ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center animate-in fade-in">
                   <CheckCircle2 className="h-12 w-12 text-emerald-400" />
-                  <p className="mt-3 font-bold text-white text-sm">Mensagem enviada com sucesso!</p>
+                  <p className="mt-3 font-bold text-white text-sm">Chamado encaminhado com sucesso!</p>
                   <p className="mt-1 max-w-xs text-slate-300 text-xs">
-                    Nossa equipe técnica já recebeu seu chamado e responderá por e-mail com brevidade.
+                    Nossa equipe técnica já foi notificada no Telegram do suporte e responderá via WhatsApp ou e-mail com total atenção.
                   </p>
                   <Button
                     size="sm"

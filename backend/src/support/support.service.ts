@@ -70,6 +70,13 @@ export class SupportService {
     // Cada turno do usuário tem 1 pergunta + 1 resposta (2 mensagens no histórico)
     const turnNumber = Math.floor(historyTurns.length / 2) + 1;
 
+    // Alerta imediato no Telegram se o visitante pedir atendente humano
+    if (this.isHumanEscalationRequest(dto.message)) {
+      this.notifyTelegramPublicEscalation(clientIp, dto.message).catch((err) =>
+        this.logger.warn(`Falha ao disparar alerta de escalada pública no Telegram: ${err}`),
+      );
+    }
+
     return this.deepSeekService.generateReply(
       dto.message,
       historyTurns,
@@ -100,6 +107,19 @@ export class SupportService {
     }
 
     const historyTurns = dto.history || [];
+
+    // Alerta imediato no Telegram se o assinante pedir atendente humano
+    if (this.isHumanEscalationRequest(dto.message)) {
+      this.notifyTelegramHumanEscalation(
+        user.email,
+        plan.status,
+        dto.message,
+        user.familyAccountId,
+      ).catch((err) =>
+        this.logger.warn(`Falha ao disparar alerta de escalada humana no Telegram: ${err}`),
+      );
+    }
+
     return this.deepSeekService.generateReply(
       dto.message,
       historyTurns,
@@ -262,6 +282,79 @@ export class SupportService {
       `<b>Workspace:</b> <code>${this.escapeHtml(user.familyAccountId)}</code>`,
       `<b>Data/Hora:</b> ${timestamp} (BRT)`,
     ].join('\n');
+  }
+
+  private isHumanEscalationRequest(text: string): boolean {
+    const pattern = /\b(atendente|humano|humana|pessoa\s+real|atendimento\s+humano|falar\s+com\s+algu[eé]m|suporte\s+humano|falar\s+com\s+uma\s+pessoa|falar\s+com\s+tendente)\b/i;
+    return pattern.test(text);
+  }
+
+  private async notifyTelegramHumanEscalation(
+    email: string,
+    planStatus: string,
+    message: string,
+    familyAccountId: string,
+  ): Promise<void> {
+    const botToken =
+      this.config.get<string>('TELEGRAM_SUPPORT_BOT_TOKEN') ||
+      this.config.get<string>('TELEGRAM_BOT_TOKEN');
+    const chatId =
+      this.config.get<string>('TELEGRAM_SUPPORT_CHAT_ID') ||
+      this.config.get<string>('TELEGRAM_CHAT_ID');
+
+    if (!botToken || !chatId) return;
+
+    const timestamp = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(new Date());
+
+    const text = [
+      '🔔 <b>Alerta: Solicitação de Atendente Humano no Chat</b>',
+      '',
+      `👤 <b>Usuário:</b> ${this.escapeHtml(email)}`,
+      `🏷️ <b>Plano:</b> ${this.escapeHtml(planStatus)}`,
+      `🏢 <b>Workspace:</b> <code>${this.escapeHtml(familyAccountId)}</code>`,
+      `💬 <b>Mensagem:</b> <i>"${this.escapeHtml(message)}"</i>`,
+      '',
+      `🕒 <b>Horário:</b> ${timestamp} (BRT)`,
+      '<i>ℹ️ O usuário solicitou contato humano durante a conversa com a IA-ksurim. O formulário para coleta de WhatsApp foi aberto na tela dele.</i>',
+    ].join('\n');
+
+    await this.dispatchTelegramMessage(botToken, chatId, text);
+  }
+
+  private async notifyTelegramPublicEscalation(
+    clientIp: string,
+    message: string,
+  ): Promise<void> {
+    const botToken =
+      this.config.get<string>('TELEGRAM_SUPPORT_BOT_TOKEN') ||
+      this.config.get<string>('TELEGRAM_BOT_TOKEN');
+    const chatId =
+      this.config.get<string>('TELEGRAM_SUPPORT_CHAT_ID') ||
+      this.config.get<string>('TELEGRAM_CHAT_ID');
+
+    if (!botToken || !chatId) return;
+
+    const timestamp = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(new Date());
+
+    const text = [
+      '🔔 <b>Alerta: Visitante Solicitou Atendente na Frontpage</b>',
+      '',
+      `🌐 <b>IP do Visitante:</b> <code>${this.escapeHtml(clientIp)}</code>`,
+      `💬 <b>Mensagem:</b> <i>"${this.escapeHtml(message)}"</i>`,
+      '',
+      `🕒 <b>Horário:</b> ${timestamp} (BRT)`,
+      '<i>ℹ️ O visitante pediu atendimento humano na página pública. O formulário foi disponibilizado.</i>',
+    ].join('\n');
+
+    await this.dispatchTelegramMessage(botToken, chatId, text);
   }
 
   private escapeHtml(value: string): string {
