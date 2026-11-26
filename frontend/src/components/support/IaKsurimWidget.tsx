@@ -48,6 +48,11 @@ const KNOWN_UI_MENUS = new Set([
   'suporte',
   '+ nova despesa',
   'nova despesa',
+  'exportar relatório pdf',
+  'csv (lgpd)',
+  'relatório pdf',
+  'relatórios',
+  'csv',
 ]);
 
 function isMenuOrBadge(label: string): boolean {
@@ -357,6 +362,15 @@ export function IaKsurimWidget({
         return;
       }
       navigate('/plans');
+      setIsOpen(false);
+      return;
+    }
+    if (reply.includes('Painel') || reply.includes('Relatório') || reply.includes('Gráfico')) {
+      if (isPublic) {
+        navigate('/login');
+      } else {
+        navigate('/dashboard');
+      }
       setIsOpen(false);
       return;
     }
