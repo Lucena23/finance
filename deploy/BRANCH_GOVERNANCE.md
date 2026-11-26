@@ -1,30 +1,26 @@
-# Governança de Branch — Finanças Aksurim v1.1
+# Governança de Branch — Finanças Aksurim v1.4.1
 
 > Documento de rastreabilidade da RN-17 (Proteção de Código e Controle de Versão).
 
-## Branch de Trabalho Obrigatória
+## Histórico de Branches de Release
 
-- **Branch paralela:** `feature/v1.1-update`
-- **Branch protegida:** `master` (merge apenas manual pelo Engenheiro Responsável — Joannderson Lucena)
+- **v1.1:** `feature/v1.1-update` → `master`
+- **v1.2:** `feature/v1.2-freemium-adtech` → `master`
+- **v1.3:** `feature/v1.3-checkout-transparente` → `master`
+- **v1.4.0 / v1.4.1:** `feature/v1.4.0-ia-ksurim-suporte` → `master`
+- **Branch protegida:** `master` (merge apenas manual com autorização do Engenheiro Responsável — Joannderson Lucena)
 
 ## Regras
 
-1. É **ESTRITAMENTE PROIBIDO** realizar alterações de código ou instalar dependências diretamente em `main`/`master`.
-2. Todo o desenvolvimento da v1.1 ocorre exclusivamente em `feature/v1.1-update`.
-3. O merge final para a branch principal é manual, após validação e testes completos.
-
-## Comandos de Verificação
-
-```bash
-# Confirmar branch atual
-git rev-parse --abbrev-ref HEAD   # deve retornar: feature/v1.1-update
-
-# Criar a branch caso não exista
-git checkout feature/v1.1-update || git checkout -b feature/v1.1-update
-```
+1. É **ESTRITAMENTE PROIBIDO** realizar alterações diretas de código ou instalar dependências diretamente em `master`.
+2. Todo o desenvolvimento da versão ocorre exclusivamente na feature branch isolada.
+3. O merge final para a branch principal (`master`) é executado após validação e bateria de testes 100% aprovada.
 
 ## Estado Verificado
 
-- Branch ativa: `feature/v1.1-update`
+- Branch de Origem: `feature/v1.4.0-ia-ksurim-suporte`
+- Branch de Destino: `master`
+- Versão: `1.4.1`
 - Working tree: limpo
-- Última tarefa: TAREFA 1 (governança `.gitignore` + `git status`)
+- Banco de Produção: Reconectado no `.env` do backend
+- Bateria de Testes: 100% aprovada (11 suítes Jest backend, 7 suítes Vitest frontend)
